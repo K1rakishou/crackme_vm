@@ -1,6 +1,6 @@
-package crackme.vm
+package crackme.vm.core
 
-enum class Type(val str: String) {
+enum class ParameterType(val str: String) {
   IntType("Int"),
   LongType("Long"),
   FloatType("Float"),
@@ -16,8 +16,8 @@ enum class Type(val str: String) {
       "String" to StringType
     )
 
-    fun fromString(str: String): Type {
-      return map.getValue(str)
+    fun fromString(str: String): ParameterType? {
+      return map[str]
     }
   }
 }

@@ -1,3 +1,3 @@
-package crackme.vm
+package crackme.vm.core
 
-class ParsingException(lineNumber: Int, message: String) : Exception("[Error at line ${lineNumber}]: ${message}")
+class ParsingException(programLine: Int, message: String) : Exception("[Error at line ${programLine + 1}]: ${message}")

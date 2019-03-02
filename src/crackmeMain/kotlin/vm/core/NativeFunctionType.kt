@@ -1,4 +1,4 @@
-package crackme.vm
+package crackme.vm.core
 
 enum class NativeFunctionType(val funcName: String) {
   VmExit("vm_exit"),
@@ -10,8 +10,8 @@ enum class NativeFunctionType(val funcName: String) {
       "println" to Println
     )
 
-    fun fromString(funcName: String): NativeFunctionType {
-      return map.getValue(funcName)
+    fun fromString(funcName: String): NativeFunctionType? {
+      return map[funcName]
     }
   }
 }

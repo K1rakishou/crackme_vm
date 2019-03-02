@@ -1,9 +1,11 @@
 package crackme.vm
 
-import crackme.vm.instructions.Add
-import crackme.vm.instructions.Cmp
-import crackme.vm.instructions.Instruction
-import crackme.vm.instructions.Mov
+import crackme.vm.core.JumpType
+import crackme.vm.core.NativeFunctionType
+import crackme.vm.core.ParameterType
+import crackme.vm.core.ParsingException
+import crackme.vm.instructions.*
+import crackme.vm.meta.NativeFunction
 import crackme.vm.operands.*
 
 class VMParser {
@@ -13,113 +15,193 @@ class VMParser {
       .map { it.trim() }
       .filterNot { it.isEmpty() }
 
-    val instructionList = lines.mapIndexed { index, str ->
-      val instruction = tryParseInstruction(index + 1, str)
-      if (instruction == null) {
-        //TODO: parse labels etc
-      }
+    var instructionIndex = 0
+    val instructions = mutableListOf<Instruction>()
+    val nativeFunctions = mutableMapOf<NativeFunctionType, NativeFunction>()
+    val labels = mutableMapOf<String, Int>()
 
-      instruction
-    }.filterNotNull()
+    for ((programLine, line) in lines.withIndex()) {
+      when {
+        line.startsWith("use") -> {
+          val nativeFunction = parseNativeFunction(programLine, line)
+          nativeFunctions[nativeFunction.type] = nativeFunction
+        }
+        line.startsWith("@") -> {
+          val label = parseLabel(programLine, line)
+          labels.put(label, instructionIndex)
+        }
+
+        else -> {
+          val instruction = parseInstruction(programLine, line, nativeFunctions, labels)
+          instructions.add(instruction)
+
+          ++instructionIndex
+        }
+      }
+    }
 
     return VM(
-      emptyMap(),
-      instructionList,
+      nativeFunctions,
+      instructions,
       listOf(0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL)
     )
   }
 
-  private fun tryParseInstruction(lineNum: Int, line: String): Instruction? {
+  private fun parseLabel(programLine: Int, line: String): String {
+    val labelName = line.substring(1)
+    if (labelName.isEmpty()) {
+      throw ParsingException(programLine, "Cannot parse label (${line})")
+    }
+
+    return labelName
+  }
+
+  private fun parseNativeFunction(programLine: Int, line: String): NativeFunction {
+    val functionBody = line.substring(4)
+    if (functionBody.isEmpty()) {
+      throw ParsingException(programLine, "Cannot parse native function body ($line)")
+    }
+
+    val parametersStart = functionBody.indexOf('(')
+    if (parametersStart == -1) {
+      throw ParsingException(programLine, "Cannot parse function's parameters start")
+    }
+
+    val parametersEnd = functionBody.indexOf(')', parametersStart)
+    if (parametersEnd == -1) {
+      throw ParsingException(programLine, "Cannot parse function's parameters end")
+    }
+
+    val functionName = functionBody.substring(0, parametersStart)
+    val functionType = NativeFunctionType.fromString(functionName)
+    if (functionType == null) {
+      throw ParsingException(programLine, "Cannot parse function type ($functionName)")
+    }
+
+    //"parametersStart + 1" to skip the opening bracket
+    val parametersList = functionBody.substring(parametersStart + 1, parametersEnd).split(',')
+    if (parametersList.isEmpty()) {
+      return NativeFunction(functionType, emptyList())
+    }
+
+    val functionParameters = parametersList
+      .map { parameter ->
+        val parameterType = ParameterType.fromString(parameter)
+        if (parameterType == null) {
+          throw ParsingException(programLine, "Unknown parameter type ($parameter)")
+        }
+
+        parameterType!!
+      }
+
+    return NativeFunction(functionType, functionParameters)
+  }
+
+  private fun parseInstruction(
+    programLine: Int,
+    line: String,
+    nativeFunctions: MutableMap<NativeFunctionType, NativeFunction>,
+    labels: MutableMap<String, Int>
+  ): Instruction {
     val indexOfFirstSpace = line.indexOfFirst { it == ' ' }
     if (indexOfFirstSpace == -1) {
-      return null
+      throw ParsingException(programLine, "Cannot parse instruction name ($line)")
     }
 
     val instructionName = line.substring(0, indexOfFirstSpace).toLowerCase()
     val body = line.substring(indexOfFirstSpace)
 
     return when (instructionName) {
-      "mov" -> parseMov(lineNum, body)
-      "add" -> parseAdd(lineNum, body)
-      "cmp" -> parseCmp(lineNum, body)
+      "mov" -> parseMov(programLine, body)
+      "add" -> parseAdd(programLine, body)
+      "cmp" -> parseCmp(programLine, body)
       "je",
       "jne",
-      "jmp" -> parseJxx(lineNum, instructionName, body)
-      "call" -> parseCall(lineNum, body)
-      else -> null
+      "jmp" -> parseJxx(programLine, instructionName, body, labels)
+      "call" -> parseCall(programLine, body, nativeFunctions)
+      else -> throw ParsingException(programLine, "Unknown instruction name")
     }
   }
 
-  private fun parseCall(lineNum: Int, body: String): Instruction? {
-    return null
+  private fun parseCall(programLine: Int, body: String, nativeFunctions: MutableMap<NativeFunctionType, NativeFunction>): Instruction {
+    TODO("parseCall not implemented")
   }
 
-  private fun parseJxx(lineNum: Int, instructionName: String, body: String): Instruction? {
-    return null
+  private fun parseJxx(programLine: Int, instructionName: String, body: String, labels: MutableMap<String, Int>): Instruction {
+    val jumpType = JumpType.fromString(instructionName)
+    if (jumpType == null) {
+      throw ParsingException(programLine, "Cannot parse jump type from instruction name ($instructionName)")
+    }
+
+    if (labels[body] == null) {
+      throw ParsingException(programLine, "Label with name ($body) does not exist in the labels map")
+    }
+
+    return Jxx(jumpType, labels.getValue(body))
   }
 
-  private fun parseCmp(lineNum: Int, body: String): Instruction? {
+  private fun parseCmp(programLine: Int, body: String): Instruction {
     if (body.isEmpty()) {
-      throw ParsingException(lineNum, "Instruction has name but does not have a body")
+      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
     }
 
     if (body.indexOf(',') == -1) {
-      throw ParsingException(lineNum, "Cannot parse operands because there is no \',\' symbol")
+      throw ParsingException(programLine, "Cannot parse operands because there is no \',\' symbol")
     }
 
     val (destOperand, srcOperand) = body.split(',')
       .map { it.trim() }
 
     return Cmp(
-      parseOperand(lineNum, destOperand),
-      parseOperand(lineNum, srcOperand)
+      parseOperand(programLine, destOperand),
+      parseOperand(programLine, srcOperand)
     )
   }
 
-  private fun parseAdd(lineNum: Int, body: String): Instruction? {
+  private fun parseAdd(programLine: Int, body: String): Instruction {
     if (body.isEmpty()) {
-      throw ParsingException(lineNum, "Instruction has name but does not have a body")
+      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
     }
 
     if (body.indexOf(',') == -1) {
-      throw ParsingException(lineNum, "Cannot parse operands because there is no \',\' symbol")
+      throw ParsingException(programLine, "Cannot parse operands because there is no \',\' symbol")
     }
 
     val (destOperand, srcOperand) = body.split(',')
       .map { it.trim() }
 
     return Add(
-      parseOperand(lineNum, destOperand),
-      parseOperand(lineNum, srcOperand)
+      parseOperand(programLine, destOperand),
+      parseOperand(programLine, srcOperand)
     )
   }
 
-  private fun parseMov(lineNum: Int, body: String): Instruction? {
+  private fun parseMov(programLine: Int, body: String): Instruction {
     if (body.isEmpty()) {
-      throw ParsingException(lineNum, "Instruction has name but does not have a body")
+      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
     }
 
     if (body.indexOf(',') == -1) {
-      throw ParsingException(lineNum, "Cannot parse operands because there is no \',\' symbol")
+      throw ParsingException(programLine, "Cannot parse operands because there is no \',\' symbol")
     }
 
     val (destOperand, srcOperand) = body.split(',')
       .map { it.trim() }
 
     return Mov(
-      parseOperand(lineNum, destOperand),
-      parseOperand(lineNum, srcOperand)
+      parseOperand(programLine, destOperand),
+      parseOperand(programLine, srcOperand)
     )
   }
 
-  private fun parseOperand(lineNum: Int, operandString: String): Operand {
+  private fun parseOperand(programLine: Int, operandString: String): Operand {
     val ch = operandString[0].toLowerCase()
 
     when {
       ch == 'r' -> {
         val registerIndex = numberRegex.find(operandString)?.value?.toInt()
         if (registerIndex == null) {
-          throw ParsingException(lineNum, "Cannot parse register index for operand ${operandString}")
+          throw ParsingException(programLine, "Cannot parse register index for operand ($operandString)")
         }
 
         return Registers(registerIndex)
@@ -130,23 +212,23 @@ class VMParser {
       ch.isDigit() -> {
         val constantString = numberRegex.find(operandString)?.value
         if (constantString == null) {
-          throw ParsingException(lineNum, "Cannot parse constant operand ${operandString}")
+          throw ParsingException(programLine, "Cannot parse constant operand ($operandString)")
         }
 
-        return extractConstant(lineNum, constantString)
+        return extractConstant(programLine, constantString)
       }
-      else -> throw ParsingException(lineNum, "Cannot parse operand for \'${operandString}\'")
+      else -> throw ParsingException(programLine, "Cannot parse operand for ($operandString)")
     }
   }
 
-  private fun extractConstant(lineNum: Int, constantString: String): Constant {
+  private fun extractConstant(programLine: Int, constantString: String): Constant {
     if (constantString.isEmpty()) {
-      throw ParsingException(lineNum, "Constant is empty")
+      throw ParsingException(programLine, "Constant is empty")
     }
 
     val extractedValue = constantString.toULongOrNull()
     if (extractedValue == null) {
-      throw ParsingException(lineNum, "Cannot parse constant ${constantString}, unknown error")
+      throw ParsingException(programLine, "Cannot parse constant ($constantString), unknown error")
     }
 
     //TODO: add C16 and C8 here when needed

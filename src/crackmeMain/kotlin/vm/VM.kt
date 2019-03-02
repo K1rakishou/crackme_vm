@@ -1,5 +1,6 @@
 package crackme.vm
 
+import crackme.vm.core.NativeFunctionType
 import crackme.vm.instructions.Instruction
 import crackme.vm.meta.NativeFunction
 
