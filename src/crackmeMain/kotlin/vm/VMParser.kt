@@ -1,12 +1,11 @@
 package crackme.vm
 
-import crackme.vm.core.JumpType
-import crackme.vm.core.NativeFunctionType
-import crackme.vm.core.ParameterType
-import crackme.vm.core.ParsingException
+import crackme.vm.core.*
 import crackme.vm.instructions.*
 import crackme.vm.meta.NativeFunction
 import crackme.vm.operands.*
+import platform.windows.GetTickCount
+import kotlin.random.Random
 
 class VMParser {
 
@@ -54,7 +53,9 @@ class VMParser {
     return VM(
       nativeFunctions,
       instructions,
-      listOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L)
+      listOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L),
+      VmStack(1024),
+      VmMemory(16384, Random(GetTickCount().toInt()))
     )
   }
 
