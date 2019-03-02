@@ -19,3 +19,13 @@ class C64(
     return value.toString()
   }
 }
+
+class VmString(
+  val memAddress: Int,
+  val len: Int
+) : Constant() {
+
+  override fun toString(): String {
+    return "string at ($memAddress) with len ($len)"
+  }
+}

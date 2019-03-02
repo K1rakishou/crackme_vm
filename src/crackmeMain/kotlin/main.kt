@@ -17,6 +17,8 @@ fun main() {
 @BAD:
         mov r0, -888
 @EXIT:
+        mov r2, "Hello from VM!"
+        call println(r2)
         ret r0
     """
 
@@ -26,7 +28,7 @@ fun main() {
   println("Native functions: ")
   vm.nativeFunctions.forEach { nativeFunction ->
     val funcName = nativeFunction.value.type.funcName
-    val parameters = nativeFunction.value.parameters.joinToString(",") { it.str }
+    val parameters = nativeFunction.value.parameterTypeList.joinToString(",") { it.str }
 
     println("$funcName($parameters)")
   }

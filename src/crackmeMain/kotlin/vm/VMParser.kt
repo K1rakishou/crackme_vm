@@ -18,10 +18,12 @@ class VMParser {
     val instructions = mutableListOf<Instruction>()
     val nativeFunctions = mutableMapOf<NativeFunctionType, NativeFunction>()
     val labels = mutableMapOf<String, Int>()
+    val strings = mutableListOf<Pair<String, Int>>()
 
     for ((programLine, line) in lines.withIndex()) {
       when {
-        line.startsWith("use") -> { }
+        line.startsWith("use") -> {
+        }
         line.startsWith("@") -> {
           val label = parseLabel(programLine, line)
           labels.put(label, instructionIndex)
@@ -40,9 +42,10 @@ class VMParser {
           val nativeFunction = parseNativeFunction(programLine, line)
           nativeFunctions[nativeFunction.type] = nativeFunction
         }
-        line.startsWith("@") -> { }
+        line.startsWith("@") -> {
+        }
         else -> {
-          val instruction = parseInstruction(programLine, line, nativeFunctions, labels)
+          val instruction = parseInstruction(programLine, line, nativeFunctions, labels, strings)
           instructions.add(instruction)
 
           ++instructionIndex
@@ -76,12 +79,12 @@ class VMParser {
 
     val parametersStart = functionBody.indexOf('(')
     if (parametersStart == -1) {
-      throw ParsingException(programLine, "Cannot parse function's parameters start")
+      throw ParsingException(programLine, "Cannot parse function's parameterTypeList start")
     }
 
     val parametersEnd = functionBody.indexOf(')', parametersStart)
     if (parametersEnd == -1) {
-      throw ParsingException(programLine, "Cannot parse function's parameters end")
+      throw ParsingException(programLine, "Cannot parse function's parameterTypeList end")
     }
 
     val functionName = functionBody.substring(0, parametersStart)
@@ -113,7 +116,8 @@ class VMParser {
     programLine: Int,
     line: String,
     nativeFunctions: MutableMap<NativeFunctionType, NativeFunction>,
-    labels: MutableMap<String, Int>
+    labels: MutableMap<String, Int>,
+    strings: MutableList<Pair<String, Int>>
   ): Instruction {
     val indexOfFirstSpace = line.indexOfFirst { it == ' ' }
     if (indexOfFirstSpace == -1) {
@@ -124,9 +128,9 @@ class VMParser {
     val body = line.substring(indexOfFirstSpace)
 
     return when (instructionName) {
-      "mov" -> parseMov(programLine, body)
-      "add" -> parseAdd(programLine, body)
-      "cmp" -> parseCmp(programLine, body)
+      "mov" -> parseMov(programLine, body, strings)
+      "add" -> parseAdd(programLine, body, strings)
+      "cmp" -> parseCmp(programLine, body, strings)
       "je",
       "jne",
       "jmp" -> parseJxx(programLine, instructionName, body, labels)
@@ -158,7 +162,7 @@ class VMParser {
     return Jxx(jumpType, labels.getValue(labelName))
   }
 
-  private fun parseCmp(programLine: Int, body: String): Instruction {
+  private fun parseCmp(programLine: Int, body: String, strings: MutableList<Pair<String, Int>>): Instruction {
     if (body.isEmpty()) {
       throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
     }
@@ -171,12 +175,12 @@ class VMParser {
       .map { it.trim() }
 
     return Cmp(
-      parseOperand(programLine, destOperand),
-      parseOperand(programLine, srcOperand)
+      parseOperand(programLine, destOperand, strings),
+      parseOperand(programLine, srcOperand, strings)
     )
   }
 
-  private fun parseAdd(programLine: Int, body: String): Instruction {
+  private fun parseAdd(programLine: Int, body: String, strings: MutableList<Pair<String, Int>>): Instruction {
     if (body.isEmpty()) {
       throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
     }
@@ -189,12 +193,12 @@ class VMParser {
       .map { it.trim() }
 
     return Add(
-      parseOperand(programLine, destOperand),
-      parseOperand(programLine, srcOperand)
+      parseOperand(programLine, destOperand, strings),
+      parseOperand(programLine, srcOperand, strings)
     )
   }
 
-  private fun parseMov(programLine: Int, body: String): Instruction {
+  private fun parseMov(programLine: Int, body: String, strings: MutableList<Pair<String, Int>>): Instruction {
     if (body.isEmpty()) {
       throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
     }
@@ -207,12 +211,12 @@ class VMParser {
       .map { it.trim() }
 
     return Mov(
-      parseOperand(programLine, destOperand),
-      parseOperand(programLine, srcOperand)
+      parseOperand(programLine, destOperand, strings),
+      parseOperand(programLine, srcOperand, strings)
     )
   }
 
-  private fun parseOperand(programLine: Int, operandString: String): Operand {
+  private fun parseOperand(programLine: Int, operandString: String, strings: MutableList<Pair<String, Int>>? = null): Operand {
     val ch = operandString[0].toLowerCase()
 
     when {
@@ -234,6 +238,27 @@ class VMParser {
         }
 
         return extractConstant(programLine, constantString)
+      }
+      ch == '\"' -> {
+        if (strings == null) {
+          throw ParsingException(programLine, "No strings parameter were passed to parseOperand function for operand ($operandString)")
+        }
+
+        val stringEndIndex = operandString.indexOf('\"', 1)
+        if (stringEndIndex == -1) {
+          throw ParsingException(programLine, "Cannot find end of the string operand (${operandString})")
+        }
+
+        val string = operandString.substring(1, stringEndIndex - 1)
+
+        val lastStringEndIndex = strings.lastOrNull()?.second ?: 0
+        val currentStringEndIndex = lastStringEndIndex + string.length
+        strings += Pair(string, currentStringEndIndex)
+
+        return VmString(
+          lastStringEndIndex,
+          string.length
+        )
       }
       else -> throw ParsingException(programLine, "Cannot parse operand for ($operandString)")
     }

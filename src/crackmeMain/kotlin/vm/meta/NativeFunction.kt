@@ -5,6 +5,6 @@ import crackme.vm.core.ParameterType
 
 class NativeFunction(
   val type: NativeFunctionType,
-  val parameters: List<ParameterType>,
+  val parameterTypeList: List<ParameterType>,
   val nativeFunctionCallback: (List<ParameterType>) -> Long
 ) : VmParameter

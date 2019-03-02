@@ -14,4 +14,12 @@ class VmMemoryTests {
     vmMemory.putInt(0, 11223344)
     assertEquals(11223344, vmMemory.getInt(0))
   }
+
+  @Test
+  fun testPutGetString() {
+    val str = "This is a test string"
+
+    vmMemory.putString(10, str)
+    assertEquals(str, vmMemory.getString(10, str.length))
+  }
 }

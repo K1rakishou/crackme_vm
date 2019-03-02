@@ -32,5 +32,30 @@ class VmMemory(private val size: Int,
     return result
   }
 
+  fun putString(index: Int, value: String) {
+    if (index < 0 || (index + value.length) > size) {
+      throw OutOfBoundsException(index, size)
+    }
+
+    copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, index, value.length)
+  }
+
+  fun getString(index: Int, length: Int): String {
+    if (index < 0 || (index + length) > size) {
+      throw OutOfBoundsException(index, size)
+    }
+
+    val bytes = ByteArray(length)
+    copyBytes(memory, index, bytes, 0, length)
+
+    return String(bytes.map { it.toChar() }.toCharArray())
+  }
+
+  private fun copyBytes(from: ByteArray, fromIndex: Int, to: ByteArray, toIndex: Int, count: Int) {
+    for (i in 0 until count) {
+      to[i + toIndex] = from[i + fromIndex]
+    }
+  }
+
   class OutOfBoundsException(val index: Int, val upper: Int) : Exception("index is out of bounds (index = ${index}, upperBound = ${upper})")
 }
