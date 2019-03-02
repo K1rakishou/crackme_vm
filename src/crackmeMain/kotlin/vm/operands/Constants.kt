@@ -3,7 +3,7 @@ package crackme.vm.operands
 abstract class Constant : Operand
 
 class C32(
-  val value: UInt
+  val value: Int
 ) : Constant() {
 
   override fun toString(): String {
@@ -12,7 +12,7 @@ class C32(
 }
 
 class C64(
-  val value: ULong
+  val value: Long
 ) : Constant() {
 
   override fun toString(): String {

@@ -1,7 +1,5 @@
 package crackme.vm.operands
 
-import crackme.vm.operands.Operand
-
 class Registers(
   val index: Int
 ) : Operand {

@@ -22,15 +22,26 @@ class VMParser {
 
     for ((programLine, line) in lines.withIndex()) {
       when {
-        line.startsWith("use") -> {
-          val nativeFunction = parseNativeFunction(programLine, line)
-          nativeFunctions[nativeFunction.type] = nativeFunction
-        }
+        line.startsWith("use") -> { }
         line.startsWith("@") -> {
           val label = parseLabel(programLine, line)
           labels.put(label, instructionIndex)
         }
+        else -> {
+          ++instructionIndex
+        }
+      }
+    }
 
+    instructionIndex = 0
+
+    for ((programLine, line) in lines.withIndex()) {
+      when {
+        line.startsWith("use") -> {
+          val nativeFunction = parseNativeFunction(programLine, line)
+          nativeFunctions[nativeFunction.type] = nativeFunction
+        }
+        line.startsWith("@") -> { }
         else -> {
           val instruction = parseInstruction(programLine, line, nativeFunctions, labels)
           instructions.add(instruction)
@@ -43,7 +54,7 @@ class VMParser {
     return VM(
       nativeFunctions,
       instructions,
-      listOf(0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL)
+      listOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L)
     )
   }
 
@@ -53,7 +64,7 @@ class VMParser {
       throw ParsingException(programLine, "Cannot parse label (${line})")
     }
 
-    return labelName
+    return labelName.dropLast(1)
   }
 
   private fun parseNativeFunction(programLine: Int, line: String): NativeFunction {
@@ -119,8 +130,13 @@ class VMParser {
       "jne",
       "jmp" -> parseJxx(programLine, instructionName, body, labels)
       "call" -> parseCall(programLine, body, nativeFunctions)
+      "ret" -> parseRet(programLine, body)
       else -> throw ParsingException(programLine, "Unknown instruction name")
     }
+  }
+
+  private fun parseRet(programLine: Int, body: String): Instruction {
+    return Ret(parseOperand(programLine, body.trim()))
   }
 
   private fun parseCall(programLine: Int, body: String, nativeFunctions: MutableMap<NativeFunctionType, NativeFunction>): Instruction {
@@ -133,11 +149,12 @@ class VMParser {
       throw ParsingException(programLine, "Cannot parse jump type from instruction name ($instructionName)")
     }
 
-    if (labels[body] == null) {
-      throw ParsingException(programLine, "Label with name ($body) does not exist in the labels map")
+    val labelName = body.trim()
+    if (labels[labelName] == null) {
+      throw ParsingException(programLine, "Label with name ($labelName) does not exist in the labels map")
     }
 
-    return Jxx(jumpType, labels.getValue(body))
+    return Jxx(jumpType, labels.getValue(labelName))
   }
 
   private fun parseCmp(programLine: Int, body: String): Instruction {
@@ -209,7 +226,7 @@ class VMParser {
       ch == '[' -> {
         TODO("memory type")
       }
-      ch.isDigit() -> {
+      ch == '-' || ch.isDigit() -> {
         val constantString = numberRegex.find(operandString)?.value
         if (constantString == null) {
           throw ParsingException(programLine, "Cannot parse constant operand ($operandString)")
@@ -226,21 +243,20 @@ class VMParser {
       throw ParsingException(programLine, "Constant is empty")
     }
 
-    val extractedValue = constantString.toULongOrNull()
+    val extractedValue = constantString.toLongOrNull()
     if (extractedValue == null) {
       throw ParsingException(programLine, "Cannot parse constant ($constantString), unknown error")
     }
 
     //TODO: add C16 and C8 here when needed
-
-    if (extractedValue >= UInt.MIN_VALUE && extractedValue <= UInt.MAX_VALUE) {
-      return C32(extractedValue.toUInt())
+    if (extractedValue >= Int.MIN_VALUE && extractedValue <= Int.MAX_VALUE) {
+      return C32(extractedValue.toInt())
     }
 
     return C64(extractedValue)
   }
 
   companion object {
-    val numberRegex = Regex("[0-9]+")
+    val numberRegex = Regex("-?\\d+")
   }
 }

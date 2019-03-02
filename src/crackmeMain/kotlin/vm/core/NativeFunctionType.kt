@@ -1,12 +1,10 @@
 package crackme.vm.core
 
 enum class NativeFunctionType(val funcName: String) {
-  VmExit("vm_exit"),
   Println("println");
 
   companion object {
     private val map = mapOf(
-      "vm_exit" to VmExit,
       "println" to Println
     )
 

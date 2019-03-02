@@ -4,23 +4,21 @@ import crackme.vm.VMParser
 
 fun main() {
   val testProgram = """
-        use vm_exit(Int)
         use println(String)
 
         mov r0, 1
         mov r1, 3
         add r0, r1
-    """
-
-  /*        cmp r0, 4
+        cmp r0, 4
         je BAD
-        call println("OK")
-        jmp EXIT
 
+        mov r0, 999
+        jmp EXIT
 @BAD:
-        call println("BAD")
+        mov r0, -888
 @EXIT:
-        call vm_exit(0)*/
+        ret r0
+    """
 
   val vmParser = VMParser()
   val vm = vmParser.parse(testProgram)
