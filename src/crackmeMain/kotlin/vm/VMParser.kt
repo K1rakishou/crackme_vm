@@ -53,13 +53,25 @@ class VMParser {
       }
     }
 
+    val vmMemory = VmMemory(16384, Random(GetTickCount().toInt()))
+    moveStringsToVmMemory(vmMemory, strings)
+
     return VM(
       nativeFunctions,
       instructions,
       listOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L),
       VmStack(1024),
-      VmMemory(16384, Random(GetTickCount().toInt()))
+      vmMemory
     )
+  }
+
+  private fun moveStringsToVmMemory(vmMemory: VmMemory, strings: MutableList<Pair<String, Int>>) {
+    var index = 0
+
+    for (string in strings) {
+      vmMemory.putString(index, string.first)
+      index += string.second
+    }
   }
 
   private fun parseLabel(programLine: Int, line: String): String {
