@@ -92,10 +92,6 @@ class VMParser {
 
     //"parametersStart + 1" to skip the opening bracket
     val parametersList = functionBody.substring(parametersStart + 1, parametersEnd).split(',')
-    if (parametersList.isEmpty()) {
-      return NativeFunction(functionType, emptyList())
-    }
-
     val functionParameters = parametersList
       .map { parameter ->
         val parameterType = ParameterType.fromString(parameter)
@@ -106,7 +102,11 @@ class VMParser {
         parameterType!!
       }
 
-    return NativeFunction(functionType, functionParameters)
+    return NativeFunction(
+      functionType,
+      functionParameters,
+      NativeFunctionCallbacks.getCallbackByFunctionType(functionType)
+    )
   }
 
   private fun parseInstruction(

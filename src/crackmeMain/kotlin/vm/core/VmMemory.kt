@@ -7,6 +7,10 @@ class VmMemory(private val size: Int,
   private val memory = random.nextBytes(size)
 
   fun putInt(index: Int, value: Int) {
+    if (index < 0 || index > size) {
+      throw OutOfBoundsException(index, size)
+    }
+
     memory[index] = ((value shr 24) and 0x000000FF).toByte()
     memory[index + 1] = ((value shr 16) and 0x000000FF).toByte()
     memory[index + 2] = ((value shr 8) and 0x000000FF).toByte()
@@ -14,6 +18,10 @@ class VmMemory(private val size: Int,
   }
 
   fun getInt(index: Int): Int {
+    if (index < 0 || index > size) {
+      throw OutOfBoundsException(index, size)
+    }
+
     var result = 0
 
     for (i in 0..3) {
@@ -23,4 +31,6 @@ class VmMemory(private val size: Int,
 
     return result
   }
+
+  class OutOfBoundsException(val index: Int, val upper: Int) : Exception("index is out of bounds (index = ${index}, upperBound = ${upper})")
 }

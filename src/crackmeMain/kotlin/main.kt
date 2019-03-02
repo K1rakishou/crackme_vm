@@ -28,7 +28,7 @@ fun main() {
     val funcName = nativeFunction.value.type.funcName
     val parameters = nativeFunction.value.parameters.joinToString(",") { it.str }
 
-    println("native function: $funcName($parameters)")
+    println("$funcName($parameters)")
   }
 
   println("Instructions: ")
