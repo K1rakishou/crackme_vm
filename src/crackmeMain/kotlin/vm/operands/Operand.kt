@@ -1,3 +1,5 @@
 package crackme.vm.operands
 
-interface Operand
+interface Operand {
+  val name: String
+}

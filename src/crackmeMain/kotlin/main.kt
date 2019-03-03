@@ -5,6 +5,8 @@ import crackme.vm.VMParser
 fun main() {
   val testProgram = """
         use println(String)
+        use sizeof(Any)
+        use alloc(Int)
 
         mov r0, 1
         mov r1, 3
@@ -17,8 +19,11 @@ fun main() {
 @BAD:
         mov r0, -888
 @EXIT:
-        mov r2, "Hello from VM!"
-        call println(r2)
+        call sizeof("Hello from VM!")
+        call alloc(r0)
+        let a, r0
+        mov [a], "Hello from VM!"
+        call println([a])
         ret r0
     """
 

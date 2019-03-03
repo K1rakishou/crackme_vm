@@ -4,7 +4,19 @@ import kotlin.random.Random
 
 class VmMemory(private val size: Int,
                private val random: Random) {
+  private var eip = 0
   private val memory = random.nextBytes(size)
+
+  fun alloc(len: Int): Int {
+    if (eip < 0 || (eip + len) > size) {
+      throw OutOfBoundsException(eip, eip + len)
+    }
+
+    val address = eip
+    eip += len
+
+    return address
+  }
 
   fun putInt(index: Int, value: Int) {
     if (index < 0 || index > size) {
@@ -37,16 +49,18 @@ class VmMemory(private val size: Int,
       throw OutOfBoundsException(index, size)
     }
 
-    copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, index, value.length)
+    putInt(index, value.length)
+    copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, index + 4, value.length)
   }
 
-  fun getString(index: Int, length: Int): String {
-    if (index < 0 || (index + length) > size) {
+  fun getString(index: Int): String {
+    if (index < 0 || index > size) {
       throw OutOfBoundsException(index, size)
     }
 
+    val length = getInt(index)
     val bytes = ByteArray(length)
-    copyBytes(memory, index, bytes, 0, length)
+    copyBytes(memory, index + 4, bytes, 0, length)
 
     return String(bytes.map { it.toChar() }.toCharArray())
   }
@@ -57,5 +71,5 @@ class VmMemory(private val size: Int,
     }
   }
 
-  class OutOfBoundsException(val index: Int, val upper: Int) : Exception("index is out of bounds (index = ${index}, upperBound = ${upper})")
+  class OutOfBoundsException(val eip: Int, val upper: Int) : Exception("eip is out of bounds (eip = ${eip}, upperBound = ${upper})")
 }

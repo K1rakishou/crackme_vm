@@ -20,6 +20,6 @@ class VmMemoryTests {
     val str = "This is a test string"
 
     vmMemory.putString(10, str)
-    assertEquals(str, vmMemory.getString(10, str.length))
+    assertEquals(str, vmMemory.getString(10))
   }
 }
