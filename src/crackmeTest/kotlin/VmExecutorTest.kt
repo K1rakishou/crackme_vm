@@ -7,6 +7,10 @@ import kotlin.test.assertEquals
 
 class VmExecutorTest {
 
+  /**
+   * Mov
+   * */
+
   @Test
   fun test_MovReg_Const32() {
     //mov r0, 123
@@ -126,5 +130,24 @@ class VmExecutorTest {
     vmExecutor.run()
 
     assertEquals(112233, vm.vmMemory.getLong(0))
+  }
+
+  /**
+   * Add
+   * */
+
+  @Test
+  fun test_AddReg_Reg() {
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+        mov r0, 101
+        mov r1, 500
+        add r0, r1
+        ret r0
+      """
+    )
+    val vmExecutor = VMExecutor(vm)
+    assertEquals(601, vmExecutor.run())
   }
 }
