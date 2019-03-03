@@ -102,6 +102,7 @@ class VMParser {
     //"parametersStart + 1" to skip the opening bracket
     val parametersList = functionBody.substring(parametersStart + 1, parametersEnd).split(',')
     val functionParameters = parametersList
+      .map { parameter -> parameter.trim() }
       .map { parameter ->
         val parameterType = VariableType.fromString(parameter)
         if (parameterType == null) {
@@ -197,9 +198,9 @@ class VMParser {
     //"parametersStart + 1" to skip the opening bracket
     val operandsList = functionBody.substring(parametersStart + 1, parametersEnd).split(',')
 
-    val operands = operandsList.map {
-      operandString -> parseOperand(programLine, operandString, type)
-    }
+    val operands = operandsList
+      .map { operandString -> operandString.trim() }
+      .map { operandString -> parseOperand(programLine, operandString, type) }
 
     return Call(
       functionType,
@@ -293,7 +294,7 @@ class VMParser {
           throw ParsingException(programLine, "Cannot find closing bracket (\']\') for operand ($operandString)")
         }
 
-        val operandName = operandString.substring(1, closingBracketIndex)
+        val operandName = operandString.substring(1, closingBracketIndex).trim()
         val operand = parseOperand(programLine, operandName, type)
 
         when (operand) {

@@ -6,6 +6,32 @@ import crackme.vm.operands.*
 
 object NativeFunctionCallbacks {
 
+  private val vmTestAddNumbers = NativeFunctionType.TestAddNumbers to fun (vm: VM, parameters: List<Any>): Long {
+    if (parameters.isEmpty()) {
+      throw BadParametersCount(NativeFunctionType.TestAddNumbers, 1, parameters.size)
+    }
+
+    val paramsCount = parameters[0] as C64
+    var sum: Long = 0L
+
+    for (i in 0 until paramsCount.value.toInt()) {
+      val operand = parameters[i + 1] as Operand
+
+      when (operand) {
+        is Constant -> {
+          when (operand) {
+            is C64 -> sum += operand.value
+            else -> throw RuntimeException("Not implemented for ${operand.operandName}")
+          }.safe
+        }
+        is Register -> sum += vm.registers[operand.index]
+        else -> throw RuntimeException("Not implemented for ${operand.operandName}")
+      }.safe
+    }
+
+    return sum
+  }
+
   private val vmPrintlnCallback = NativeFunctionType.Println to fun (vm: VM, parameters: List<Any>): Long {
     if (parameters.size != 1) {
       throw BadParametersCount(NativeFunctionType.Println, 1, parameters.size)
@@ -75,6 +101,7 @@ object NativeFunctionCallbacks {
   }
 
   private val parametersMap = mapOf(
+    vmTestAddNumbers,
     vmPrintlnCallback,
     vmSizeofCallback,
     vmAllocCallback

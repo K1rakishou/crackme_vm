@@ -185,4 +185,26 @@ class VmExecutorTest {
     val vmExecutor = VMExecutor(vm)
     vmExecutor.run()
   }
+
+  @Test
+  fun test_Call_test_add_number_func_with_ten_parameters() {
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+        use testAddNumbers(Long, Long, Long, Long, Long, Long, Long, Long, Long, Long, Long)
+
+        mov r0, 1
+        mov r1, 2
+        mov r2, 3
+        mov r3, 4
+        mov r4, 5
+
+        call testAddNumbers(10, r0, r1, r2, r3, r4, 6, 7, 8, 9, 10)
+
+        ret r0
+      """
+    )
+    val vmExecutor = VMExecutor(vm)
+    assertEquals(55, vmExecutor.run())
+  }
 }
