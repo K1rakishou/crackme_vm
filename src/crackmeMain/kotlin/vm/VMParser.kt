@@ -131,20 +131,20 @@ class VMParser {
     val body = line.substring(indexOfFirstSpace)
 
     return when (instructionName) {
-      "mov" -> parseMov(programLine, body)
-      "add" -> parseAdd(programLine, body)
-      "cmp" -> parseCmp(programLine, body)
+      "mov" -> parseMov(programLine, body, InstructionType.Mov)
+      "add" -> parseAdd(programLine, body, InstructionType.Add)
+      "cmp" -> parseCmp(programLine, body, InstructionType.Cmp)
       "je",
       "jne",
-      "jmp" -> parseJxx(programLine, instructionName, body)
-      "call" -> parseCall(programLine, body)
-      "ret" -> parseRet(programLine, body)
-      "let" -> parseLet(programLine, body)
+      "jmp" -> parseJxx(programLine, instructionName, body, InstructionType.Jxx)
+      "call" -> parseCall(programLine, body, InstructionType.Call)
+      "ret" -> parseRet(programLine, body, InstructionType.Ret)
+      "let" -> parseLet(programLine, body, InstructionType.Let)
       else -> throw ParsingException(programLine, "Unknown instruction name ($instructionName)")
     }
   }
 
-  private fun parseLet(programLine: Int, body: String): Instruction {
+  private fun parseLet(programLine: Int, body: String, type: InstructionType): Instruction {
     if (body.isEmpty()) {
       throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
     }
@@ -157,16 +157,16 @@ class VMParser {
       .map { it.trim() }
 
     return Let(
-      parseOperand(programLine, variableOperand) as Variable,
-      parseOperand(programLine, initializerOperand)
+      parseOperand(programLine, variableOperand, type) as Variable,
+      parseOperand(programLine, initializerOperand, type)
     )
   }
 
-  private fun parseRet(programLine: Int, body: String): Instruction {
-    return Ret(parseOperand(programLine, body.trim()))
+  private fun parseRet(programLine: Int, body: String, type: InstructionType): Instruction {
+    return Ret(parseOperand(programLine, body.trim(), type))
   }
 
-  private fun parseCall(programLine: Int, body: String): Instruction {
+  private fun parseCall(programLine: Int, body: String, type: InstructionType): Instruction {
     val functionBody = body.trim()
     if (functionBody.isEmpty()) {
       throw ParsingException(programLine, "Function body is empty")
@@ -192,7 +192,7 @@ class VMParser {
     val operandsList = functionBody.substring(parametersStart + 1, parametersEnd).split(',')
 
     val operands = operandsList.map {
-      operandString -> parseOperand(programLine, operandString)
+      operandString -> parseOperand(programLine, operandString, type)
     }
 
     return Call(
@@ -201,7 +201,7 @@ class VMParser {
     )
   }
 
-  private fun parseJxx(programLine: Int, instructionName: String, body: String): Instruction {
+  private fun parseJxx(programLine: Int, instructionName: String, body: String, type: InstructionType): Instruction {
     val jumpType = JumpType.fromString(instructionName)
     if (jumpType == null) {
       throw ParsingException(programLine, "Cannot parse jump type from instruction name ($instructionName)")
@@ -215,7 +215,7 @@ class VMParser {
     return Jxx(jumpType, labels.getValue(labelName))
   }
 
-  private fun parseCmp(programLine: Int, body: String): Instruction {
+  private fun parseCmp(programLine: Int, body: String, type: InstructionType): Instruction {
     if (body.isEmpty()) {
       throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
     }
@@ -228,12 +228,12 @@ class VMParser {
       .map { it.trim() }
 
     return Cmp(
-      parseOperand(programLine, destOperand),
-      parseOperand(programLine, srcOperand)
+      parseOperand(programLine, destOperand, type),
+      parseOperand(programLine, srcOperand, type)
     )
   }
 
-  private fun parseAdd(programLine: Int, body: String): Instruction {
+  private fun parseAdd(programLine: Int, body: String, type: InstructionType): Instruction {
     if (body.isEmpty()) {
       throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
     }
@@ -246,12 +246,12 @@ class VMParser {
       .map { it.trim() }
 
     return Add(
-      parseOperand(programLine, destOperand),
-      parseOperand(programLine, srcOperand)
+      parseOperand(programLine, destOperand, type),
+      parseOperand(programLine, srcOperand, type)
     )
   }
 
-  private fun parseMov(programLine: Int, body: String): Instruction {
+  private fun parseMov(programLine: Int, body: String, type: InstructionType): Instruction {
     if (body.isEmpty()) {
       throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
     }
@@ -264,12 +264,12 @@ class VMParser {
       .map { it.trim() }
 
     return Mov(
-      parseOperand(programLine, destOperand),
-      parseOperand(programLine, srcOperand)
+      parseOperand(programLine, destOperand, type),
+      parseOperand(programLine, srcOperand, type)
     )
   }
 
-  private fun parseOperand(programLine: Int, operandString: String): Operand {
+  private fun parseOperand(programLine: Int, operandString: String, type: InstructionType): Operand {
     val ch = operandString[0].toLowerCase()
 
     when {
@@ -282,7 +282,25 @@ class VMParser {
         return Register(registerIndex)
       }
       ch == '[' -> {
-        TODO("memory type")
+        val closingBracketIndex = operandString.indexOf(']')
+        if (closingBracketIndex == -1) {
+          throw ParsingException(programLine, "Cannot find closing bracket (\']\') for operand ($operandString)")
+        }
+
+        val operandName = operandString.substring(1, closingBracketIndex)
+        val operand = parseOperand(programLine, operandName, type)
+
+        when (operand) {
+          is Variable -> {
+            if (!vmMemory.isVariableDefined(operand.name)) {
+              throw ParsingException(programLine, "Variable (${operand.name}) is not defined")
+            }
+          }
+          is Register -> {}
+          else -> throw ParsingException(programLine, "Operand ($operandName) is not supported by Memory operand")
+        }
+
+        return Memory(operand)
       }
       ch == '-' || ch.isDigit() -> {
         val constantString = numberRegex.find(operandString)?.value
@@ -299,7 +317,7 @@ class VMParser {
         }
 
         val string = operandString.substring(1, stringEndIndex - 1)
-        val address = vmMemory.putString(string)
+        val address = vmMemory.allocString(string)
 
         return VmString(address)
       }
@@ -307,6 +325,12 @@ class VMParser {
         val variableName = wordRegex.find(operandString)?.value
         if (variableName == null) {
           throw ParsingException(programLine, "Cannot parse variable name (${operandString})")
+        }
+
+        if (type == InstructionType.Let) {
+          if (vmMemory.isVariableDefined(variableName)) {
+            throw ParsingException(programLine, "Variable ($variableName) is already defined")
+          }
         }
 
         return Variable(

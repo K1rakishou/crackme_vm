@@ -7,6 +7,6 @@ class Variable(
   override val operandName = "Variable"
 
   override fun toString(): String {
-    return name
+    return "var ($name) at $address"
   }
 }

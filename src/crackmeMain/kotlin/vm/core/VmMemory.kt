@@ -8,6 +8,10 @@ class VmMemory(private val size: Int,
   private val variables = mutableMapOf<String, Int>()
   private val memory = random.nextBytes(size)
 
+  fun isVariableDefined(variableName: String): Boolean {
+    return variables.containsKey(variableName)
+  }
+
   fun alloc(len: Int): Int {
     if (eip < 0 || (eip + len) > size) {
       throw EipIsOutOfBoundsException(eip, eip + len)
@@ -24,10 +28,6 @@ class VmMemory(private val size: Int,
       throw EipIsOutOfBoundsException(eip, eip + VARIABLE_SIZE)
     }
 
-    if (variables.containsKey(variableName)) {
-      throw VariableAlreadyDefinedException(variableName)
-    }
-
     val address = eip
     variables.put(variableName, address)
 
@@ -35,7 +35,7 @@ class VmMemory(private val size: Int,
     return address
   }
 
-  fun putInt(value: Int): Int {
+  fun allocInt(value: Int): Int {
     if (eip < 0 || (eip + INT_SIZE) > size) {
       throw EipIsOutOfBoundsException(eip, size)
     }
@@ -65,14 +65,14 @@ class VmMemory(private val size: Int,
     return result
   }
 
-  fun putString(value: String): Int {
+  fun allocString(value: String): Int {
     if (eip < 0 || (eip + value.length) > size) {
       throw EipIsOutOfBoundsException(eip, size)
     }
 
     val address = eip
 
-    putInt(value.length)
+    allocInt(value.length)
     copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, eip + INT_SIZE, value.length)
 
     return address
@@ -94,9 +94,10 @@ class VmMemory(private val size: Int,
     for (i in 0 until count) {
       to[i + toIndex] = from[i + fromIndex]
     }
+
+    eip += count
   }
 
-  class VariableAlreadyDefinedException(val variableName: String) : Exception("Variable (${variableName}) is already defined in the memory")
   class EipIsOutOfBoundsException(val eip: Int, val upper: Int) : Exception("eip is out of bounds (eip = ${eip}, upperBound = ${upper})")
   class IndexOutOfBoundsException(val index: Int, val upper: Int) : Exception("eip is out of bounds (index = ${index}, upperBound = ${upper})")
 

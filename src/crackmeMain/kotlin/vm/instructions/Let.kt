@@ -9,6 +9,6 @@ class Let(
 ) : Instruction {
 
   override fun toString(): String {
-    return "let ${variable.name}, ${initializer.operandName}"
+    return "let ${variable.name}, $initializer"
   }
 }

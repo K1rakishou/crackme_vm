@@ -9,6 +9,6 @@ class Call(
 ) : Instruction {
 
   override fun toString(): String {
-    return "${type.funcName}(${parameters.joinToString(",")})"
+    return "call ${type.funcName}(${parameters.joinToString(",")})"
   }
 }
