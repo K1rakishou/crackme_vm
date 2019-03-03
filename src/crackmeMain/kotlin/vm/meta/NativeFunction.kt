@@ -2,10 +2,10 @@ package crackme.vm.meta
 
 import crackme.vm.VM
 import crackme.vm.core.NativeFunctionType
-import crackme.vm.core.ParameterType
+import crackme.vm.core.VariableType
 
 class NativeFunction(
   val type: NativeFunctionType,
-  val parameterTypeList: List<ParameterType>,
-  val nativeFunctionCallback: (vm: VM, List<ParameterType>) -> Long
+  val variableTypeList: List<VariableType>,
+  val nativeFunctionCallback: (vm: VM, List<VariableType>) -> Long
 ) : VmParameter

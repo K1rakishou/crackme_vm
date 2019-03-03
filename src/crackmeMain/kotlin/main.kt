@@ -1,5 +1,6 @@
 package crackme
 
+import crackme.vm.VMExecutor
 import crackme.vm.VMParser
 
 fun main() {
@@ -21,9 +22,8 @@ fun main() {
 @EXIT:
         call sizeof("Hello from VM!")
         call alloc(r0)
-        let a, r0
-        mov [a], "Hello from VM!"
-        call println([a])
+        mov [r0], "Hello from VM!"
+        call println([r0])
         ret r0
     """
 
@@ -33,7 +33,7 @@ fun main() {
   println("Native functions: ")
   vm.nativeFunctions.forEach { nativeFunction ->
     val funcName = nativeFunction.value.type.funcName
-    val parameters = nativeFunction.value.parameterTypeList.joinToString(",") { it.str }
+    val parameters = nativeFunction.value.variableTypeList.joinToString(",") { it.str }
 
     println("$funcName($parameters)")
   }
@@ -42,4 +42,7 @@ fun main() {
   vm.instructions.forEachIndexed { index, instruction ->
     println("[$index]: $instruction")
   }
+
+  val vmExecutor = VMExecutor(vm)
+  vmExecutor.run()
 }

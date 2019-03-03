@@ -1,9 +1,9 @@
 package crackme.vm.instructions
 
-import crackme.vm.operands.Operand
+import crackme.vm.operands.Register
 
 class Ret(
-  val result: Operand
+  val result: Register
 ) : Instruction {
 
   override fun toString(): String {

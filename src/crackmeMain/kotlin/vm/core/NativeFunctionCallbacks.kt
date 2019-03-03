@@ -40,15 +40,13 @@ object NativeFunctionCallbacks {
       throw BadParametersCount(NativeFunctionType.Sizeof, 2, parameters.size)
     }
 
-    val type = parameters[1] as ParameterType
+    val type = parameters[1] as VariableType
 
     return when (type) {
-      ParameterType.AnyType -> throw ParameterTypeNotSupportedForThisFunction(NativeFunctionType.Sizeof, type)
-      ParameterType.IntType -> 4
-      ParameterType.LongType -> 8
-      ParameterType.FloatType -> 4
-      ParameterType.DoubleType -> 8
-      ParameterType.StringType -> {
+      VariableType.AnyType -> throw ParameterTypeNotSupportedForThisFunction(NativeFunctionType.Sizeof, type)
+      VariableType.IntType -> 4
+      VariableType.LongType -> 8
+      VariableType.StringType -> {
         val obj = parameters[0] as String
         //TODO: should we really add 4 here?
         return (obj.length + 4).toLong()
@@ -96,7 +94,7 @@ object NativeFunctionCallbacks {
   class OperandNotSupportedForThisFunction(val funcType: NativeFunctionType,
                                            val operand: Operand) : Exception("Operand (${operand.operandName}) is not supported by function (${funcType.funcName})")
   class ParameterTypeNotSupportedForThisFunction(val funcType: NativeFunctionType,
-                                                 val type: ParameterType) : Exception("Parameter of type (${type.str} is not supported by function (${funcType.funcName}))")
+                                                 val type: VariableType) : Exception("Parameter of type (${type.str} is not supported by function (${funcType.funcName}))")
   class UnknownFunctionType(type: NativeFunctionType) : Exception("Unknown Function type ${type.funcName}")
   class BadParametersCount(val funcType: NativeFunctionType,
                            val expected: Int,

@@ -62,7 +62,7 @@ class VMParser {
     return VM(
       nativeFunctions,
       instructions,
-      listOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L),
+      mutableListOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L),
       VmStack(1024),
       vmMemory
     )
@@ -85,12 +85,12 @@ class VMParser {
 
     val parametersStart = functionBody.indexOf('(')
     if (parametersStart == -1) {
-      throw ParsingException(programLine, "Cannot parse function's parameterTypeList start")
+      throw ParsingException(programLine, "Cannot parse function's variableTypeList start")
     }
 
     val parametersEnd = functionBody.indexOf(')', parametersStart)
     if (parametersEnd == -1) {
-      throw ParsingException(programLine, "Cannot parse function's parameterTypeList end")
+      throw ParsingException(programLine, "Cannot parse function's variableTypeList end")
     }
 
     val functionName = functionBody.substring(0, parametersStart)
@@ -103,7 +103,7 @@ class VMParser {
     val parametersList = functionBody.substring(parametersStart + 1, parametersEnd).split(',')
     val functionParameters = parametersList
       .map { parameter ->
-        val parameterType = ParameterType.fromString(parameter)
+        val parameterType = VariableType.fromString(parameter)
         if (parameterType == null) {
           throw ParsingException(programLine, "Unknown parameter type ($parameter)")
         }
@@ -163,7 +163,13 @@ class VMParser {
   }
 
   private fun parseRet(programLine: Int, body: String, type: InstructionType): Instruction {
-    return Ret(parseOperand(programLine, body.trim(), type))
+    val operand = parseOperand(programLine, body.trim(), type)
+    if (operand !is Register) {
+      throw ParsingException(programLine, "Only register operator allowed with Ret instruction")
+    }
+
+    //TODO: add const as well
+    return Ret(operand)
   }
 
   private fun parseCall(programLine: Int, body: String, type: InstructionType): Instruction {
@@ -174,12 +180,12 @@ class VMParser {
 
     val parametersStart = functionBody.indexOf('(')
     if (parametersStart == -1) {
-      throw ParsingException(programLine, "Cannot parse function's parameterTypeList start")
+      throw ParsingException(programLine, "Cannot parse function's variableTypeList start")
     }
 
     val parametersEnd = functionBody.indexOf(')', parametersStart)
     if (parametersEnd == -1) {
-      throw ParsingException(programLine, "Cannot parse function's parameterTypeList end")
+      throw ParsingException(programLine, "Cannot parse function's variableTypeList end")
     }
 
     val functionName = functionBody.substring(0, parametersStart)
@@ -297,6 +303,7 @@ class VMParser {
             }
           }
           is Register -> {}
+          is Constant -> {}
           else -> throw ParsingException(programLine, "Operand ($operandName) is not supported by Memory operand")
         }
 
@@ -333,9 +340,12 @@ class VMParser {
           }
         }
 
+        //FIXME: add variable types
+
         return Variable(
           variableName,
-          vmMemory.allocVariable(variableName)
+          vmMemory.allocVariable(variableName),
+          VariableType.IntType
         )
       }
       else -> throw ParsingException(programLine, "Cannot parse operand for ($operandString)")
