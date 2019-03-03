@@ -1,7 +1,8 @@
-package crackme.vm.core
+package crackme.vm.core.function
 
 import crackme.misc.safe
 import crackme.vm.VM
+import crackme.vm.core.VariableType
 import crackme.vm.operands.*
 
 object NativeFunctionCallbacks {

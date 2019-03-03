@@ -1,7 +1,7 @@
 package crackme.vm.handlers
 
 import crackme.vm.VM
-import crackme.vm.core.NativeFunctionCallbacks
+import crackme.vm.core.function.NativeFunctionCallbacks
 import crackme.vm.instructions.Call
 
 class CallHandler : Handler<Call> {

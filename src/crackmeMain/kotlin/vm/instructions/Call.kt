@@ -1,6 +1,6 @@
 package crackme.vm.instructions
 
-import crackme.vm.core.NativeFunctionType
+import crackme.vm.core.function.NativeFunctionType
 import crackme.vm.operands.Operand
 
 class Call(

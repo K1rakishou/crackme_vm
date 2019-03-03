@@ -1,4 +1,4 @@
-package crackme.vm.core
+package crackme.vm.core.function
 
 enum class NativeFunctionType(val funcName: String) {
   TestAddNumbers("testAddNumbers"),

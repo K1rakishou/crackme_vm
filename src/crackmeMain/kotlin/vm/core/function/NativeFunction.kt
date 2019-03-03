@@ -1,7 +1,7 @@
-package crackme.vm.meta
+package crackme.vm.core.function
 
 import crackme.vm.VM
-import crackme.vm.core.NativeFunctionType
+import crackme.vm.core.VmParameter
 import crackme.vm.core.VariableType
 
 class NativeFunction(

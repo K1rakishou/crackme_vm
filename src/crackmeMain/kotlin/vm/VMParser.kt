@@ -1,8 +1,11 @@
 package crackme.vm
 
 import crackme.vm.core.*
+import crackme.vm.core.function.NativeFunctionCallbacks
+import crackme.vm.core.function.NativeFunctionType
+import crackme.vm.core.VariableType
 import crackme.vm.instructions.*
-import crackme.vm.meta.NativeFunction
+import crackme.vm.core.function.NativeFunction
 import crackme.vm.operands.*
 import platform.windows.GetTickCount
 import kotlin.random.Random
