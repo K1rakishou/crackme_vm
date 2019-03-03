@@ -5,11 +5,12 @@ import kotlin.random.Random
 class VmMemory(private val size: Int,
                private val random: Random) {
   private var eip = 0
+  private val variables = mutableMapOf<String, Int>()
   private val memory = random.nextBytes(size)
 
   fun alloc(len: Int): Int {
     if (eip < 0 || (eip + len) > size) {
-      throw OutOfBoundsException(eip, eip + len)
+      throw EipIsOutOfBoundsException(eip, eip + len)
     }
 
     val address = eip
@@ -18,20 +19,40 @@ class VmMemory(private val size: Int,
     return address
   }
 
-  fun putInt(index: Int, value: Int) {
-    if (index < 0 || index > size) {
-      throw OutOfBoundsException(index, size)
+  fun allocVariable(variableName: String): Int {
+    if (eip < 0 || (eip + VARIABLE_SIZE) > size) {
+      throw EipIsOutOfBoundsException(eip, eip + VARIABLE_SIZE)
     }
 
-    memory[index] = ((value shr 24) and 0x000000FF).toByte()
-    memory[index + 1] = ((value shr 16) and 0x000000FF).toByte()
-    memory[index + 2] = ((value shr 8) and 0x000000FF).toByte()
-    memory[index + 3] = (value and 0x000000FF).toByte()
+    if (variables.containsKey(variableName)) {
+      throw VariableAlreadyDefinedException(variableName)
+    }
+
+    val address = eip
+    variables.put(variableName, address)
+
+    eip += VARIABLE_SIZE
+    return address
+  }
+
+  fun putInt(value: Int): Int {
+    if (eip < 0 || (eip + INT_SIZE) > size) {
+      throw EipIsOutOfBoundsException(eip, size)
+    }
+
+    val address = eip
+
+    memory[eip] = ((value shr 24) and 0x000000FF).toByte()
+    memory[eip + 1] = ((value shr 16) and 0x000000FF).toByte()
+    memory[eip + 2] = ((value shr 8) and 0x000000FF).toByte()
+    memory[eip + 3] = (value and 0x000000FF).toByte()
+
+    return address
   }
 
   fun getInt(index: Int): Int {
     if (index < 0 || index > size) {
-      throw OutOfBoundsException(index, size)
+      throw IndexOutOfBoundsException(index, size)
     }
 
     var result = 0
@@ -44,23 +65,27 @@ class VmMemory(private val size: Int,
     return result
   }
 
-  fun putString(index: Int, value: String) {
-    if (index < 0 || (index + value.length) > size) {
-      throw OutOfBoundsException(index, size)
+  fun putString(value: String): Int {
+    if (eip < 0 || (eip + value.length) > size) {
+      throw EipIsOutOfBoundsException(eip, size)
     }
 
-    putInt(index, value.length)
-    copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, index + 4, value.length)
+    val address = eip
+
+    putInt(value.length)
+    copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, eip + INT_SIZE, value.length)
+
+    return address
   }
 
   fun getString(index: Int): String {
     if (index < 0 || index > size) {
-      throw OutOfBoundsException(index, size)
+      throw IndexOutOfBoundsException(index, size)
     }
 
     val length = getInt(index)
     val bytes = ByteArray(length)
-    copyBytes(memory, index + 4, bytes, 0, length)
+    copyBytes(memory, index + INT_SIZE, bytes, 0, length)
 
     return String(bytes.map { it.toChar() }.toCharArray())
   }
@@ -71,5 +96,13 @@ class VmMemory(private val size: Int,
     }
   }
 
-  class OutOfBoundsException(val eip: Int, val upper: Int) : Exception("eip is out of bounds (eip = ${eip}, upperBound = ${upper})")
+  class VariableAlreadyDefinedException(val variableName: String) : Exception("Variable (${variableName}) is already defined in the memory")
+  class EipIsOutOfBoundsException(val eip: Int, val upper: Int) : Exception("eip is out of bounds (eip = ${eip}, upperBound = ${upper})")
+  class IndexOutOfBoundsException(val index: Int, val upper: Int) : Exception("eip is out of bounds (index = ${index}, upperBound = ${upper})")
+
+  companion object {
+    const val INT_SIZE = 4
+    const val LONG_SIZE = 4
+    const val VARIABLE_SIZE = 4
+  }
 }

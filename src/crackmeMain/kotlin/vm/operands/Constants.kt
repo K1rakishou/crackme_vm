@@ -5,7 +5,7 @@ abstract class Constant : Operand
 class C32(
   val value: Int
 ) : Constant() {
-  override val name = "C32"
+  override val operandName = "C32"
 
   override fun toString(): String {
     return value.toString()
@@ -15,7 +15,7 @@ class C32(
 class C64(
   val value: Long
 ) : Constant() {
-  override val name = "C64"
+  override val operandName = "C64"
 
   override fun toString(): String {
     return value.toString()
@@ -23,11 +23,11 @@ class C64(
 }
 
 class VmString(
-  val memAddress: Int
+  val address: Int
 ) : Constant() {
-  override val name = "String"
+  override val operandName = "String"
 
   override fun toString(): String {
-    return "string at ($memAddress)"
+    return "string at ($address)"
   }
 }

@@ -12,14 +12,12 @@ class VMParser {
   private lateinit var nativeFunctions: MutableMap<NativeFunctionType, NativeFunction>
   private lateinit var labels: MutableMap<String, Int>
   //this list is to keep track of all added string to the memory (their addresses in the memory)
-  private lateinit var strings: MutableList<Int>
   private lateinit var vmMemory: VmMemory
 
   fun parse(program: String): VM {
     instructions = mutableListOf()
     nativeFunctions = mutableMapOf()
     labels = mutableMapOf()
-    strings = mutableListOf()
     vmMemory = VmMemory(16384, Random(GetTickCount().toInt()))
 
     val lines = program.split("\n")
@@ -147,7 +145,21 @@ class VMParser {
   }
 
   private fun parseLet(programLine: Int, body: String): Instruction {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    if (body.isEmpty()) {
+      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
+    }
+
+    if (body.indexOf(',') == -1) {
+      throw ParsingException(programLine, "Cannot parse operands because there is no \',\' symbol")
+    }
+
+    val (variableOperand, initializerOperand) = body.split(',')
+      .map { it.trim() }
+
+    return Let(
+      parseOperand(programLine, variableOperand) as Variable,
+      parseOperand(programLine, initializerOperand)
+    )
   }
 
   private fun parseRet(programLine: Int, body: String): Instruction {
@@ -171,8 +183,6 @@ class VMParser {
     }
 
     val functionName = functionBody.substring(0, parametersStart)
-    println("functionBody = $functionBody")
-
     val functionType = NativeFunctionType.fromString(functionName)
     if (functionType == null) {
       throw ParsingException(programLine, "Cannot parse function type ($functionName)")
@@ -289,14 +299,20 @@ class VMParser {
         }
 
         val string = operandString.substring(1, stringEndIndex - 1)
+        val address = vmMemory.putString(string)
 
-        val lastStringEndIndex = strings.lastOrNull() ?: 0
-        val currentStringEndIndex = lastStringEndIndex + string.length
+        return VmString(address)
+      }
+      ch.isLetter() -> {
+        val variableName = wordRegex.find(operandString)?.value
+        if (variableName == null) {
+          throw ParsingException(programLine, "Cannot parse variable name (${operandString})")
+        }
 
-        strings.add(currentStringEndIndex)
-        vmMemory.putString(lastStringEndIndex, string)
-
-        return VmString(lastStringEndIndex)
+        return Variable(
+          variableName,
+          vmMemory.allocVariable(variableName)
+        )
       }
       else -> throw ParsingException(programLine, "Cannot parse operand for ($operandString)")
     }
@@ -322,5 +338,6 @@ class VMParser {
 
   companion object {
     val numberRegex = Regex("-?\\d+")
+    val wordRegex = Regex("\\w+")
   }
 }

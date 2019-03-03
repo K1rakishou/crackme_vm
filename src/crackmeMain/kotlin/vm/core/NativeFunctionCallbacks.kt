@@ -19,17 +19,17 @@ object NativeFunctionCallbacks {
           is C32 -> println(operand.value)
           is C64 -> println(operand.value)
           is VmString -> {
-            val string = vm.vmMemory.getString(operand.memAddress)
+            val string = vm.vmMemory.getString(operand.address)
             println(string)
           }
-          else -> throw RuntimeException("Not implemented for ${operand.name}")
+          else -> throw RuntimeException("Not implemented for ${operand.operandName}")
         }.safe
       }
       is Register -> {
         val regValue = vm.registers[operand.index]
         println(regValue)
       }
-      else -> throw RuntimeException("Not implemented for ${operand.name}")
+      else -> throw RuntimeException("Not implemented for ${operand.operandName}")
     }.safe
 
     return 0
@@ -68,14 +68,14 @@ object NativeFunctionCallbacks {
           is C32 -> vm.vmMemory.alloc(operand.value).toLong()
           is C64 -> throw OperandNotSupportedForThisFunction(NativeFunctionType.Alloc, operand)
           is VmString -> throw OperandNotSupportedForThisFunction(NativeFunctionType.Alloc, operand)
-          else -> throw RuntimeException("Not implemented for ${operand.name}")
+          else -> throw RuntimeException("Not implemented for ${operand.operandName}")
         }
       }
       is Register -> {
         val regValue = vm.registers[operand.index]
         vm.vmMemory.alloc(regValue.toInt()).toLong()
       }
-      else -> throw RuntimeException("Not implemented for ${operand.name}")
+      else -> throw RuntimeException("Not implemented for ${operand.operandName}")
     }
   }
 
@@ -94,7 +94,7 @@ object NativeFunctionCallbacks {
   }
 
   class OperandNotSupportedForThisFunction(val funcType: NativeFunctionType,
-                                           val operand: Operand) : Exception("Operand (${operand.name}) is not supported by function (${funcType.funcName})")
+                                           val operand: Operand) : Exception("Operand (${operand.operandName}) is not supported by function (${funcType.funcName})")
   class ParameterTypeNotSupportedForThisFunction(val funcType: NativeFunctionType,
                                                  val type: ParameterType) : Exception("Parameter of type (${type.str} is not supported by function (${funcType.funcName}))")
   class UnknownFunctionType(type: NativeFunctionType) : Exception("Unknown Function type ${type.funcName}")
