@@ -35,7 +35,7 @@ class VmMemory(private val size: Int,
     return address
   }
 
-  fun allocInt(value: Int): Int {
+  private fun allocInt(value: Int): Int {
     if (eip < 0 || (eip + INT_SIZE) > size) {
       throw EipIsOutOfBoundsException(eip, size)
     }
@@ -51,7 +51,7 @@ class VmMemory(private val size: Int,
     return address
   }
 
-  fun putInt(index: Int, value: Int) {
+  private fun putInt(index: Int, value: Int) {
     if (index < 0 || (index + INT_SIZE) > size) {
       throw VmIndexOutOfBoundsException(index, size)
     }
@@ -62,7 +62,7 @@ class VmMemory(private val size: Int,
     memory[index + 3] = (value and 0x000000FF).toByte()
   }
 
-  fun getInt(index: Int): Int {
+  private fun getInt(index: Int): Int {
     if (index < 0 || index > size) {
       throw VmIndexOutOfBoundsException(index, size)
     }

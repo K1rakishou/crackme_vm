@@ -345,7 +345,7 @@ class VMParser {
         return Variable(
           variableName,
           vmMemory.allocVariable(variableName),
-          VariableType.IntType
+          VariableType.LongType
         )
       }
       else -> throw ParsingException(programLine, "Cannot parse operand for ($operandString)")
@@ -360,11 +360,6 @@ class VMParser {
     val extractedValue = constantString.toLongOrNull()
     if (extractedValue == null) {
       throw ParsingException(programLine, "Cannot parse constant ($constantString), unknown error")
-    }
-
-    //TODO: add C16 and C8 here when needed
-    if (extractedValue >= Int.MIN_VALUE && extractedValue <= Int.MAX_VALUE) {
-      return C32(extractedValue.toInt())
     }
 
     return C64(extractedValue)

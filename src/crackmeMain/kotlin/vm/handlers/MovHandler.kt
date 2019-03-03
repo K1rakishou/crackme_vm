@@ -61,9 +61,6 @@ class MovHandler : Handler<Mov> {
           VariableType.AnyType -> {
             throw VMExecutor.VmExecutionException(eip, "Variable with type (${dest.operand.type}) cannot be used with Memory operand")
           }
-          VariableType.IntType -> {
-            vm.registers[dest.operand.address] = vm.vmMemory.getInt(src.index).toLong()
-          }
           VariableType.LongType -> {
             vm.registers[dest.operand.address] = vm.vmMemory.getLong(src.index)
           }
@@ -75,7 +72,6 @@ class MovHandler : Handler<Mov> {
       is Constant -> {
         //mov [123], r0
         when (dest.operand) {
-          is C32 -> vm.vmMemory.putLong(dest.operand.value, vm.registers[src.index])
           is C64 -> vm.vmMemory.putLong(dest.operand.value.toInt(), vm.registers[src.index])
           is VmString -> {
             throw VMExecutor.VmExecutionException(eip, "VmString cannot be used as memory address")
@@ -96,7 +92,6 @@ class MovHandler : Handler<Mov> {
     }
 
     when (src) {
-      is C32 -> vm.registers[dest.index] = src.value.toLong()
       is C64 -> vm.registers[dest.index] = src.value
       else -> throw NotImplementedError("getConstantValue not implemented for constant type (${src.operandName})")
     }
@@ -141,7 +136,6 @@ class MovHandler : Handler<Mov> {
 
   private fun getVmMemoryVariableValue(vm: VM, eip: Int, operand: Variable): Long {
     return when (operand.type) {
-      VariableType.IntType -> vm.vmMemory.getInt(operand.address).toLong()
       VariableType.LongType -> vm.vmMemory.getLong(operand.address)
       VariableType.StringType -> vm.vmMemory.getString(operand.address).toLong()
       VariableType.AnyType -> {
@@ -152,8 +146,7 @@ class MovHandler : Handler<Mov> {
 
   private fun getConstantValue(vm: VM, operand: Constant): Long {
     return when (operand) {
-      is C32 -> vm.vmMemory.getInt(operand.value).toLong()
-      is C64 -> vm.vmMemory.getInt(operand.value.toInt()).toLong()
+      is C64 -> vm.vmMemory.getLong(operand.value.toInt())
       else -> throw NotImplementedError("getConstantValue not implemented for constant type (${operand.operandName})")
     }
   }

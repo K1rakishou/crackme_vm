@@ -11,35 +11,35 @@ class VmMemoryTests {
 
   @Test
   fun testPutGetInt() {
-    vmMemory.putInt(10, 11223344)
-    assertEquals(11223344, vmMemory.getInt(10))
+    vmMemory.putLong(10, 11223344)
+    assertEquals(11223344, vmMemory.getLong(10))
   }
 
   @Test
   fun testPutIntOutOfBounds1() {
     expectException<VmMemory.VmIndexOutOfBoundsException> {
-      vmMemory.putInt(-1, 11223344)
+      vmMemory.putLong(-1, 11223344)
     }
   }
 
   @Test
   fun testPutIntOutOfBounds2() {
     expectException<VmMemory.VmIndexOutOfBoundsException> {
-      vmMemory.putInt(66666, 11223344)
+      vmMemory.putLong(66666, 11223344)
     }
   }
 
   @Test
   fun testGetIntOutOfBounds1() {
     expectException<VmMemory.VmIndexOutOfBoundsException> {
-      vmMemory.getInt(-1)
+      vmMemory.getLong(-1)
     }
   }
 
   @Test
   fun testGetIntOutOfBounds2() {
     expectException<VmMemory.VmIndexOutOfBoundsException> {
-      vmMemory.getInt(666666)
+      vmMemory.getLong(666666)
     }
   }
 

@@ -16,7 +16,6 @@ object NativeFunctionCallbacks {
     when (operand) {
       is Constant -> {
         when (operand) {
-          is C32 -> println(operand.value)
           is C64 -> println(operand.value)
           is VmString -> {
             val string = vm.vmMemory.getString(operand.address)
@@ -44,7 +43,6 @@ object NativeFunctionCallbacks {
 
     return when (type) {
       VariableType.AnyType -> throw ParameterTypeNotSupportedForThisFunction(NativeFunctionType.Sizeof, type)
-      VariableType.IntType -> 4
       VariableType.LongType -> 8
       VariableType.StringType -> {
         val obj = parameters[0] as String
@@ -63,7 +61,6 @@ object NativeFunctionCallbacks {
     return when (operand) {
       is Constant -> {
         when (operand) {
-          is C32 -> vm.vmMemory.alloc(operand.value).toLong()
           is C64 -> throw OperandNotSupportedForThisFunction(NativeFunctionType.Alloc, operand)
           is VmString -> throw OperandNotSupportedForThisFunction(NativeFunctionType.Alloc, operand)
           else -> throw RuntimeException("Not implemented for ${operand.operandName}")

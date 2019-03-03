@@ -67,7 +67,7 @@ class VmExecutorTest {
         ret r0
       """
     )
-    vm.vmMemory.putInt(0, 112233)
+    vm.vmMemory.putLong(0, 112233)
     val vmExecutor = VMExecutor(vm)
 
     assertEquals(112233, vmExecutor.run())
