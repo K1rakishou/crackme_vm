@@ -2,6 +2,7 @@ package sample.helloworld
 
 import crackme.vm.VMExecutor
 import crackme.vm.VMParser
+import platform.windows.TEKPUBKEY
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -149,5 +150,39 @@ class VmExecutorTest {
     )
     val vmExecutor = VMExecutor(vm)
     assertEquals(601, vmExecutor.run())
+  }
+
+  /**
+   * Call
+   * */
+
+  @Test
+  fun test_Call_ConstString() {
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+        use println(String)
+        call println("TTTAAA Hello from VM!")
+
+        ret r0
+      """
+    )
+    val vmExecutor = VMExecutor(vm)
+    vmExecutor.run()
+  }
+
+  @Test
+  fun test_Call_ConstC64() {
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+        use println(String)
+        call println(1122334455)
+
+        ret r0
+      """
+    )
+    val vmExecutor = VMExecutor(vm)
+    vmExecutor.run()
   }
 }

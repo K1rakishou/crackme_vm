@@ -1,13 +1,15 @@
 package crackme.vm
 
 import crackme.vm.handlers.AddHandler
+import crackme.vm.handlers.CallHandler
 import crackme.vm.handlers.MovHandler
 import crackme.vm.instructions.*
 
 class VMExecutor(
   private val vm: VM,
   private val movHandler: MovHandler = MovHandler(),
-  private val addHandler: AddHandler = AddHandler()
+  private val addHandler: AddHandler = AddHandler(),
+  private val callHandler: CallHandler = CallHandler()
 ) {
   private var eip = 0
 
@@ -17,7 +19,7 @@ class VMExecutor(
 
       when (instruction) {
         is Add -> addHandler.handle(vm, eip, instruction)
-        is Call -> executeCall(instruction)
+        is Call -> callHandler.handle(vm, eip, instruction)
         is Cmp -> executeCmp(instruction)
         is Jxx -> executeJxx(instruction)
         is Let -> executeLet(instruction)
@@ -29,10 +31,6 @@ class VMExecutor(
 
       ++eip
     }
-  }
-
-  private fun executeCall(instruction: Call) {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
   }
 
   private fun executeCmp(instruction: Cmp) {
