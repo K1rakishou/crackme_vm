@@ -3,10 +3,10 @@ package crackme.vm.instructions
 import crackme.vm.operands.Operand
 
 class Mov(
-  val dest: Operand,
-  val src: Operand,
+  override val dest: Operand,
+  override val src: Operand,
   override val instructionType: InstructionType = InstructionType.Mov
-) : Instruction() {
+) : GenericTwoOperandsInstruction, Instruction() {
   override fun rawSize(): Int = 1 + dest.rawSize + src.rawSize //instructionType + size of two operands
 
   override fun compile(): List<ByteArray> {

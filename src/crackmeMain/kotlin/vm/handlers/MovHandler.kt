@@ -3,6 +3,8 @@ package crackme.vm.handlers
 import crackme.vm.VM
 import crackme.vm.VMSimulator
 import crackme.vm.core.VariableType
+import crackme.vm.instructions.Add
+import crackme.vm.instructions.Instruction
 import crackme.vm.instructions.Mov
 import crackme.vm.operands.*
 
