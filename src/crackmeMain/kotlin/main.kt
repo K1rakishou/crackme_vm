@@ -22,9 +22,10 @@ fun main() {
 //@BAD:
 //        mov r0, -888
 //@EXIT:
-//        call sizeof("Hello from VM!")
+//        let a, "Hello from VM!"
+//        call sizeof(a)
 //        call alloc(r0)
-//        mov [r0], "Hello from VM!"
+//        mov [r0], a
 //        call println([r0])
 //        ret r0
 //    """

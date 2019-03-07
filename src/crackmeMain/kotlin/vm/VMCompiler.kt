@@ -18,6 +18,8 @@ class VMCompiler {
       val compiled = instruction.compile().map { Utils.bytesToHex(it) }.joinToString()
       println("${instruction} (rawSize = ${instruction.getInstructionRawSize()}) (byte code = [${compiled}])")
     }
+
+    println("result = ${vm.registers[0]}")
   }
 
 }
