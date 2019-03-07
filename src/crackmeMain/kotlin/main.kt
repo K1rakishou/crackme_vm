@@ -1,7 +1,8 @@
 package crackme
 
-import crackme.vm.VMExecutor
+import crackme.vm.VMCompiler
 import crackme.vm.VMParser
+import crackme.vm.core.os.WinFile
 
 fun main() {
   val testProgram = """
@@ -43,6 +44,11 @@ fun main() {
     println("[$index]: $instruction")
   }
 
-  val vmExecutor = VMExecutor(vm)
-  vmExecutor.run()
+  WinFile.withFileDo("bytecode.txt", WinFile.OpenType.Write) { file ->
+    val vmCompiler = VMCompiler(vm)
+    vmCompiler.compile(file)
+  }
+
+//  val vmExecutor = VMExecutor(vm)
+//  vmExecutor.run()
 }
