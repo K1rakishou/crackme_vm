@@ -4,11 +4,12 @@ import crackme.vm.core.function.NativeFunctionType
 import crackme.vm.operands.Operand
 
 class Call(
-  val type: NativeFunctionType,
+  val functionType: NativeFunctionType,
   val parameters: List<Operand>
-) : Instruction {
+) : Instruction() {
+  override fun rawSize(): Int = 1 //functionType
 
   override fun toString(): String {
-    return "call ${type.funcName}(${parameters.joinToString(",")})"
+    return "call ${functionType.funcName}(${parameters.joinToString(",")})"
   }
 }

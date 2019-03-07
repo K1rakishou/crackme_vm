@@ -2,30 +2,43 @@ package crackme
 
 import crackme.vm.VMCompiler
 import crackme.vm.VMParser
+import crackme.vm.VMSimulator
 import crackme.vm.core.os.WinFile
 
 fun main() {
-  val testProgram = """
-        use println(String)
-        use sizeof(Any)
-        use alloc(Int)
+//  val testProgram = """
+//        use println(String)
+//        use sizeof(Any)
+//        use alloc(Int)
+//
+//        mov r0, 1
+//        mov r1, 3
+//        add r0, r1
+//        cmp r0, 4
+//        je BAD
+//
+//        mov r0, 999
+//        jmp EXIT
+//@BAD:
+//        mov r0, -888
+//@EXIT:
+//        call sizeof("Hello from VM!")
+//        call alloc(r0)
+//        mov [r0], "Hello from VM!"
+//        call println([r0])
+//        ret r0
+//    """
 
-        mov r0, 1
-        mov r1, 3
-        add r0, r1
-        cmp r0, 4
-        je BAD
+  val testProgram =
+    """
+      mov r0, 0
+      add r0, 1
+      add r0, 1
+      add r0, 1
+      add r0, 1
+      add r0, 1
 
-        mov r0, 999
-        jmp EXIT
-@BAD:
-        mov r0, -888
-@EXIT:
-        call sizeof("Hello from VM!")
-        call alloc(r0)
-        mov [r0], "Hello from VM!"
-        call println([r0])
-        ret r0
+      ret r0
     """
 
   val vmParser = VMParser()
@@ -44,11 +57,12 @@ fun main() {
     println("[$index]: $instruction")
   }
 
-  WinFile.withFileDo("bytecode.txt", WinFile.OpenType.Write) { file ->
-    val vmCompiler = VMCompiler(vm)
-    vmCompiler.compile(file)
-  }
+  val vmSimulator = VMSimulator()
+  val vmCompiler = VMCompiler()
 
-//  val vmExecutor = VMExecutor(vm)
-//  vmExecutor.run()
+
+  WinFile.withFileDo("bytecode.txt", WinFile.OpenType.Write) { file ->
+    vmSimulator.simulate(vm)
+    vmCompiler.compile(file, vm)
+  }
 }

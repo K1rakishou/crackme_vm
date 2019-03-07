@@ -21,7 +21,7 @@ class VMParser {
     instructions = mutableListOf()
     nativeFunctions = mutableMapOf()
     labels = mutableMapOf()
-    vmMemory = VmMemory(16384, Random(GetTickCount().toInt()))
+    vmMemory = VmMemory(1024, Random(GetTickCount().toInt()))
 
     val lines = program.split("\n")
       .map { it.trim() }

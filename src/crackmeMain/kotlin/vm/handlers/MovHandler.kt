@@ -1,7 +1,7 @@
 package crackme.vm.handlers
 
 import crackme.vm.VM
-import crackme.vm.VMExecutor
+import crackme.vm.VMSimulator
 import crackme.vm.core.VariableType
 import crackme.vm.instructions.Mov
 import crackme.vm.operands.*
@@ -36,7 +36,7 @@ class MovHandler : Handler<Mov> {
           is Variable,
           //mov [123], [1234]
           is Memory -> {
-            throw VMExecutor.VmExecutionException(eip, "Operand (${instruction.dest.operandName}) cannot be used as destination with instruction ($instruction)")
+            throw VMSimulator.VmExecutionException(eip, "Operand (${instruction.dest.operandName}) cannot be used as destination with instruction ($instruction)")
           }
         }
       }
@@ -44,7 +44,7 @@ class MovHandler : Handler<Mov> {
         //mov 123, *
       is Variable -> {
         //mov abc, *
-        throw VMExecutor.VmExecutionException(eip, "Operand (${instruction.dest.operandName}) cannot be used as destination with instruction ($instruction)")
+        throw VMSimulator.VmExecutionException(eip, "Operand (${instruction.dest.operandName}) cannot be used as destination with instruction ($instruction)")
       }
     }
   }
@@ -59,13 +59,13 @@ class MovHandler : Handler<Mov> {
         //mov [abc], r0
         when (dest.operand.type) {
           VariableType.AnyType -> {
-            throw VMExecutor.VmExecutionException(eip, "Variable with type (${dest.operand.type}) cannot be used with Memory operand")
+            throw VMSimulator.VmExecutionException(eip, "Variable with type (${dest.operand.type}) cannot be used with Memory operand")
           }
           VariableType.LongType -> {
             vm.registers[dest.operand.address] = vm.vmMemory.getLong(src.index)
           }
           VariableType.StringType -> {
-            throw VMExecutor.VmExecutionException(eip, "Variable with type (${dest.operand.type}) cannot be used with Memory operand")
+            throw VMSimulator.VmExecutionException(eip, "Variable with type (${dest.operand.type}) cannot be used with Memory operand")
           }
         }
       }
@@ -74,13 +74,13 @@ class MovHandler : Handler<Mov> {
         when (dest.operand) {
           is C64 -> vm.vmMemory.putLong(dest.operand.value.toInt(), vm.registers[src.index])
           is VmString -> {
-            throw VMExecutor.VmExecutionException(eip, "VmString cannot be used as memory address")
+            throw VMSimulator.VmExecutionException(eip, "VmString cannot be used as memory address")
           }
         }
       }
       is Memory -> {
         //mov [[???]], r0
-        throw VMExecutor.VmExecutionException(eip, "Operand (${dest.operand.operandName}) cannot be used as Memory operand")
+        throw VMSimulator.VmExecutionException(eip, "Operand (${dest.operand.operandName}) cannot be used as Memory operand")
       }
     }
   }
@@ -88,7 +88,7 @@ class MovHandler : Handler<Mov> {
   private fun executeMovRegConst(vm: VM, eip: Int, instruction: Mov, dest: Register, src: Constant) {
     if (src is VmString) {
       //mov r0, "test"
-      throw VMExecutor.VmExecutionException(eip, "Operand (${src.operandName}) cannot be used as source with instruction ($instruction)")
+      throw VMSimulator.VmExecutionException(eip, "Operand (${src.operandName}) cannot be used as source with instruction ($instruction)")
     }
 
     when (src) {
@@ -102,14 +102,14 @@ class MovHandler : Handler<Mov> {
       is Constant -> {
         if (src.operand is VmString) {
           //mov r0, ["test"]
-          throw VMExecutor.VmExecutionException(eip, "Operand (${src.operandName}) cannot be used as source with instruction ($instruction)")
+          throw VMSimulator.VmExecutionException(eip, "Operand (${src.operandName}) cannot be used as source with instruction ($instruction)")
         }
 
         vm.registers[dest.index] = getConstantValue(vm, src.operand)
       }
       is Memory -> {
         //mov r0, [[???]]
-        throw VMExecutor.VmExecutionException(eip, "Operand (${src.operand.operandName}) cannot be used as Memory operand")
+        throw VMSimulator.VmExecutionException(eip, "Operand (${src.operand.operandName}) cannot be used as Memory operand")
       }
       is Register -> {
         //mov r0, [r0]
@@ -118,7 +118,7 @@ class MovHandler : Handler<Mov> {
       is Variable -> {
         //mov r0, [abc]
         if (src.operand.type == VariableType.AnyType || src.operand.type == VariableType.StringType) {
-          throw VMExecutor.VmExecutionException(eip, "Variable with type (${src.operand.type}) cannot be used with Memory operand")
+          throw VMSimulator.VmExecutionException(eip, "Variable with type (${src.operand.type}) cannot be used with Memory operand")
         }
 
         vm.registers[dest.index] = getVmMemoryVariableValue(vm, eip, src.operand)
@@ -139,7 +139,7 @@ class MovHandler : Handler<Mov> {
       VariableType.LongType -> vm.vmMemory.getLong(operand.address)
       VariableType.StringType -> vm.vmMemory.getString(operand.address).toLong()
       VariableType.AnyType -> {
-        throw VMExecutor.VmExecutionException(eip, "Variable with type (${operand.type}) cannot be used with Memory operand")
+        throw VMSimulator.VmExecutionException(eip, "Variable with type (${operand.type}) cannot be used with Memory operand")
       }
     }
   }

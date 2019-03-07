@@ -1,7 +1,7 @@
 package crackme.vm.core
 
 class VmStack(
-  private val size: Int = 1024
+  private val size: Int = 128
 ) {
   var current: Int = 0
   val array = arrayOfNulls<Long>(size)

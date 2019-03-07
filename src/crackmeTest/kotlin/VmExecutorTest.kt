@@ -1,8 +1,7 @@
 package sample.helloworld
 
-import crackme.vm.VMExecutor
+import crackme.vm.VMSimulator
 import crackme.vm.VMParser
-import platform.windows.TEKPUBKEY
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -23,9 +22,10 @@ class VmExecutorTest {
         ret r0
       """
     )
-    val vmExecutor = VMExecutor(vm)
+    val vmExecutor = VMSimulator()
+    vmExecutor.simulate(vm)
 
-    assertEquals(11223344L, vmExecutor.run())
+    assertEquals(11223344L, vm.registers[0])
   }
 
   @Test
@@ -39,9 +39,10 @@ class VmExecutorTest {
         ret r0
       """
     )
-    val vmExecutor = VMExecutor(vm)
+    val vmExecutor = VMSimulator()
+    vmExecutor.simulate(vm)
 
-    assertEquals(1122334455667788L, vmExecutor.run())
+    assertEquals(1122334455667788L, vm.registers[0])
   }
 
   @Test
@@ -56,9 +57,10 @@ class VmExecutorTest {
         ret r0
       """
     )
-    val vmExecutor = VMExecutor(vm)
+    val vmExecutor = VMSimulator()
+    vmExecutor.simulate(vm)
 
-    assertEquals(112233, vmExecutor.run())
+    assertEquals(112233, vm.registers[0])
   }
 
   @Test
@@ -73,9 +75,10 @@ class VmExecutorTest {
       """
     )
     vm.vmMemory.putLong(0, 112233)
-    val vmExecutor = VMExecutor(vm)
+    val vmExecutor = VMSimulator()
+    vmExecutor.simulate(vm)
 
-    assertEquals(112233, vmExecutor.run())
+    assertEquals(112233, vm.registers[0])
   }
 
   @Test
@@ -91,9 +94,10 @@ class VmExecutorTest {
       """
     )
     vm.vmMemory.putLong(0, 112233)
-    val vmExecutor = VMExecutor(vm)
+    val vmExecutor = VMSimulator()
+    vmExecutor.simulate(vm)
 
-    assertEquals(112233, vmExecutor.run())
+    assertEquals(112233, vm.registers[0])
   }
 
   @Test
@@ -108,8 +112,8 @@ class VmExecutorTest {
         ret r0
       """
     )
-    val vmExecutor = VMExecutor(vm)
-    vmExecutor.run()
+    val vmExecutor = VMSimulator()
+    vmExecutor.simulate(vm)
 
     assertEquals(112233, vm.vmMemory.getLong(0))
   }
@@ -127,8 +131,8 @@ class VmExecutorTest {
         ret r0
       """
     )
-    val vmExecutor = VMExecutor(vm)
-    vmExecutor.run()
+    val vmExecutor = VMSimulator()
+    vmExecutor.simulate(vm)
 
     assertEquals(112233, vm.vmMemory.getLong(0))
   }
@@ -148,8 +152,9 @@ class VmExecutorTest {
         ret r0
       """
     )
-    val vmExecutor = VMExecutor(vm)
-    assertEquals(601, vmExecutor.run())
+    val vmExecutor = VMSimulator()
+    vmExecutor.simulate(vm)
+    assertEquals(601, vm.registers[0])
   }
 
   /**
@@ -167,8 +172,8 @@ class VmExecutorTest {
         ret r0
       """
     )
-    val vmExecutor = VMExecutor(vm)
-    vmExecutor.run()
+    val vmExecutor = VMSimulator()
+    vmExecutor.simulate(vm)
   }
 
   @Test
@@ -182,8 +187,8 @@ class VmExecutorTest {
         ret r0
       """
     )
-    val vmExecutor = VMExecutor(vm)
-    vmExecutor.run()
+    val vmExecutor = VMSimulator()
+    vmExecutor.simulate(vm)
   }
 
   @Test
@@ -204,7 +209,8 @@ class VmExecutorTest {
         ret r0
       """
     )
-    val vmExecutor = VMExecutor(vm)
-    assertEquals(55, vmExecutor.run())
+    val vmExecutor = VMSimulator()
+    vmExecutor.simulate(vm)
+    assertEquals(55, vm.registers[0])
   }
 }

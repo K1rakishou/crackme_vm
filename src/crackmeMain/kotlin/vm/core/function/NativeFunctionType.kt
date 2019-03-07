@@ -1,11 +1,16 @@
 package crackme.vm.core.function
 
-enum class NativeFunctionType(val funcName: String) {
-  TestAddNumbers("testAddNumbers"),
+enum class NativeFunctionType(
+  val index: Int,
+  val funcName: String
+) {
+  //functions for test purposes
+  TestAddNumbers(255, "testAddNumbers"),
+  Println(254, "println"),
 
-  Println("println"),
-  Sizeof("sizeof"),
-  Alloc("alloc");
+  //real functions
+  Sizeof(0, "sizeof"),
+  Alloc(1, "alloc");
 
   companion object {
     private val map = mapOf(

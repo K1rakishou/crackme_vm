@@ -5,7 +5,8 @@ import crackme.vm.core.JumpType
 class Jxx(
   val jumpType: JumpType,
   val instructionIndex: Int
-) : Instruction {
+) : Instruction() {
+  override fun rawSize(): Int = 4 //instructionIndex
 
   override fun toString(): String {
     return "${jumpType.type} @$instructionIndex"
