@@ -99,7 +99,7 @@ class VMParser {
     val functionName = functionBody.substring(0, parametersStart)
     val functionType = NativeFunctionType.fromString(functionName)
     if (functionType == null) {
-      throw ParsingException(programLine, "Cannot parse function type ($functionName)")
+      throw ParsingException(programLine, "Cannot parse function operandType ($functionName)")
     }
 
     //"parametersStart + 1" to skip the opening bracket
@@ -109,7 +109,7 @@ class VMParser {
       .map { parameter ->
         val parameterType = VariableType.fromString(parameter)
         if (parameterType == null) {
-          throw ParsingException(programLine, "Unknown parameter type ($parameter)")
+          throw ParsingException(programLine, "Unknown parameter operandType ($parameter)")
         }
 
         parameterType!!
@@ -195,7 +195,7 @@ class VMParser {
     val functionName = functionBody.substring(0, parametersStart)
     val functionType = NativeFunctionType.fromString(functionName)
     if (functionType == null) {
-      throw ParsingException(programLine, "Cannot parse function type ($functionName)")
+      throw ParsingException(programLine, "Cannot parse function operandType ($functionName)")
     }
 
     //"parametersStart + 1" to skip the opening bracket
@@ -214,7 +214,7 @@ class VMParser {
   private fun parseJxx(programLine: Int, instructionName: String, body: String, type: InstructionType): Instruction {
     val jumpType = JumpType.fromString(instructionName)
     if (jumpType == null) {
-      throw ParsingException(programLine, "Cannot parse jump type from instruction name ($instructionName)")
+      throw ParsingException(programLine, "Cannot parse jump operandType from instruction name ($instructionName)")
     }
 
     val labelName = body.trim()

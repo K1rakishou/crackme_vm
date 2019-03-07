@@ -32,11 +32,17 @@ fun main() {
   val testProgram =
     """
       mov r0, 0
-      add r0, 1
-      add r0, 1
-      add r0, 1
-      add r0, 1
-      add r0, 1
+      mov r1, 11
+      mov r2, 22
+      mov r3, 33
+      mov r4, 44
+      mov r5, 55
+
+      add r0, r1
+      add r0, r2
+      add r0, r3
+      add r0, r4
+      add r0, r5
 
       ret r0
     """

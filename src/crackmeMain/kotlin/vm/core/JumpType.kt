@@ -1,9 +1,12 @@
 package crackme.vm.core
 
-enum class JumpType(val type: String) {
-  Je("je"),
-  Jne("jne"),
-  Jmp("jmp");
+enum class JumpType(
+  val type: Byte,
+  val jumpName: String
+) {
+  Je(0, "je"),
+  Jne(1, "jne"),
+  Jmp(2, "jmp");
 
   companion object {
     private val map = mapOf(

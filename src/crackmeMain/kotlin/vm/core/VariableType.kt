@@ -1,9 +1,10 @@
 package crackme.vm.core
 
-enum class VariableType(val str: String) {
-  AnyType("Any"),
-  LongType("Long"),
-  StringType("String");
+enum class VariableType(val type: Byte,
+                        val str: String) {
+  AnyType(0, "Any"),
+  LongType(1, "Long"),
+  StringType(2, "String");
 
   companion object {
     private val map = mapOf(

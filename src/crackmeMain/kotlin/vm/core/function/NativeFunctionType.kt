@@ -1,12 +1,12 @@
 package crackme.vm.core.function
 
 enum class NativeFunctionType(
-  val index: Int,
+  val index: Byte,
   val funcName: String
 ) {
   //functions for test purposes
-  TestAddNumbers(255, "testAddNumbers"),
-  Println(254, "println"),
+  TestAddNumbers(255.toByte(), "testAddNumbers"),
+  Println(254.toByte(), "println"),
 
   //real functions
   Sizeof(0, "sizeof"),

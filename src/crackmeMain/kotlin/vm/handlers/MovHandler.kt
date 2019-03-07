@@ -57,15 +57,15 @@ class MovHandler : Handler<Mov> {
       }
       is Variable -> {
         //mov [abc], r0
-        when (dest.operand.type) {
+        when (dest.operand.variableType) {
           VariableType.AnyType -> {
-            throw VMSimulator.VmExecutionException(eip, "Variable with type (${dest.operand.type}) cannot be used with Memory operand")
+            throw VMSimulator.VmExecutionException(eip, "Variable with operandType (${dest.operand.operandType}) cannot be used with Memory operand")
           }
           VariableType.LongType -> {
             vm.registers[dest.operand.address] = vm.vmMemory.getLong(src.index)
           }
           VariableType.StringType -> {
-            throw VMSimulator.VmExecutionException(eip, "Variable with type (${dest.operand.type}) cannot be used with Memory operand")
+            throw VMSimulator.VmExecutionException(eip, "Variable with operandType (${dest.operand.operandType}) cannot be used with Memory operand")
           }
         }
       }
@@ -93,7 +93,7 @@ class MovHandler : Handler<Mov> {
 
     when (src) {
       is C64 -> vm.registers[dest.index] = src.value
-      else -> throw NotImplementedError("getConstantValue not implemented for constant type (${src.operandName})")
+      else -> throw NotImplementedError("getConstantValue not implemented for constant operandType (${src.operandName})")
     }
   }
 
@@ -117,8 +117,8 @@ class MovHandler : Handler<Mov> {
       }
       is Variable -> {
         //mov r0, [abc]
-        if (src.operand.type == VariableType.AnyType || src.operand.type == VariableType.StringType) {
-          throw VMSimulator.VmExecutionException(eip, "Variable with type (${src.operand.type}) cannot be used with Memory operand")
+        if (src.operand.variableType == VariableType.AnyType || src.operand.variableType == VariableType.StringType) {
+          throw VMSimulator.VmExecutionException(eip, "Variable with operandType (${src.operand.operandType}) cannot be used with Memory operand")
         }
 
         vm.registers[dest.index] = getVmMemoryVariableValue(vm, eip, src.operand)
@@ -135,11 +135,11 @@ class MovHandler : Handler<Mov> {
   }
 
   private fun getVmMemoryVariableValue(vm: VM, eip: Int, operand: Variable): Long {
-    return when (operand.type) {
+    return when (operand.variableType) {
       VariableType.LongType -> vm.vmMemory.getLong(operand.address)
       VariableType.StringType -> vm.vmMemory.getString(operand.address).toLong()
       VariableType.AnyType -> {
-        throw VMSimulator.VmExecutionException(eip, "Variable with type (${operand.type}) cannot be used with Memory operand")
+        throw VMSimulator.VmExecutionException(eip, "Variable with operandType (${operand.operandType}) cannot be used with Memory operand")
       }
     }
   }
@@ -147,7 +147,7 @@ class MovHandler : Handler<Mov> {
   private fun getConstantValue(vm: VM, operand: Constant): Long {
     return when (operand) {
       is C64 -> vm.vmMemory.getLong(operand.value.toInt())
-      else -> throw NotImplementedError("getConstantValue not implemented for constant type (${operand.operandName})")
+      else -> throw NotImplementedError("getConstantValue not implemented for constant operandType (${operand.operandName})")
     }
   }
 }

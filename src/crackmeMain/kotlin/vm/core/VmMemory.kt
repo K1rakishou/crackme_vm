@@ -153,9 +153,7 @@ class VmMemory(private val size: Int,
   }
 
   private fun copyBytes(from: ByteArray, fromIndex: Int, to: ByteArray, toIndex: Int, count: Int) {
-    for (i in 0 until count) {
-      to[i + toIndex] = from[i + fromIndex]
-    }
+    Utils.copyBytes(from, fromIndex, to, toIndex, count)
 
     eip += count
   }

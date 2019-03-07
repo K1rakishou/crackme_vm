@@ -1,5 +1,6 @@
 package crackme.vm
 
+import crackme.vm.core.Utils
 import crackme.vm.core.os.File
 
 class VMCompiler {
@@ -14,7 +15,8 @@ class VMCompiler {
     }
 
     for (instruction in vm.instructions) {
-      println("${instruction} (rawSize = ${instruction.getInstructionRawSize()})")
+      val compiled = instruction.compile().map { Utils.bytesToHex(it) }.joinToString()
+      println("${instruction} (rawSize = ${instruction.getInstructionRawSize()}) (byte code = [${compiled}])")
     }
   }
 
