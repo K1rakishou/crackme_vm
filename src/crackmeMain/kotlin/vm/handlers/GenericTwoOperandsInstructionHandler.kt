@@ -1,8 +1,8 @@
 package crackme.vm.handlers
 
 import crackme.vm.VM
-import crackme.vm.VMSimulator
 import crackme.vm.core.VariableType
+import crackme.vm.core.VmExecutionException
 import crackme.vm.instructions.GenericTwoOperandsInstruction
 import crackme.vm.instructions.Instruction
 import crackme.vm.operands.*
@@ -48,7 +48,7 @@ object GenericTwoOperandsInstructionHandler {
           is Constant -> {
             if (srcOperand is VmString) {
               //instr r0, "test"
-              throw VMSimulator.VmExecutionException(eip, "Operand (${srcOperand.operandName}) cannot be used as source with instruction ($instruction)")
+              throw VmExecutionException(eip, "Operand (${srcOperand.operandName}) cannot be used as source with instruction ($instruction)")
             }
 
             when (srcOperand) {
@@ -56,7 +56,7 @@ object GenericTwoOperandsInstructionHandler {
               is C64 -> handle_Reg_C64(instruction.dest as Register, srcOperand, eip)
               //instr r0, 11223344
               is C32 -> handle_Reg_C32(instruction.dest as Register, srcOperand, eip)
-              else -> throw VMSimulator.VmExecutionException(eip, "getConstantValue not implemented for constant operandType (${srcOperand.operandName})")
+              else -> throw VmExecutionException(eip, "getConstantValue not implemented for constant operandType (${srcOperand.operandName})")
             }
           }
           is Memory<*> -> {
@@ -68,12 +68,12 @@ object GenericTwoOperandsInstructionHandler {
                   //instr r0, [11223344]
                   is C32 -> handle_Reg_MemC32(instruction.dest as Register, instruction.src as Memory<C32>, eip)
                   //instr r0, ["test"] etc
-                  else -> throw VMSimulator.VmExecutionException(eip, "Operand (${instruction.src.operandName}) cannot be used as source with instruction ($instruction)")
+                  else -> throw VmExecutionException(eip, "Operand (${instruction.src.operandName}) cannot be used as source with instruction ($instruction)")
                 }
               }
               is Memory<*> -> {
                 //instr r0, [[???]]
-                throw VMSimulator.VmExecutionException(eip, "Operand (${(instruction.src as Memory<*>).operand.operandName}) cannot be used as Memory operand")
+                throw VmExecutionException(eip, "Operand (${(instruction.src as Memory<*>).operand.operandName}) cannot be used as Memory operand")
               }
               is Register -> {
                 //instr r0, [r0]
@@ -83,7 +83,7 @@ object GenericTwoOperandsInstructionHandler {
                 //instr r0, [abc]
                 if (((instruction.src as Memory<*>).operand as Variable).variableType == VariableType.AnyType
                   || ((instruction.src as Memory<*>).operand as Variable).variableType == VariableType.StringType) {
-                  throw VMSimulator.VmExecutionException(eip, "Variable with operandType (${(instruction.src as Memory<*>).operand.operandType}) cannot be used with Memory operand")
+                  throw VmExecutionException(eip, "Variable with operandType (${(instruction.src as Memory<*>).operand.operandType}) cannot be used with Memory operand")
                 }
 
                 handle_Reg_MemVar(instruction.dest as Register, instruction.src as Memory<Variable>, eip)
@@ -115,7 +115,7 @@ object GenericTwoOperandsInstructionHandler {
                   VariableType.LongType -> handle_MemVar_Reg(instruction.dest as Memory<Variable>, instruction.src as Register, eip)
                   VariableType.AnyType,
                   VariableType.StringType -> {
-                    throw VMSimulator.VmExecutionException(eip, "Variable with operandType (${(instruction.dest as Memory<*>).operand.operandType}) cannot be used with Memory operand")
+                    throw VmExecutionException(eip, "Variable with operandType (${(instruction.dest as Memory<*>).operand.operandType}) cannot be used with Memory operand")
                   }
                 }
               }
@@ -125,13 +125,13 @@ object GenericTwoOperandsInstructionHandler {
                   is C64 -> handle_MemC64_Reg(instruction.dest as Memory<C64>, instruction.src as Register, eip)
                   is C32 -> handle_MemC32_Reg(instruction.dest as Memory<C32>, instruction.src as Register, eip)
                   is VmString -> {
-                    throw VMSimulator.VmExecutionException(eip, "VmString cannot be used as a memory address")
+                    throw VmExecutionException(eip, "VmString cannot be used as a memory address")
                   }
                 }
               }
               is Memory<*> -> {
                 //mov [[???]], r0
-                throw VMSimulator.VmExecutionException(eip, "Operand (${(instruction.dest as Memory<*>).operand.operandName}) cannot be used as Memory operand")
+                throw VmExecutionException(eip, "Operand (${(instruction.dest as Memory<*>).operand.operandName}) cannot be used as Memory operand")
               }
             }
           }
@@ -141,7 +141,7 @@ object GenericTwoOperandsInstructionHandler {
           is Variable,
             //mov [123], [1234]
           is Memory<*> -> {
-            throw VMSimulator.VmExecutionException(eip, "Operand (${instruction.dest.operandName}) cannot be used as destination with instruction ($instruction)")
+            throw VmExecutionException(eip, "Operand (${instruction.dest.operandName}) cannot be used as destination with instruction ($instruction)")
           }
         }
       }
@@ -149,7 +149,7 @@ object GenericTwoOperandsInstructionHandler {
         //instr 123, *
       is Variable -> {
         //instr abc, *
-        throw VMSimulator.VmExecutionException(eip, "Operand (${instruction.dest.operandName}) cannot be used as destination with instruction ($instruction)")
+        throw VmExecutionException(eip, "Operand (${instruction.dest.operandName}) cannot be used as destination with instruction ($instruction)")
       }
     }
   }

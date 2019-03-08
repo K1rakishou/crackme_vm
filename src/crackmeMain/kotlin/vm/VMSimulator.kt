@@ -29,7 +29,4 @@ class VMSimulator(
       ++eip
     }
   }
-
-  class VmExecutionException(eip: Int,
-                             message: String) : Exception("Error at $eip instruction, $message")
 }

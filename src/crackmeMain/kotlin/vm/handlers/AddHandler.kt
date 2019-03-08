@@ -1,7 +1,7 @@
 package crackme.vm.handlers
 
 import crackme.vm.VM
-import crackme.vm.VMSimulator
+import crackme.vm.core.VmExecutionException
 import crackme.vm.instructions.Add
 import crackme.vm.operands.C64
 import crackme.vm.operands.Constant
@@ -21,11 +21,11 @@ class AddHandler : Handler<Add>() {
         if (src is C64) {
           vm.registers[dest.index] += src.value
         } else {
-          throw VMSimulator.VmExecutionException(currentEip, "Add handler not implemented to work with (${src.operandName}) as src operand")
+          throw VmExecutionException(currentEip, "Add handler not implemented to work with (${src.operandName}) as src operand")
         }
       }
       is Register -> vm.registers[dest.index] += vm.registers[src.index]
-      else -> throw VMSimulator.VmExecutionException(currentEip, "Add handler not implemented to work with (${src.operandName}) as src operand")
+      else -> throw VmExecutionException(currentEip, "Add handler not implemented to work with (${src.operandName}) as src operand")
     }
   }
 }

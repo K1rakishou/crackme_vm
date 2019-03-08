@@ -1,8 +1,8 @@
 package crackme.vm.handlers
 
 import crackme.vm.VM
-import crackme.vm.VMSimulator
 import crackme.vm.core.VariableType
+import crackme.vm.core.VmExecutionException
 import crackme.vm.instructions.Let
 import crackme.vm.operands.*
 
@@ -10,7 +10,7 @@ class LetHandler : Handler<Let>() {
 
   override fun handle(vm: VM, currentEip: Int, instruction: Let) {
     if (instruction.variable.variableType == VariableType.AnyType) {
-      throw VMSimulator.VmExecutionException(currentEip, "Cannot use Let with \'Any\' type")
+      throw VmExecutionException(currentEip, "Cannot use Let with \'Any\' type")
     }
 
     //let a: String, "Hello from VM!" -> OK
@@ -25,20 +25,24 @@ class LetHandler : Handler<Let>() {
       is Constant -> {
         when (val constant = instruction.initializer) {
           is C32 -> {
-            if (instruction.variable.variableType != VariableType.IntType) {
-              throw VMSimulator.VmExecutionException(
+            if (instruction.variable.variableType != VariableType.IntType && instruction.variable.variableType != VariableType.LongType) {
+              throw VmExecutionException(
                 currentEip,
-                "Initializer type (${constant.operandName}) differs from the variable type ${instruction.variable.variableType.str}"
+                "1 Initializer type (${constant.operandName}) differs from the variable type ${instruction.variable.variableType.str}"
               )
             }
 
-            vm.vmMemory.putInt(instruction.variable.address, constant.value)
+            if (instruction.variable.variableType == VariableType.IntType) {
+              vm.vmMemory.putInt(instruction.variable.address, constant.value)
+            } else if (instruction.variable.variableType == VariableType.LongType) {
+              vm.vmMemory.putLong(instruction.variable.address, constant.value.toLong())
+            }
           }
           is C64 -> {
             if (instruction.variable.variableType != VariableType.LongType) {
-              throw VMSimulator.VmExecutionException(
+              throw VmExecutionException(
                 currentEip,
-                "Initializer type (${constant.operandName}) differs from the variable type ${instruction.variable.variableType.str}"
+                "2 Initializer type (${constant.operandName}) differs from the variable type ${instruction.variable.variableType.str}"
               )
             }
 
@@ -46,7 +50,7 @@ class LetHandler : Handler<Let>() {
           }
           is VmString -> {
             if (instruction.variable.variableType != VariableType.StringType) {
-              throw VMSimulator.VmExecutionException(
+              throw VmExecutionException(
                 currentEip,
                 "Initializer type (${constant.operandName}) differs from the variable type ${instruction.variable.variableType.str}"
               )
@@ -67,12 +71,12 @@ class LetHandler : Handler<Let>() {
           }
           VariableType.AnyType,
           VariableType.StringType -> {
-            throw VMSimulator.VmExecutionException(currentEip, "Cannot initialize variable of type (${instruction.variable.variableType}) with register")
+            throw VmExecutionException(currentEip, "Cannot initialize variable of type (${instruction.variable.variableType}) with register")
           }
         }
       }
-      is Memory<*> -> throw VMSimulator.VmExecutionException(currentEip, "Cannot initialize variable with Memory type operand")
-      is Variable -> throw VMSimulator.VmExecutionException(currentEip, "Cannot initialize variable with another variable")
+      is Memory<*> -> throw VmExecutionException(currentEip, "Cannot initialize variable with Memory type operand")
+      is Variable -> throw VmExecutionException(currentEip, "Cannot initialize variable with another variable")
     }
   }
 

@@ -1,8 +1,8 @@
 package crackme.vm.handlers
 
 import crackme.vm.VM
-import crackme.vm.VMSimulator
 import crackme.vm.core.VariableType
+import crackme.vm.core.VmExecutionException
 import crackme.vm.instructions.Instruction
 import crackme.vm.operands.*
 
@@ -16,7 +16,7 @@ abstract class Handler<T : Instruction> {
       //FIXME why are we casting a string from the vmMemory to long??? We should probably return it's address
       VariableType.StringType -> vm.vmMemory.getString(operand.address).toLong()
       VariableType.AnyType -> {
-        throw VMSimulator.VmExecutionException(eip, "Variable with operandType (${operand.operandType}) cannot be used with Memory operand")
+        throw VmExecutionException(eip, "Variable with operandType (${operand.operandType}) cannot be used with Memory operand")
       }
     }
   }
@@ -35,7 +35,7 @@ abstract class Handler<T : Instruction> {
       VariableType.LongType -> vm.vmMemory.putLong(dest.operand.address, vm.registers[src.index])
       VariableType.AnyType,
       VariableType.StringType -> {
-        throw VMSimulator.VmExecutionException(eip, "Variable with operandType (${dest.operand.operandType}) cannot be used with Memory operand")
+        throw VmExecutionException(eip, "Variable with operandType (${dest.operand.operandType}) cannot be used with Memory operand")
       }
     }
   }
