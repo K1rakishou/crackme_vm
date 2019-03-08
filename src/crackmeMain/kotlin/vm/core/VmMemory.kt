@@ -6,10 +6,22 @@ class VmMemory(private val size: Int,
                private val random: Random) {
   private var eip = 0
   private val variables = mutableMapOf<String, Pair<Int, VariableType>>()
-  private val memory = random.nextBytes(size)
+  private val memory = ByteArray(size) { 0 } //random.nextBytes(size)
 
   fun isVariableDefined(variableName: String): Boolean {
     return variables.containsKey(variableName)
+  }
+
+  fun slice(startIndex: Int = 0, endIndex: Int = size): ByteArray {
+    if (startIndex >= endIndex) {
+      throw RuntimeException("startIndex must be less than endIndex (startIndex = ${startIndex}, endIndex = ${endIndex})")
+    }
+
+    val count = endIndex - startIndex
+    val byteArray = ByteArray(count)
+    Utils.copyBytes(memory, startIndex, byteArray, 0, count)
+
+    return byteArray
   }
 
   fun alloc(len: Int): Int {
@@ -27,15 +39,59 @@ class VmMemory(private val size: Int,
     return variables[variableName]
   }
 
+  fun <T : Any> getVariableValue(variableName: String, variableType: VariableType): T {
+    val variable = variables[variableName]
+    if (variable == null) {
+      throw RuntimeException("Unknown variable (${variableName})")
+    }
+
+    if (variable.second != variableType) {
+      throw RuntimeException("Variable types do not match (expected = ${variable.second}, actual = ${variableType})")
+    }
+
+    return when (variableType) {
+      VariableType.IntType -> {
+        Utils.readIntFromArray(variable.first, memory) as T
+      }
+      VariableType.LongType -> {
+        Utils.readLongFromByteArray(variable.first, memory) as T
+      }
+      VariableType.StringType -> {
+        val address = Utils.readIntFromArray(variable.first, memory)
+        val stringLen = Utils.readIntFromArray(address, memory)
+
+        val array = ByteArray(stringLen)
+        Utils.copyBytes(memory, address + INT_SIZE, array, 0, stringLen)
+
+        return String(array.map { it.toChar() }.toCharArray()) as T
+      }
+      VariableType.AnyType -> throw RuntimeException("Cannot get variable value of type Any")
+    }
+  }
+
   fun allocVariable(variableName: String, variableType: VariableType): Int {
-    if (eip < 0 || (eip + VARIABLE_SIZE) > size) {
-      throw EipIsOutOfBoundsException(eip, eip + VARIABLE_SIZE)
+    val variableSize = when (variableType) {
+      VariableType.IntType -> 4
+      VariableType.LongType -> 8
+      VariableType.StringType -> 4
+      VariableType.AnyType -> throw RuntimeException("Cannot use Any as variable type")
+    }
+
+    if (eip < 0 || (eip + variableSize) > size) {
+      throw EipIsOutOfBoundsException(eip, eip + variableSize)
     }
 
     val address = eip
     variables.put(variableName, Pair(address, variableType))
 
-    eip += VARIABLE_SIZE
+    when (variableType) {
+      VariableType.IntType -> Utils.writeIntToArray(address, 0, memory)
+      VariableType.LongType -> Utils.writeLongToArray(address, 0, memory)
+      VariableType.StringType -> Utils.writeIntToArray(address, 0, memory)
+      VariableType.AnyType -> throw RuntimeException("Cannot use Any as variable type")
+    }
+
+    eip += variableSize
     return address
   }
 
@@ -100,9 +156,7 @@ class VmMemory(private val size: Int,
       throw EipIsOutOfBoundsException(eip, size)
     }
 
-    val address = eip
-
-    allocInt(value.length)
+    val address = allocInt(value.length)
     Utils.copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, eip, value.length)
 
     eip += value.length
@@ -127,6 +181,5 @@ class VmMemory(private val size: Int,
   companion object {
     const val INT_SIZE = 4
     const val LONG_SIZE = 4
-    const val VARIABLE_SIZE = 4
   }
 }

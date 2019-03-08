@@ -16,7 +16,7 @@ class CallHandlerTest {
     val vm = vmParser.parse(
       """
         use println(String)
-        call println("TTTAAA Hello from VM!")
+        call println("test_Call_ConstString")
 
         ret r0
       """

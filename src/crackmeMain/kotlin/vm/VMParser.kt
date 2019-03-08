@@ -160,9 +160,23 @@ class VMParser {
     val (variableOperand, initializerOperand) = body.split(',')
       .map { it.trim() }
 
+    val variable = parseOperand(programLine, variableOperand, type) as Variable
+    val initializer = parseOperand(programLine, initializerOperand, type)
+
+    when (initializer) {
+      is Constant -> {
+        when (initializer) {
+          is C32 -> vmMemory.putInt(variable.address, initializer.value)
+          is C64 -> vmMemory.putLong(variable.address, initializer.value)
+          is VmString -> vmMemory.putInt(variable.address, initializer.address)
+        }
+      }
+      else -> throw ParsingException(programLine, "Initialization not implemented for initializer of type (${initializer.operandName})")
+    }
+
     return Let(
-      parseOperand(programLine, variableOperand, type) as Variable,
-      parseOperand(programLine, initializerOperand, type)
+      variable,
+      initializer
     )
   }
 
@@ -329,7 +343,7 @@ class VMParser {
           throw ParsingException(programLine, "Cannot find end of the string operand (${operandString})")
         }
 
-        val string = operandString.substring(1, stringEndIndex - 1)
+        val string = operandString.substring(1, stringEndIndex)
         val address = vmMemory.allocString(string)
 
         return VmString(address)

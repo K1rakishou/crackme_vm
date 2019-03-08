@@ -3,6 +3,7 @@ package sample.helloworld.handlers
 import crackme.vm.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.ParsingException
+import crackme.vm.core.VariableType
 import crackme.vm.core.VmExecutionException
 import sample.helloworld.expectException
 import kotlin.test.Test
@@ -123,6 +124,24 @@ class LetHandlerTest {
       """
       )
     }
+  }
+
+  @Test
+  fun test_LetString() {
+    //let a: String, "Hello from VM!"
+    val string = "Hello from VM!"
+
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+         let a: String, "${string}"
+         ret r0
+      """
+    )
+    val vmSimulator = VMSimulator()
+    vmSimulator.simulate(vm)
+
+    assertEquals(string, vm.vmMemory.getVariableValue("a", VariableType.StringType))
   }
 
 }

@@ -18,8 +18,8 @@ class LetHandler : Handler<Let>() {
     //let a: Int, 1122334455 -> NOT OK
     //let a: Long, 123 -> OK
     //let a: Long, 11223344556677889900 -> NOT OK
-    //let a: Int, r0 -> OK (unsafe cast, but still allowed)
-    //let a: Long, r0 -> OK
+    //let a: Int, r0 -> NOT OK //we can't know what value will be in the register at the parsing stage
+    //let a: Long, r0 -> NOT OK //we can't know what value will be in the register at the parsing stage
 
     when (instruction.initializer) {
       is Constant -> {
@@ -28,7 +28,7 @@ class LetHandler : Handler<Let>() {
             if (instruction.variable.variableType != VariableType.IntType && instruction.variable.variableType != VariableType.LongType) {
               throw VmExecutionException(
                 currentEip,
-                "1 Initializer type (${constant.operandName}) differs from the variable type ${instruction.variable.variableType.str}"
+                "Initializer type (${constant.operandName}) differs from the variable type ${instruction.variable.variableType.str}"
               )
             }
 
