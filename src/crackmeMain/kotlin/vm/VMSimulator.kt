@@ -10,7 +10,8 @@ class VMSimulator(
   private val movHandler: MovHandler = MovHandler(),
   private val addHandler: AddHandler = AddHandler(),
   private val callHandler: CallHandler = CallHandler(),
-  private val letHandler: LetHandler = LetHandler()
+  private val letHandler: LetHandler = LetHandler(),
+  private val cmpHandler: CmpHandler = CmpHandler()
 ) {
   private var eip = 0
 
@@ -19,7 +20,7 @@ class VMSimulator(
       when (val instruction = vm.instructions[eip]) {
         is Add -> addHandler.handle(vm, eip, instruction)
         is Call -> callHandler.handle(vm, eip, instruction)
-        is Cmp -> TODO("Cmp")
+        is Cmp -> cmpHandler.handle(vm, eip, instruction)
         is Jxx -> TODO("Jxx")
         is Let -> letHandler.handle(vm, eip, instruction)
         is Mov -> movHandler.handle(vm, eip, instruction)
