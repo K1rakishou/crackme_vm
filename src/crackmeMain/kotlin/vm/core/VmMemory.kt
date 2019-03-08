@@ -5,7 +5,7 @@ import kotlin.random.Random
 class VmMemory(private val size: Int,
                private val random: Random) {
   private var eip = 0
-  private val variables = mutableMapOf<String, Int>()
+  private val variables = mutableMapOf<String, Pair<Int, VariableType>>()
   private val memory = random.nextBytes(size)
 
   fun isVariableDefined(variableName: String): Boolean {
@@ -23,13 +23,17 @@ class VmMemory(private val size: Int,
     return address
   }
 
-  fun allocVariable(variableName: String): Int {
+  fun getVariable(variableName: String): Pair<Int, VariableType>? {
+    return variables[variableName]
+  }
+
+  fun allocVariable(variableName: String, variableType: VariableType): Int {
     if (eip < 0 || (eip + VARIABLE_SIZE) > size) {
       throw EipIsOutOfBoundsException(eip, eip + VARIABLE_SIZE)
     }
 
     val address = eip
-    variables.put(variableName, address)
+    variables.put(variableName, Pair(address, variableType))
 
     eip += VARIABLE_SIZE
     return address

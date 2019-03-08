@@ -335,7 +335,25 @@ class VMParser {
         return VmString(address)
       }
       ch.isLetter() -> {
-        val variableName = wordRegex.find(operandString)?.value
+        if (operandString.indexOf(':') == -1) {
+          if (!vmMemory.isVariableDefined(operandString)) {
+            throw ParsingException(programLine, "Cannot determine variable type (${operandString})")
+          }
+
+          val definedVariable = vmMemory.getVariable(operandString)
+          if (definedVariable == null) {
+            throw ParsingException(programLine, "Variable (${operandString}) is defined but does not have an address in the variables map!")
+          }
+
+          return Variable(
+            operandString,
+            definedVariable.first,
+            definedVariable.second
+          )
+        }
+
+        val (variableNameRaw, variableTypeRaw) = operandString.split(':').map { it.trim() }
+        val variableName = wordRegex.find(variableNameRaw)?.value
         if (variableName == null) {
           throw ParsingException(programLine, "Cannot parse variable name (${operandString})")
         }
@@ -346,12 +364,15 @@ class VMParser {
           }
         }
 
-        //FIXME: add variable types
+        val variableType = VariableType.fromString(variableTypeRaw)
+        if (variableType == null) {
+          throw ParsingException(programLine, "Unknown variable type (${variableTypeRaw})")
+        }
 
         return Variable(
           variableName,
-          vmMemory.allocVariable(variableName),
-          VariableType.LongType
+          vmMemory.allocVariable(variableName, variableType),
+          variableType
         )
       }
       else -> throw ParsingException(programLine, "Cannot parse operand for ($operandString)")

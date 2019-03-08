@@ -43,4 +43,8 @@ abstract class Handler<T : Instruction> {
       }
     }
   }
+
+  protected fun warning(eip: Int, message: String) {
+    println("Warning at $eip instruction, $message")
+  }
 }
