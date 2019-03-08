@@ -8,43 +8,23 @@ import crackme.vm.core.os.WinFile
 import crackme.vm.obfuscator.SimpleVMInstructionObfuscator
 
 fun main() {
-//  val testProgram = """
-//        use println(String)
-//        use sizeof(Any)
-//        use alloc(Int)
-//
-//        mov r0, 1
-//        mov r1, 3
-//        add r0, r1
-//        cmp r0, 4
-//        je BAD
-//
-//        mov r0, 999
-//        jmp EXIT
-//@BAD:
-//        mov r0, -888
-//@EXIT:
-//        let a: String, "Hello from VM!"
-//        call println([a])
-//        ret r0
-//    """
+  val testProgram = """
+        use println(String)
 
-  val testProgram =
-    """
-      mov r0, 0
-      mov r1, 11
-      mov r2, 22
-      mov r3, 33
-      mov r4, 44
-      mov r5, 55
+        mov r0, 1
+        mov r1, 3
+        add r0, r1
+        cmp r0, 4
+        je BAD
 
-      add r0, r1
-      add r0, r2
-      add r0, r3
-      add r0, r4
-      add r0, r5
-
-      ret r0
+        mov r0, 999
+        jmp EXIT
+@BAD:
+        mov r0, -888
+@EXIT:
+        let a: String, "Hello from VM!"
+        call println([a])
+        ret
     """
 
   val vmInstructionObfuscator = SimpleVMInstructionObfuscator()

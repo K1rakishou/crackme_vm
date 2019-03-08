@@ -8,7 +8,7 @@ import crackme.vm.operands.*
 
 class LetHandler : Handler<Let>() {
 
-  override fun handle(vm: VM, currentEip: Int, instruction: Let) {
+  override fun handle(vm: VM, currentEip: Int, instruction: Let): Int {
     if (instruction.variable.variableType == VariableType.AnyType) {
       throw VmExecutionException(currentEip, "Cannot use Let with \'Any\' type")
     }
@@ -78,6 +78,8 @@ class LetHandler : Handler<Let>() {
       is Memory<*> -> throw VmExecutionException(currentEip, "Cannot initialize variable with Memory type operand")
       is Variable -> throw VmExecutionException(currentEip, "Cannot initialize variable with another variable")
     }
+
+    return currentEip + 1
   }
 
 }

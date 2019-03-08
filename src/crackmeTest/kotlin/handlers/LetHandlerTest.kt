@@ -20,7 +20,7 @@ class LetHandlerTest {
       """
          let a: Int, 1234
          mov r0, [a]
-         ret r0
+         ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -36,7 +36,7 @@ class LetHandlerTest {
       """
          let a: Int, -1234
          mov r0, [a]
-         ret r0
+         ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -52,7 +52,7 @@ class LetHandlerTest {
       """
          let a: Int, 7722334455
          mov r0, [a]
-         ret r0
+         ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -70,7 +70,7 @@ class LetHandlerTest {
       """
          let a: Long, 1234
          mov r0, [a]
-         ret r0
+         ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -86,7 +86,7 @@ class LetHandlerTest {
       """
          let a: Long, 77223344556677
          mov r0, [a]
-         ret r0
+         ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -102,7 +102,7 @@ class LetHandlerTest {
       """
          let a: Long, -77223344556677
          mov r0, [a]
-         ret r0
+         ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -121,7 +121,7 @@ class LetHandlerTest {
         """
          let a: Long, 77223344556677889900
          mov r0, [a]
-         ret r0
+         ret
       """
       )
     }
@@ -136,7 +136,7 @@ class LetHandlerTest {
     val vm = vmParser.parse(
       """
          let a: String, "${string}"
-         ret r0
+         ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -159,7 +159,7 @@ class LetHandlerTest {
          let c: String, "${string3}"
          let d: Int, 1234
          let aavvss: Long, 1122334455667788
-         ret r0
+         ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -181,7 +181,7 @@ class LetHandlerTest {
         """
          let a: Int, 123
          let a: Int, 123456
-         ret r0
+         ret
       """
       )
     }

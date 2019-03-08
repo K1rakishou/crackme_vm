@@ -7,7 +7,9 @@ import crackme.vm.instructions.Instruction
 import crackme.vm.operands.*
 
 abstract class Handler<T : Instruction> {
-  abstract fun handle(vm: VM, currentEip: Int, instruction: T)
+
+  //eip -> new eip
+  abstract fun handle(vm: VM, currentEip: Int, instruction: T): Int
 
   protected fun getVmMemoryVariableValue(vm: VM, eip: Int, operand: Variable): Long {
     return when (operand.variableType) {

@@ -10,7 +10,7 @@ import crackme.vm.operands.Register
 
 class CmpHandler : Handler<Cmp>() {
 
-  override fun handle(vm: VM, currentEip: Int, instruction: Cmp) {
+  override fun handle(vm: VM, currentEip: Int, instruction: Cmp): Int {
     if (instruction.dest !is Register && instruction.src !is Register) {
       throw VmExecutionException(currentEip, "Only the Register operand type is supported for now")
     }
@@ -30,6 +30,7 @@ class CmpHandler : Handler<Cmp>() {
     }
 
     vm.vmFlags.updateFlagsFromResult(result)
+    return currentEip + 1
   }
 
 }

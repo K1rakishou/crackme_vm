@@ -18,7 +18,7 @@ class CallHandlerTest {
         use println(String)
         call println("test_Call_ConstString")
 
-        ret r0
+        ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -33,7 +33,7 @@ class CallHandlerTest {
         use println(String)
         call println(1122334455)
 
-        ret r0
+        ret
       """
     )
     val vmSimulator = VMSimulator()

@@ -10,7 +10,7 @@ import crackme.vm.operands.Register
 
 class AddHandler : Handler<Add>() {
 
-  override fun handle(vm: VM, currentEip: Int, instruction: Add) {
+  override fun handle(vm: VM, currentEip: Int, instruction: Add): Int {
     if (instruction.dest !is Register) {
       throw NotImplementedError("Dest operand must be a register!")
     }
@@ -37,5 +37,7 @@ class AddHandler : Handler<Add>() {
       }
       else -> throw VmExecutionException(currentEip, "Add handler not implemented to work with (${src.operandName}) as src operand")
     }
+
+    return currentEip + 1
   }
 }

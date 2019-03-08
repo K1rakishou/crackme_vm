@@ -5,7 +5,7 @@ import crackme.vm.instructions.Mov
 
 class MovHandler : Handler<Mov>() {
 
-  override fun handle(vm: VM, currentEip: Int, instruction: Mov) {
+  override fun handle(vm: VM, currentEip: Int, instruction: Mov): Int {
     GenericTwoOperandsInstructionHandler.handle(
       vm,
       currentEip,
@@ -23,6 +23,8 @@ class MovHandler : Handler<Mov>() {
       handle_MemC64_Reg = { dest, src, _ -> vm.vmMemory.putLong(dest.operand.value.toInt(), vm.registers[src.index]) },
       handle_MemC32_Reg = { dest, src, _ -> vm.vmMemory.putInt(dest.operand.value, vm.registers[src.index].toInt()) }
     )
+
+    return currentEip + 1
   }
 
 }

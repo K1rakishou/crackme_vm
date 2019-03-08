@@ -29,7 +29,7 @@ class MultipleInstructionsTest {
         add r0, r4
         add r0, r5
 
-        ret r0
+        ret
       """
     )
     val vmSimulator = VMSimulator()

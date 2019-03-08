@@ -132,6 +132,10 @@ class VMParser(
     programLine: Int,
     line: String
   ): List<Instruction> {
+    if (line.startsWith("ret")) {
+      return listOf(Ret())
+    }
+
     val indexOfFirstSpace = line.indexOfFirst { it == ' ' }
     if (indexOfFirstSpace == -1) {
       throw ParsingException(programLine, "Cannot parse instruction name ($line)")
@@ -148,7 +152,6 @@ class VMParser(
       "jne",
       "jmp" -> parseJxx(programLine, instructionName, body, InstructionType.Jxx)
       "call" -> parseCall(programLine, body, InstructionType.Call)
-      "ret" -> parseRet(programLine, body, InstructionType.Ret)
       "let" -> parseLet(programLine, body, InstructionType.Let)
       else -> throw ParsingException(programLine, "Unknown instruction name ($instructionName)")
     }
@@ -186,16 +189,6 @@ class VMParser(
       variable,
       initializer
     )
-  }
-
-  private fun parseRet(programLine: Int, body: String, type: InstructionType): Instruction {
-    val operand = parseOperand(programLine, body.trim(), type)
-    if (operand !is Register) {
-      throw ParsingException(programLine, "Only register operator allowed with Ret instruction")
-    }
-
-    //TODO: add const as well
-    return Ret(operand)
   }
 
   private fun parseCall(programLine: Int, body: String, type: InstructionType): Instruction {
@@ -244,7 +237,12 @@ class VMParser(
       throw ParsingException(programLine, "Label with name ($labelName) does not exist in the labels map")
     }
 
-    return Jxx(jumpType, labels.getValue(labelName))
+    val instructionIndex = labels[labelName]
+    if (instructionIndex == null || instructionIndex == -1) {
+      throw ParsingException(programLine, "Label with name ($labelName) was not initialized, instructionIndex = ($instructionIndex)")
+    }
+
+    return Jxx(jumpType, instructionIndex)
   }
 
   private fun parseCmp(programLine: Int, body: String, type: InstructionType): Instruction {

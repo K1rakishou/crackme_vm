@@ -26,7 +26,7 @@ class NativeFunctionsTest {
 
         call testAddNumbers(10, r0, r1, r2, r3, r4, 6, 7, 8, 9, 10)
 
-        ret r0
+        ret
       """
     )
     val vmSimulator = VMSimulator()

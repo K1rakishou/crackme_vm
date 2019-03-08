@@ -22,7 +22,7 @@ class MovHandlerTest {
     val vm = vmParser.parse(
       """
         mov r0, 1122334455667788
-        ret r0
+        ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -40,7 +40,7 @@ class MovHandlerTest {
     val vm = vmParser.parse(
       """
         mov r0, 11223344
-        ret r0
+        ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -60,7 +60,7 @@ class MovHandlerTest {
     val vm = vmParser.parse(
       """
         mov r0, [0]
-        ret r0
+        ret
       """
     )
     vm.vmMemory.putInt(0, 112233)
@@ -80,7 +80,7 @@ class MovHandlerTest {
       """
           mov r1, 0
           mov r0, [r1]
-          ret r0
+          ret
         """
     )
     vm.vmMemory.putLong(0, 112233)
@@ -99,7 +99,7 @@ class MovHandlerTest {
       """
           let a: Int, 112233
           mov r0, [a]
-          ret r0
+          ret
         """
     )
 
@@ -119,7 +119,7 @@ class MovHandlerTest {
       """
         mov r1, 112233
         mov r0, r1
-        ret r0
+        ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -138,7 +138,7 @@ class MovHandlerTest {
       """
          let a: Int, 0
          mov r0, a
-         ret r0
+         ret
       """
     )
 
@@ -160,7 +160,7 @@ class MovHandlerTest {
         mov r0, 112233
         mov r1, 0
         mov [r1], r0
-        ret r0
+        ret
       """
     )
     val vmSimulator = VMSimulator()
@@ -181,7 +181,7 @@ class MovHandlerTest {
          mov r1, 334455
          mov [a], r1
          mov r0, [a]
-         ret r0
+         ret
       """
     )
 
@@ -204,7 +204,7 @@ class MovHandlerTest {
       """
         mov r0, 112233
         mov [0], r0
-        ret r0
+        ret
       """
     )
     val vmSimulator = VMSimulator()

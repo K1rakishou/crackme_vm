@@ -19,7 +19,7 @@ class AddHandlerTest {
         mov r0, 101
         mov r1, 500
         add r0, r1
-        ret r0
+        ret
       """
     )
     val vmSimulator = VMSimulator()
