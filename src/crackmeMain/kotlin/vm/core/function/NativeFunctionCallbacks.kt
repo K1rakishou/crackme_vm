@@ -57,6 +57,28 @@ object NativeFunctionCallbacks {
         val regValue = vm.registers[operand.index]
         println(regValue)
       }
+      is Memory<*> -> {
+        when (val memoryOperand = operand.operand) {
+          is Constant -> {
+            TODO("Constant")
+          }
+          is Register -> {
+            TODO("Register")
+          }
+          is Variable -> {
+            when (memoryOperand.variableType) {
+              VariableType.IntType -> TODO("IntType")
+              VariableType.LongType -> TODO("LongType")
+              VariableType.StringType -> {
+                val string = vm.vmMemory.getVariableValue<String>(memoryOperand.name, memoryOperand.variableType)
+                println(string)
+              }
+              VariableType.AnyType -> TODO("AnyType")
+            }
+          }
+          else -> throw RuntimeException("Not implemented for ${operand.operandName}")
+        }
+      }
       else -> throw RuntimeException("Not implemented for ${operand.operandName}")
     }.safe
 

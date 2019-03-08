@@ -11,6 +11,7 @@ class VM(
   val nativeFunctions: Map<NativeFunctionType, NativeFunction>,
   val instructions: List<Instruction>,
   val registers: MutableList<Long>,
+  val labels: MutableMap<String, Int>,
   val vmStack: VmStack,
   val vmMemory: VmMemory,
   val vmFlags: VmFlags

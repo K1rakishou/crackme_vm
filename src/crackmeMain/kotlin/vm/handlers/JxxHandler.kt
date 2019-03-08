@@ -11,15 +11,15 @@ class JxxHandler : Handler<Jxx>() {
     when (instruction.jumpType) {
       JumpType.Je -> {
         if (vm.vmFlags.isFlagSet(VmFlags.Flag.ZF)) {
-          return instruction.instructionIndex
+          return vm.labels.getValue(instruction.labelName)
         }
       }
       JumpType.Jne -> {
         if (!vm.vmFlags.isFlagSet(VmFlags.Flag.ZF)) {
-          return instruction.instructionIndex
+          return vm.labels.getValue(instruction.labelName)
         }
       }
-      JumpType.Jmp -> return instruction.instructionIndex
+      JumpType.Jmp -> return vm.labels.getValue(instruction.labelName)
     }
 
     return currentEip + 1

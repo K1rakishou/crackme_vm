@@ -50,10 +50,10 @@ class VMParser(
       } else {
         val trimmed = line.trim()
 
-        if (trimmed.startsWith('@')) {
-          val labelName = trimmed.substring(1)
+        if (trimmed.contains('@') && trimmed.endsWith(':')) {
+          val labelName = parseLabel(instructionIndex, trimmed)
           if (!labels.containsKey(labelName)) {
-            throw ParsingException(instructionIndex, "Label (${labelName}) was not defined")
+            throw ParsingException(instructionIndex, "Label ($labelName) was not defined")
           }
 
           labels[labelName] = instructionIndex
@@ -67,10 +67,16 @@ class VMParser(
       }
     }
 
+    val uninitializedLabels = labels.filter { it.value == -1 }
+    if (uninitializedLabels.isNotEmpty()) {
+      throw RuntimeException("There are uninitialized labels after parsing: (${uninitializedLabels.map { it.key }})")
+    }
+
     return VM(
       nativeFunctions,
       instructions,
       mutableListOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L),
+      labels,
       VmStack(1024),
       vmMemory,
       vmFlags
@@ -78,12 +84,16 @@ class VMParser(
   }
 
   private fun parseLabel(programLine: Int, line: String): String {
-    val labelName = line.substring(1)
-    if (labelName.isEmpty()) {
-      throw ParsingException(programLine, "Cannot parse label (${line})")
+    val labelName = labelRegex.find(line)?.value?.substring(1)
+    if (labelName == null) {
+      throw ParsingException(programLine, "Line contains label symbol but no label name")
     }
 
-    return labelName.dropLast(1)
+    if (labelName.endsWith(':')) {
+      return labelName.dropLast(1)
+    }
+
+    return labelName
   }
 
   private fun parseNativeFunction(programLine: Int, line: String): NativeFunction {
@@ -232,17 +242,18 @@ class VMParser(
       throw ParsingException(programLine, "Cannot parse jump operandType from instruction name ($instructionName)")
     }
 
-    val labelName = body.trim()
+    val labelName = body.trim().substring(1)
     if (labels[labelName] == null) {
       throw ParsingException(programLine, "Label with name ($labelName) does not exist in the labels map")
     }
 
-    val instructionIndex = labels[labelName]
-    if (instructionIndex == null || instructionIndex == -1) {
-      throw ParsingException(programLine, "Label with name ($labelName) was not initialized, instructionIndex = ($instructionIndex)")
+    //TODO: we probably should not check for whether the label was initialized here,
+    // it's better to do it after all of the instructions has been parsed
+    if (labels[labelName] == null) {
+      throw ParsingException(programLine, "Label with name ($labelName) was not initialized, instructionIndex = (${labels[labelName]})")
     }
 
-    return Jxx(jumpType, instructionIndex)
+    return Jxx(jumpType, labelName)
   }
 
   private fun parseCmp(programLine: Int, body: String, type: InstructionType): Instruction {
@@ -420,5 +431,6 @@ class VMParser(
   companion object {
     val numberRegex = Regex("-?\\d+")
     val wordRegex = Regex("\\w+")
+    val labelRegex = Regex("@([a-zA-Z]+)")
   }
 }

@@ -19,6 +19,10 @@ class C32(
 
     return array
   }
+
+  override fun toString(): String {
+    return value.toString()
+  }
 }
 
 class C64(
