@@ -19,7 +19,7 @@ class MovHandler : Handler<Mov>() {
       handle_Reg_Reg = { dest, src, _ -> vm.registers[dest.index] = vm.registers[src.index] },
       handle_Reg_Var = { dest, src, _ -> vm.registers[dest.index] = src.address.toLong() },
       handle_MemReg_Reg = { dest, src, _ -> vm.vmMemory.putLong(vm.registers[dest.operand.index].toInt(), vm.registers[src.index]) },
-      handle_MemVar_Reg = { dest, src, eip -> putVmMemoryVariableValue(dest, vm, src, eip) },
+      handle_MemVar_Reg = { dest, src, eip -> putVmMemoryVariableValueFromRegister(dest, vm, src, eip) },
       handle_MemC64_Reg = { dest, src, _ -> vm.vmMemory.putLong(dest.operand.value.toInt(), vm.registers[src.index]) },
       handle_MemC32_Reg = { dest, src, _ -> vm.vmMemory.putInt(dest.operand.value, vm.registers[src.index].toInt()) }
     )

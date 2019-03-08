@@ -90,27 +90,26 @@ class MovHandlerTest {
     assertEquals(112233, vm.registers[0])
   }
 
-  // TODO Reg_MemVar
+  //Reg_MemVar
   @Test
   fun test_MovReg_MemVar() {
     //mov r0, [abc]
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-          let a: Int, 0
+          let a: Int, 112233
           mov r0, [a]
           ret r0
         """
     )
 
-//    vm.vmMemory.putLong(0, 112233)
-//    val vmSimulator = VMSimulator()
-//    vmSimulator.simulate(vm)
-//
-//    assertEquals(112233, vm.registers[0])
+    val vmSimulator = VMSimulator()
+    vmSimulator.simulate(vm)
+
+    assertEquals(112233, vm.registers[0])
   }
 
-  //  Reg_Reg
+  //Reg_Reg
   @Test
   fun test_MovReg_Reg() {
     //mov r0, r1
@@ -129,7 +128,7 @@ class MovHandlerTest {
     assertEquals(112233, vm.registers[0])
   }
 
-  // TODO Reg_Var
+  //Reg_Var
   @Test
   fun test_MovReg_Var() {
     //instr r0, abc
@@ -138,16 +137,16 @@ class MovHandlerTest {
     val vm = vmParser.parse(
       """
          let a: Int, 0
-         mov r0, [a]
+         mov r0, a
          ret r0
       """
     )
 
-//    vm.vmMemory.putLong(0, 112233)
-//    val vmSimulator = VMSimulator()
-//    vmSimulator.simulate(vm)
-//
-//    assertEquals(112233, vm.registers[0])
+    val vmSimulator = VMSimulator()
+    vmSimulator.simulate(vm)
+
+    //first allocation should be at 0 address
+    assertEquals(0, vm.registers[0])
   }
 
   //  MemReg_Reg
@@ -171,7 +170,7 @@ class MovHandlerTest {
   }
 
 
-  //TODO MemVar_Reg
+  //MemVar_Reg
   @Test
   fun test_MovMemVar_Reg() {
     //mov [abc], r0
@@ -179,13 +178,17 @@ class MovHandlerTest {
     val vm = vmParser.parse(
       """
          let a: Int, 0
-         mov r1, 1234
+         mov r1, 334455
          mov [a], r1
          mov r0, [a]
          ret r0
       """
     )
 
+    val vmSimulator = VMSimulator()
+    vmSimulator.simulate(vm)
+
+    assertEquals(334455, vm.registers[0])
   }
 
   //TODO: is this even possible? Maybe this should be removed completely?
