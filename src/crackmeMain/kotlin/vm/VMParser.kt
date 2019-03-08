@@ -16,12 +16,14 @@ class VMParser {
   private lateinit var labels: MutableMap<String, Int>
   //this list is to keep track of all added string to the memory (their addresses in the memory)
   private lateinit var vmMemory: VmMemory
+  private lateinit var vmFlags: VmFlags
 
   fun parse(program: String): VM {
     instructions = mutableListOf()
     nativeFunctions = mutableMapOf()
     labels = mutableMapOf()
     vmMemory = VmMemory(1024, Random(GetTickCount().toInt()))
+    vmFlags = VmFlags()
 
     val lines = program.split("\n")
       .map { it.trim() }
@@ -67,7 +69,8 @@ class VMParser {
       instructions,
       mutableListOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L),
       VmStack(1024),
-      vmMemory
+      vmMemory,
+      vmFlags
     )
   }
 
