@@ -74,7 +74,7 @@ class VmMemory(private val size: Int,
       VariableType.IntType -> 4
       VariableType.LongType -> 8
       VariableType.StringType -> 4
-      VariableType.AnyType -> throw RuntimeException("Cannot use Any as variable type")
+      VariableType.AnyType -> throw RuntimeException("Cannot use Any as a type of the variable")
     }
 
     if (eip < 0 || (eip + variableSize) > size) {

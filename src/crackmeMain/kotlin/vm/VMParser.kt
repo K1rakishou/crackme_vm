@@ -6,11 +6,15 @@ import crackme.vm.core.function.NativeFunctionType
 import crackme.vm.core.VariableType
 import crackme.vm.instructions.*
 import crackme.vm.core.function.NativeFunction
+import crackme.vm.obfuscator.NoOpInstructionObfuscator
+import crackme.vm.obfuscator.VMInstructionObfuscator
 import crackme.vm.operands.*
 import platform.windows.GetTickCount
 import kotlin.random.Random
 
-class VMParser {
+class VMParser(
+  private val vmInstructionObfuscator: VMInstructionObfuscator = NoOpInstructionObfuscator()
+) {
   private lateinit var instructions: MutableList<Instruction>
   private lateinit var nativeFunctions: MutableMap<NativeFunctionType, NativeFunction>
   private lateinit var labels: MutableMap<String, Int>
@@ -29,38 +33,37 @@ class VMParser {
       .map { it.trim() }
       .filterNot { it.isEmpty() }
 
-    var instructionIndex = 0
 
     for ((programLine, line) in lines.withIndex()) {
-      when {
-        line.startsWith("use") -> {
-        }
-        line.startsWith("@") -> {
-          val label = parseLabel(programLine, line)
-          labels.put(label, instructionIndex)
-        }
-        else -> {
-          ++instructionIndex
-        }
+      if (line.startsWith("@")) {
+        val label = parseLabel(programLine, line)
+        labels.put(label, -1)
       }
     }
 
-    instructionIndex = 0
+    var instructionIndex = 0
 
     for ((programLine, line) in lines.withIndex()) {
-      when {
-        line.startsWith("use") -> {
-          val nativeFunction = parseNativeFunction(programLine, line)
-          nativeFunctions[nativeFunction.type] = nativeFunction
-        }
-        line.startsWith("@") -> {
-        }
-        else -> {
-          val instruction = parseInstruction(programLine, line)
-          instructions.add(instruction)
+      if (line.startsWith("use")) {
+        val nativeFunction = parseNativeFunction(programLine, line)
+        nativeFunctions[nativeFunction.type] = nativeFunction
+      } else {
+        val trimmed = line.trim()
 
-          ++instructionIndex
+        if (trimmed.startsWith('@')) {
+          val labelName = trimmed.substring(1)
+          if (!labels.containsKey(labelName)) {
+            throw ParsingException(instructionIndex, "Label (${labelName}) was not defined")
+          }
+
+          labels[labelName] = instructionIndex
+          continue
         }
+
+        val newInstructions = parseInstruction(programLine, trimmed)
+
+        instructions.addAll(newInstructions)
+        instructionIndex += newInstructions.size
       }
     }
 
@@ -128,7 +131,7 @@ class VMParser {
   private fun parseInstruction(
     programLine: Int,
     line: String
-  ): Instruction {
+  ): List<Instruction> {
     val indexOfFirstSpace = line.indexOfFirst { it == ' ' }
     if (indexOfFirstSpace == -1) {
       throw ParsingException(programLine, "Cannot parse instruction name ($line)")
@@ -137,7 +140,7 @@ class VMParser {
     val instructionName = line.substring(0, indexOfFirstSpace).toLowerCase()
     val body = line.substring(indexOfFirstSpace)
 
-    return when (instructionName) {
+    val instruction = when (instructionName) {
       "mov" -> parseMov(programLine, body, InstructionType.Mov)
       "add" -> parseAdd(programLine, body, InstructionType.Add)
       "cmp" -> parseCmp(programLine, body, InstructionType.Cmp)
@@ -149,6 +152,8 @@ class VMParser {
       "let" -> parseLet(programLine, body, InstructionType.Let)
       else -> throw ParsingException(programLine, "Unknown instruction name ($instructionName)")
     }
+
+    return vmInstructionObfuscator.obfuscate(instruction)
   }
 
   private fun parseLet(programLine: Int, body: String, type: InstructionType): Instruction {

@@ -1,9 +1,11 @@
 package crackme
 
 import crackme.vm.VMCompiler
+import crackme.vm.obfuscator.VMInstructionObfuscator
 import crackme.vm.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.os.WinFile
+import crackme.vm.obfuscator.SimpleVMInstructionObfuscator
 
 fun main() {
 //  val testProgram = """
@@ -45,7 +47,8 @@ fun main() {
       ret r0
     """
 
-  val vmParser = VMParser()
+  val vmInstructionObfuscator = SimpleVMInstructionObfuscator()
+  val vmParser = VMParser(vmInstructionObfuscator)
   val vm = vmParser.parse(testProgram)
 
   println("Native functions: ")
@@ -63,7 +66,6 @@ fun main() {
 
   val vmSimulator = VMSimulator()
   val vmCompiler = VMCompiler()
-
 
   WinFile.withFileDo("bytecode.txt", WinFile.OpenType.Write) { file ->
     vmSimulator.simulate(vm)
