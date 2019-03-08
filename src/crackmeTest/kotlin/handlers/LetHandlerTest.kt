@@ -8,6 +8,7 @@ import crackme.vm.core.VmExecutionException
 import sample.helloworld.expectException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class LetHandlerTest {
 
@@ -142,6 +143,50 @@ class LetHandlerTest {
     vmSimulator.simulate(vm)
 
     assertEquals(string, vm.vmMemory.getVariableValue("a", VariableType.StringType))
+  }
+
+  @Test
+  fun test_MultipleLetInstructions() {
+    val string1 = "Hello from VM!"
+    val string2 = "This is a test string #2"
+    val string3 = "And this is another test string 45346346347347"
+
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+         let a: String, "${string1}"
+         let b: String, "${string2}"
+         let c: String, "${string3}"
+         let d: Int, 1234
+         let aavvss: Long, 1122334455667788
+         ret r0
+      """
+    )
+    val vmSimulator = VMSimulator()
+    vmSimulator.simulate(vm)
+
+    assertEquals(string1, vm.vmMemory.getVariableValue("a", VariableType.StringType))
+    assertEquals(string2, vm.vmMemory.getVariableValue("b", VariableType.StringType))
+    assertEquals(string3, vm.vmMemory.getVariableValue("c", VariableType.StringType))
+    assertEquals(1234, vm.vmMemory.getVariableValue("d", VariableType.IntType))
+    assertEquals(1122334455667788, vm.vmMemory.getVariableValue("aavvss", VariableType.LongType))
+  }
+
+  @Test
+  fun testShouldThrowWhenDetectedMultipleVariablesWithTheSameName() {
+    val vmParser = VMParser()
+
+    val exception = expectException<ParsingException> {
+      vmParser.parse(
+        """
+         let a: Int, 123
+         let a: Int, 123456
+         ret r0
+      """
+      )
+    }
+
+    assertTrue(exception.message!!.contains("Variable (a) is already defined"))
   }
 
 }
