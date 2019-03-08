@@ -12,15 +12,16 @@ object NativeFunctionCallbacks {
       throw BadParametersCount(NativeFunctionType.TestAddNumbers, 1, parameters.size)
     }
 
-    val paramsCount = parameters[0] as C64
-    var sum: Long = 0L
+    val paramsCount = parameters[0] as C32
+    var sum = 0L
 
-    for (i in 0 until paramsCount.value.toInt()) {
+    for (i in 0 until paramsCount.value) {
       val operand = parameters[i + 1] as Operand
 
       when (operand) {
         is Constant -> {
           when (operand) {
+            is C32 -> sum += operand.value
             is C64 -> sum += operand.value
             else -> throw RuntimeException("Not implemented for ${operand.operandName}")
           }.safe
@@ -43,6 +44,7 @@ object NativeFunctionCallbacks {
     when (operand) {
       is Constant -> {
         when (operand) {
+          is C32 -> println(operand.value)
           is C64 -> println(operand.value)
           is VmString -> {
             val string = vm.vmMemory.getString(operand.address)
@@ -70,10 +72,13 @@ object NativeFunctionCallbacks {
 
     return when (type) {
       VariableType.AnyType -> throw ParameterTypeNotSupportedForThisFunction(NativeFunctionType.Sizeof, type)
+      VariableType.IntType -> 4
       VariableType.LongType -> 8
       VariableType.StringType -> {
         val obj = parameters[0] as String
-        //TODO: should we really add 4 here?
+        //TODO: should we really add 4 here? This is getting called in runtime and we probably don't need to reserve memory for string length
+
+        //4 bytes reserved for string length + it's real length
         return (obj.length + 4).toLong()
       }
     }

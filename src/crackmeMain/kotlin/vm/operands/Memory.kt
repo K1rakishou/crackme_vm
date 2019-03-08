@@ -3,8 +3,8 @@ package crackme.vm.operands
 import crackme.vm.core.Utils
 import kotlin.experimental.or
 
-class Memory(
-  val operand: Operand
+class Memory<T : Operand>(
+  val operand: T
 ) : Operand {
   override val operandName = "Memory"
   override val rawSize: Int = 1 + operand.rawSize //operandType + size of the operand

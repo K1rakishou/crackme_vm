@@ -51,9 +51,13 @@ class VmMemoryTests {
 
   @Test
   fun testAllocateGetString() {
-    val str = "This is a test string"
+    val str1 = "This is a test string1"
+    val str2 = "This is a test string2"
 
-    val address = vmMemory.allocString(str)
-    assertEquals(str, vmMemory.getString(address))
+    val address1 = vmMemory.allocString(str1)
+    val address2 = vmMemory.allocString(str2)
+    assertEquals(str1, vmMemory.getString(address1))
+    assertEquals(str2, vmMemory.getString(address2))
   }
+
 }

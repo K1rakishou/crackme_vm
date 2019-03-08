@@ -7,9 +7,9 @@ import crackme.vm.operands.C64
 import crackme.vm.operands.Constant
 import crackme.vm.operands.Register
 
-class AddHandler : Handler<Add> {
+class AddHandler : Handler<Add>() {
 
-  override fun handle(vm: VM, eip: Int, instruction: Add) {
+  override fun handle(vm: VM, currentEip: Int, instruction: Add) {
     if (instruction.dest !is Register) {
       throw NotImplementedError("Dest operand must be a register!")
     }
@@ -21,11 +21,11 @@ class AddHandler : Handler<Add> {
         if (src is C64) {
           vm.registers[dest.index] += src.value
         } else {
-          throw VMSimulator.VmExecutionException(eip, "Add handler not implemented to work with (${src.operandName}) as src operand")
+          throw VMSimulator.VmExecutionException(currentEip, "Add handler not implemented to work with (${src.operandName}) as src operand")
         }
       }
       is Register -> vm.registers[dest.index] += vm.registers[src.index]
-      else -> throw VMSimulator.VmExecutionException(eip, "Add handler not implemented to work with (${src.operandName}) as src operand")
+      else -> throw VMSimulator.VmExecutionException(currentEip, "Add handler not implemented to work with (${src.operandName}) as src operand")
     }
   }
 }

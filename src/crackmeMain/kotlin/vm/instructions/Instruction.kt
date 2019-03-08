@@ -1,5 +1,7 @@
 package crackme.vm.instructions
 
+import crackme.vm.core.Utils
+
 abstract class Instruction {
   abstract val instructionType: InstructionType
 
@@ -16,11 +18,7 @@ abstract class Instruction {
 
   protected fun Int.toByteArray(): ByteArray {
     val array = ByteArray(4)
-
-    array[0] = ((this shr 24) and 0x000000FF).toByte()
-    array[1] = ((this shr 16) and 0x000000FF).toByte()
-    array[2] = ((this shr 8) and 0x000000FF).toByte()
-    array[3] = (this and 0x000000FF).toByte()
+    Utils.writeIntToArray(0, this, array)
 
     return array
   }

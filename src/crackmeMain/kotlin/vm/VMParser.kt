@@ -306,8 +306,10 @@ class VMParser {
               throw ParsingException(programLine, "Variable (${operand.name}) is not defined")
             }
           }
-          is Register -> {}
-          is Constant -> {}
+          is Register,
+          is Constant -> {
+            //don't need to check anything here since it's not a variable
+          }
           else -> throw ParsingException(programLine, "Operand ($operandName) is not supported by Memory operand")
         }
 
@@ -361,12 +363,17 @@ class VMParser {
       throw ParsingException(programLine, "Constant is empty")
     }
 
-    val extractedValue = constantString.toLongOrNull()
-    if (extractedValue == null) {
-      throw ParsingException(programLine, "Cannot parse constant ($constantString), unknown error")
+    val extractedValue32 = constantString.toIntOrNull()
+    if (extractedValue32 != null) {
+      return C32(extractedValue32)
     }
 
-    return C64(extractedValue)
+    val extractedValue64 = constantString.toLongOrNull()
+    if (extractedValue64 == null) {
+      throw ParsingException(programLine, "Cannot parse constant ($extractedValue64), unknown error")
+    }
+
+    return C64(extractedValue64)
   }
 
   companion object {

@@ -1,5 +1,6 @@
 package crackme.vm.operands
 
+import crackme.vm.core.Utils
 import crackme.vm.core.VariableType
 
 class Variable(
@@ -16,10 +17,7 @@ class Variable(
 
     array[0] = operandType.value
     array[1] = variableType.type
-    array[2] = ((address shr 24) and 0x000000FF).toByte()
-    array[3] = ((address shr 16) and 0x000000FF).toByte()
-    array[4] = ((address shr 8) and 0x000000FF).toByte()
-    array[5] = (address and 0x000000FF).toByte()
+    Utils.writeIntToArray(2, address, array)
 
     return array
   }

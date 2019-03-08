@@ -41,40 +41,26 @@ class VmMemory(private val size: Int,
     }
 
     val address = eip
-
-    memory[eip] = ((value shr 24) and 0x000000FF).toByte()
-    memory[eip + 1] = ((value shr 16) and 0x000000FF).toByte()
-    memory[eip + 2] = ((value shr 8) and 0x000000FF).toByte()
-    memory[eip + 3] = (value and 0x000000FF).toByte()
+    Utils.writeIntToArray(eip, value, memory)
 
     eip += INT_SIZE
     return address
   }
 
-  private fun putInt(index: Int, value: Int) {
+  fun putInt(index: Int, value: Int) {
     if (index < 0 || (index + INT_SIZE) > size) {
       throw VmIndexOutOfBoundsException(index, size)
     }
 
-    memory[index] = ((value shr 24) and 0x000000FF).toByte()
-    memory[index + 1] = ((value shr 16) and 0x000000FF).toByte()
-    memory[index + 2] = ((value shr 8) and 0x000000FF).toByte()
-    memory[index + 3] = (value and 0x000000FF).toByte()
+    Utils.writeIntToArray(index, value, memory)
   }
 
-  private fun getInt(index: Int): Int {
+  fun getInt(index: Int): Int {
     if (index < 0 || index > size) {
       throw VmIndexOutOfBoundsException(index, size)
     }
 
-    var result = 0
-
-    for (i in 0..3) {
-      result = result shl 8
-      result = result or (memory[index + i].toInt() and 0xFF)
-    }
-
-    return result
+    return Utils.readIntFromArray(index, memory)
   }
 
   fun putLong(index: Int, value: Long) {
@@ -82,14 +68,7 @@ class VmMemory(private val size: Int,
       throw VmIndexOutOfBoundsException(index, size)
     }
 
-    memory[index] = ((value shr 56) and 0x000000FF).toByte()
-    memory[index + 1] = ((value shr 48) and 0x000000FF).toByte()
-    memory[index + 2] = ((value shr 40) and 0x000000FF).toByte()
-    memory[index + 3] = ((value shr 32) and 0x000000FF).toByte()
-    memory[index + 4] = ((value shr 24) and 0x000000FF).toByte()
-    memory[index + 5] = ((value shr 16) and 0x000000FF).toByte()
-    memory[index + 6] = ((value shr 8) and 0x000000FF).toByte()
-    memory[index + 7] = ((value) and 0x000000FF).toByte()
+    Utils.writeLongToArray(index, value, memory)
   }
 
   fun allocLong(value: Long): Int {
@@ -98,15 +77,7 @@ class VmMemory(private val size: Int,
     }
 
     val address = eip
-
-    memory[eip] = ((value shr 56) and 0x000000FF).toByte()
-    memory[eip + 1] = ((value shr 48) and 0x000000FF).toByte()
-    memory[eip + 2] = ((value shr 40) and 0x000000FF).toByte()
-    memory[eip + 3] = ((value shr 32) and 0x000000FF).toByte()
-    memory[eip + 4] = ((value shr 24) and 0x000000FF).toByte()
-    memory[eip + 5] = ((value shr 16) and 0x000000FF).toByte()
-    memory[eip + 6] = ((value shr 8) and 0x000000FF).toByte()
-    memory[eip + 7] = ((value) and 0x000000FF).toByte()
+    Utils.writeLongToArray(eip, value, memory)
 
     eip += LONG_SIZE
     return address
@@ -117,14 +88,7 @@ class VmMemory(private val size: Int,
       throw VmIndexOutOfBoundsException(index, size)
     }
 
-    var result = 0L
-
-    for (i in 0..7) {
-      result = result shl 8
-      result = result or (memory[index + i].toLong() and 0xFF)
-    }
-
-    return result
+    return Utils.readLongFromByteArray(index, memory)
   }
 
   fun allocString(value: String): Int {
@@ -135,8 +99,9 @@ class VmMemory(private val size: Int,
     val address = eip
 
     allocInt(value.length)
-    copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, eip, value.length)
+    Utils.copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, eip, value.length)
 
+    eip += value.length
     return address
   }
 
@@ -147,15 +112,9 @@ class VmMemory(private val size: Int,
 
     val length = getInt(index)
     val bytes = ByteArray(length)
-    copyBytes(memory, index + INT_SIZE, bytes, 0, length)
+    Utils.copyBytes(memory, index + INT_SIZE, bytes, 0, length)
 
     return String(bytes.map { it.toChar() }.toCharArray())
-  }
-
-  private fun copyBytes(from: ByteArray, fromIndex: Int, to: ByteArray, toIndex: Int, count: Int) {
-    Utils.copyBytes(from, fromIndex, to, toIndex, count)
-
-    eip += count
   }
 
   class EipIsOutOfBoundsException(val eip: Int, val upper: Int) : Exception("eip is out of bounds (eip = ${eip}, upperBound = ${upper})")

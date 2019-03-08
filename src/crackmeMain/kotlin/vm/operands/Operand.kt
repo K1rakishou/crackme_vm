@@ -9,9 +9,10 @@ interface Operand {
 }
 
 enum class OperandType(val value: Byte) {
-  Memory(0 shl 7),
-  Constant_C64(0 shl 1),
-  Constant_VmString(0 shl 2),
-  Register(0 shl 3),
-  Variable(0 shl 4)
+  Constant_C32(1 shl 0),
+  Constant_C64(1 shl 1),
+  Constant_VmString(1 shl 2),
+  Register(1 shl 3),
+  Variable(1 shl 4),
+  Memory(1 shl 6)
 }
