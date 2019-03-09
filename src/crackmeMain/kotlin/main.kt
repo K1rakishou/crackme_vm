@@ -31,6 +31,10 @@ fun main() {
         ret
     """
 
+  //TODO: sub instruction
+  //TODO: inc instruction
+  //TODO: dec instruction
+
   val vmInstructionObfuscator = SimpleVMInstructionObfuscator()
   val vmParser = VMParser(vmInstructionObfuscator)
   val vm = vmParser.parse(testProgram)

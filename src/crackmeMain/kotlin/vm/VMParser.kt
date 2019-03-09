@@ -159,6 +159,7 @@ class VMParser(
       "add" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Add)
       "cmp" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Cmp)
       "xor" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Xor)
+      "sub" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Sub)
       "je",
       "jne",
       "jmp" -> parseJxx(programLine, instructionName, body, InstructionType.Jxx)
@@ -190,6 +191,7 @@ class VMParser(
       InstructionType.Cmp -> Cmp(dest, src)
       InstructionType.Mov -> Mov(dest, src)
       InstructionType.Xor -> Xor(dest, src)
+      InstructionType.Sub -> Sub(dest, src)
       InstructionType.Call,
       InstructionType.Jxx,
       InstructionType.Let,

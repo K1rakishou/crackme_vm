@@ -35,5 +35,6 @@ enum class InstructionType(
   Let(4, "Let"),
   Mov(5, "Mov"),
   Ret(6, "Ret"),
-  Xor(7, "Xor")
+  Xor(7, "Xor"),
+  Sub(8, "Sub")
 }

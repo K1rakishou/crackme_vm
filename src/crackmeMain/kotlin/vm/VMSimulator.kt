@@ -10,7 +10,8 @@ class VMSimulator(
   private val letHandler: LetHandler = LetHandler(),
   private val cmpHandler: CmpHandler = CmpHandler(),
   private val jxxHandler: JxxHandler = JxxHandler(),
-  private val xorHandler: XorHandler = XorHandler()
+  private val xorHandler: XorHandler = XorHandler(),
+  private val subHandler: SubHandler = SubHandler()
 ) {
   private var eip = 0
 
@@ -30,6 +31,7 @@ class VMSimulator(
         InstructionType.Let -> letHandler.handle(vm, eip, instruction as Let)
         InstructionType.Mov -> movHandler.handle(vm, eip, instruction as Mov)
         InstructionType.Xor -> xorHandler.handle(vm, eip, instruction as Xor)
+        InstructionType.Sub -> subHandler.handle(vm, eip, instruction as Sub)
         InstructionType.Ret -> return
       }
     }
