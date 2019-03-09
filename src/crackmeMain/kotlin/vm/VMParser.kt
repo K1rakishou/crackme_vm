@@ -13,6 +13,7 @@ import platform.windows.GetTickCount
 import kotlin.random.Random
 
 class VMParser(
+  private val random: Random = Random(0),
   private val vmInstructionObfuscator: VMInstructionObfuscator = NoOpInstructionObfuscator()
 ) {
   private lateinit var instructions: MutableList<Instruction>
@@ -73,8 +74,9 @@ class VMParser(
     }
 
     return VM(
-      nativeFunctions,
+      random,
       instructions,
+      nativeFunctions,
       mutableListOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L),
       labels,
       VmStack(1024),
@@ -170,7 +172,7 @@ class VMParser(
       else -> throw ParsingException(programLine, "Unknown instruction name ($instructionName)")
     }
 
-    return vmInstructionObfuscator.obfuscate(instruction)
+    return vmInstructionObfuscator.obfuscate(vmMemory, instruction)
   }
 
   private fun parseGenericOneOperandInstruction(programLine: Int, body: String, type: InstructionType): Instruction {

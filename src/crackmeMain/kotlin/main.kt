@@ -3,8 +3,15 @@ package crackme
 import crackme.vm.VMCompiler
 import crackme.vm.VMParser
 import crackme.vm.VMSimulator
+import crackme.vm.core.os.Time
 import crackme.vm.core.os.WinFile
+import crackme.vm.core.os.WinTime
 import crackme.vm.obfuscator.SimpleVMInstructionObfuscator
+import crackme.vm.obfuscator.engine.ConstantObfuscationEngine
+import crackme.vm.obfuscator.generator.SimpleVMInstructionGenerator
+import crackme.vm.obfuscator.mutation.SimpleMutationEngine
+import platform.windows.GetTickCount64
+import kotlin.random.Random
 
 fun main() {
   val testProgram = """
@@ -31,10 +38,15 @@ fun main() {
         ret
     """
 
-  //TODO: dec instruction
+  val time: Time = WinTime()
+  val random = Random(GetTickCount64().toLong() * time.getCurrentTime())
 
-  val vmInstructionObfuscator = SimpleVMInstructionObfuscator()
-  val vmParser = VMParser(vmInstructionObfuscator)
+  val mutationEngine = SimpleMutationEngine(random)
+  val vmInstructionGenerator = SimpleVMInstructionGenerator(random, mutationEngine)
+  val constantObfuscationEngine = ConstantObfuscationEngine(vmInstructionGenerator)
+  val vmInstructionObfuscator = SimpleVMInstructionObfuscator(constantObfuscationEngine)
+
+  val vmParser = VMParser(random, vmInstructionObfuscator)
   val vm = vmParser.parse(testProgram)
 
   val vmSimulator = VMSimulator()

@@ -4,6 +4,7 @@ import crackme.vm.handlers.*
 import crackme.vm.instructions.*
 
 class VMSimulator(
+  private val debugMode: Boolean = false,
   private val movHandler: MovHandler = MovHandler(),
   private val addHandler: AddHandler = AddHandler(),
   private val callHandler: CallHandler = CallHandler(),
@@ -23,7 +24,11 @@ class VMSimulator(
         throw RuntimeException("eip is out of bounds eip = ($eip), upperBound = ${vm.instructions.size}")
       }
 
-      val instruction = vm.instructions[eip]
+      val instruction = if (debugMode) {
+        vm.instructions.getOrNull(eip) ?: return
+      } else {
+        vm.instructions[eip]
+      }
 
       eip = when (instruction.instructionType) {
         InstructionType.Add -> addHandler.handle(vm, eip, instruction as Add)

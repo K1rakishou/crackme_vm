@@ -1,5 +1,18 @@
 package crackme.vm.core
 
-class ParsingException(programLine: Int, message: String) : Exception("[Error at line ${programLine + 1}]: ${message}")
-class VmExecutionException(eip: Int,
-                           message: String) : Exception("Error at $eip instruction, $message")
+import crackme.vm.operands.Operand
+
+class ParsingException(
+  programLine: Int,
+  message: String
+) : Exception("[Error at line ${programLine + 1}]: $message")
+
+class VmExecutionException(
+  eip: Int,
+  message: String
+) : Exception("Error at $eip instruction, $message")
+
+class ObfuscationException(
+  inputOperand: Operand,
+  message: String
+) : Exception("Error while trying to obfuscate operand ($inputOperand), $message")
