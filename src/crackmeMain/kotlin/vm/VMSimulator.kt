@@ -9,7 +9,8 @@ class VMSimulator(
   private val callHandler: CallHandler = CallHandler(),
   private val letHandler: LetHandler = LetHandler(),
   private val cmpHandler: CmpHandler = CmpHandler(),
-  private val jxxHandler: JxxHandler = JxxHandler()
+  private val jxxHandler: JxxHandler = JxxHandler(),
+  private val xorHandler: XorHandler = XorHandler()
 ) {
   private var eip = 0
 
@@ -19,14 +20,17 @@ class VMSimulator(
         throw RuntimeException("eip is out of bounds eip = ($eip), upperBound = ${vm.instructions.size}")
       }
 
-      when (val instruction = vm.instructions[eip]) {
-        is Add -> eip = addHandler.handle(vm, eip, instruction)
-        is Call -> eip = callHandler.handle(vm, eip, instruction)
-        is Cmp -> eip = cmpHandler.handle(vm, eip, instruction)
-        is Jxx -> eip = jxxHandler.handle(vm, eip, instruction)
-        is Let -> eip = letHandler.handle(vm, eip, instruction)
-        is Mov -> eip = movHandler.handle(vm, eip, instruction)
-        is Ret -> return
+      val instruction = vm.instructions[eip]
+
+      eip = when (instruction.instructionType) {
+        InstructionType.Add -> addHandler.handle(vm, eip, instruction as Add)
+        InstructionType.Call -> callHandler.handle(vm, eip, instruction as Call)
+        InstructionType.Cmp -> cmpHandler.handle(vm, eip, instruction as Cmp)
+        InstructionType.Jxx -> jxxHandler.handle(vm, eip, instruction as Jxx)
+        InstructionType.Let -> letHandler.handle(vm, eip, instruction as Let)
+        InstructionType.Mov -> movHandler.handle(vm, eip, instruction as Mov)
+        InstructionType.Xor -> xorHandler.handle(vm, eip, instruction as Xor)
+        InstructionType.Ret -> return
       }
     }
   }

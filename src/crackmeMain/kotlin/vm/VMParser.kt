@@ -155,9 +155,10 @@ class VMParser(
     val body = line.substring(indexOfFirstSpace)
 
     val instruction = when (instructionName) {
-      "mov" -> parseMov(programLine, body, InstructionType.Mov)
-      "add" -> parseAdd(programLine, body, InstructionType.Add)
-      "cmp" -> parseCmp(programLine, body, InstructionType.Cmp)
+      "mov" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Mov)
+      "add" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Add)
+      "cmp" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Cmp)
+      "xor" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Xor)
       "je",
       "jne",
       "jmp" -> parseJxx(programLine, instructionName, body, InstructionType.Jxx)
@@ -167,6 +168,35 @@ class VMParser(
     }
 
     return vmInstructionObfuscator.obfuscate(instruction)
+  }
+
+  private fun parseGenericTwoOperandsInstruction(programLine: Int, body: String, type: InstructionType): Instruction {
+    if (body.isEmpty()) {
+      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
+    }
+
+    if (body.indexOf(',') == -1) {
+      throw ParsingException(programLine, "Cannot parse operands because there is no \',\' symbol")
+    }
+
+    val (destOperand, srcOperand) = body.split(',')
+      .map { it.trim() }
+
+    val dest = parseOperand(programLine, destOperand, type)
+    val src = parseOperand(programLine, srcOperand, type)
+
+    return when (type) {
+      InstructionType.Add -> Add(dest, src)
+      InstructionType.Cmp -> Cmp(dest, src)
+      InstructionType.Mov -> Mov(dest, src)
+      InstructionType.Xor -> Xor(dest, src)
+      InstructionType.Call,
+      InstructionType.Jxx,
+      InstructionType.Let,
+      InstructionType.Ret -> {
+        throw ParsingException(programLine, "Instruction ${type.instructionName} is not a generic two operands instruction")
+      }
+    }
   }
 
   private fun parseLet(programLine: Int, body: String, type: InstructionType): Instruction {
@@ -254,60 +284,6 @@ class VMParser(
     }
 
     return Jxx(jumpType, labelName)
-  }
-
-  private fun parseCmp(programLine: Int, body: String, type: InstructionType): Instruction {
-    if (body.isEmpty()) {
-      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
-    }
-
-    if (body.indexOf(',') == -1) {
-      throw ParsingException(programLine, "Cannot parse operands because there is no \',\' symbol")
-    }
-
-    val (destOperand, srcOperand) = body.split(',')
-      .map { it.trim() }
-
-    return Cmp(
-      parseOperand(programLine, destOperand, type),
-      parseOperand(programLine, srcOperand, type)
-    )
-  }
-
-  private fun parseAdd(programLine: Int, body: String, type: InstructionType): Instruction {
-    if (body.isEmpty()) {
-      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
-    }
-
-    if (body.indexOf(',') == -1) {
-      throw ParsingException(programLine, "Cannot parse operands because there is no \',\' symbol")
-    }
-
-    val (destOperand, srcOperand) = body.split(',')
-      .map { it.trim() }
-
-    return Add(
-      parseOperand(programLine, destOperand, type),
-      parseOperand(programLine, srcOperand, type)
-    )
-  }
-
-  private fun parseMov(programLine: Int, body: String, type: InstructionType): Instruction {
-    if (body.isEmpty()) {
-      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
-    }
-
-    if (body.indexOf(',') == -1) {
-      throw ParsingException(programLine, "Cannot parse operands because there is no \',\' symbol")
-    }
-
-    val (destOperand, srcOperand) = body.split(',')
-      .map { it.trim() }
-
-    return Mov(
-      parseOperand(programLine, destOperand, type),
-      parseOperand(programLine, srcOperand, type)
-    )
   }
 
   private fun parseOperand(programLine: Int, operandString: String, type: InstructionType): Operand {
