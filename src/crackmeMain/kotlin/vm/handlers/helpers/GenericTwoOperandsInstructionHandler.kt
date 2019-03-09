@@ -1,4 +1,4 @@
-package crackme.vm.handlers
+package crackme.vm.handlers.helpers
 
 import crackme.vm.VM
 import crackme.vm.core.VariableType
@@ -9,6 +9,7 @@ import crackme.vm.operands.*
 
 object GenericTwoOperandsInstructionHandler {
 
+  //TODO: make this function return Long as well as all of the lambdas. This is necessary for vmFlags updating
   fun <T : Instruction> handle(
     vm: VM,
     eip: Int,

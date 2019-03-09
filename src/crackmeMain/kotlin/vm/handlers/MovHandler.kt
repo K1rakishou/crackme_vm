@@ -1,6 +1,7 @@
 package crackme.vm.handlers
 
 import crackme.vm.VM
+import crackme.vm.handlers.helpers.GenericTwoOperandsInstructionHandler
 import crackme.vm.instructions.Mov
 
 class MovHandler : Handler<Mov>() {

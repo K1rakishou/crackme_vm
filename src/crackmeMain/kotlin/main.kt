@@ -31,8 +31,6 @@ fun main() {
         ret
     """
 
-  //TODO: sub instruction
-  //TODO: inc instruction
   //TODO: dec instruction
 
   val vmInstructionObfuscator = SimpleVMInstructionObfuscator()

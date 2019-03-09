@@ -160,6 +160,7 @@ class VMParser(
       "cmp" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Cmp)
       "xor" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Xor)
       "sub" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Sub)
+      "inc" -> parseGenericOneOperandInstruction(programLine, body, InstructionType.Inc)
       "je",
       "jne",
       "jmp" -> parseJxx(programLine, instructionName, body, InstructionType.Jxx)
@@ -169,6 +170,29 @@ class VMParser(
     }
 
     return vmInstructionObfuscator.obfuscate(instruction)
+  }
+
+  private fun parseGenericOneOperandInstruction(programLine: Int, body: String, type: InstructionType): Instruction {
+    if (body.isEmpty()) {
+      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
+    }
+
+    val operand = parseOperand(programLine, body.trim(), type)
+
+    return when (type) {
+      InstructionType.Inc -> Inc(operand)
+      InstructionType.Add,
+      InstructionType.Call,
+      InstructionType.Cmp,
+      InstructionType.Jxx,
+      InstructionType.Let,
+      InstructionType.Mov,
+      InstructionType.Ret,
+      InstructionType.Xor,
+      InstructionType.Sub -> {
+        throw ParsingException(programLine, "Instruction ${type.instructionName} is not a generic one operand instruction")
+      }
+    }
   }
 
   private fun parseGenericTwoOperandsInstruction(programLine: Int, body: String, type: InstructionType): Instruction {
@@ -192,6 +216,7 @@ class VMParser(
       InstructionType.Mov -> Mov(dest, src)
       InstructionType.Xor -> Xor(dest, src)
       InstructionType.Sub -> Sub(dest, src)
+      InstructionType.Inc,
       InstructionType.Call,
       InstructionType.Jxx,
       InstructionType.Let,

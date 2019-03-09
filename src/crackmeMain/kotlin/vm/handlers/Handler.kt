@@ -31,6 +31,17 @@ abstract class Handler<T : Instruction> {
     }
   }
 
+  protected fun putVmMemoryVariableValue(dest: Memory<Variable>, vm: VM, value: Long, eip: Int) {
+    when (dest.operand.variableType) {
+      VariableType.IntType -> vm.vmMemory.putInt(dest.operand.address, value.toInt())
+      VariableType.LongType -> vm.vmMemory.putLong(dest.operand.address, value)
+      VariableType.AnyType,
+      VariableType.StringType -> {
+        throw VmExecutionException(eip, "Variable with operandType (${dest.operand.operandType}) cannot be used with Memory operand")
+      }
+    }
+  }
+
   protected fun putVmMemoryVariableValueFromRegister(dest: Memory<Variable>, vm: VM, src: Register, eip: Int) {
     when (dest.operand.variableType) {
       VariableType.IntType -> vm.vmMemory.putInt(dest.operand.address, vm.registers[src.index].toInt())
