@@ -37,5 +37,6 @@ enum class InstructionType(
   Ret(6, "Ret"),
   Xor(7, "Xor"),
   Sub(8, "Sub"),
-  Inc(9, "Inc")
+  Inc(9, "Inc"),
+  Dec(10, "Dec")
 }
