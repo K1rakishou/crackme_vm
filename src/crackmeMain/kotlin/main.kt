@@ -38,15 +38,15 @@ fun main() {
         ret
     """
 
-  val time: Time = WinTime()
-  val random = Random(GetTickCount64().toLong() * time.getCurrentTime())
+//  val time: Time = WinTime()
+  val random = Random(GetTickCount64().toLong() /** time.getCurrentTime()*/)
 
-  val mutationEngine = SimpleMutationEngine(random)
-  val vmInstructionGenerator = SimpleVMInstructionGenerator(random, mutationEngine)
-  val constantObfuscationEngine = ConstantObfuscationEngine(vmInstructionGenerator)
-  val vmInstructionObfuscator = SimpleVMInstructionObfuscator(constantObfuscationEngine)
+//  val mutationEngine = SimpleMutationEngine(random)
+//  val vmInstructionGenerator = SimpleVMInstructionGenerator(random, mutationEngine)
+//  val constantObfuscationEngine = ConstantObfuscationEngine(vmInstructionGenerator)
+//  val vmInstructionObfuscator = SimpleVMInstructionObfuscator(constantObfuscationEngine)
 
-  val vmParser = VMParser(random, vmInstructionObfuscator)
+  val vmParser = VMParser(random)
   val vm = vmParser.parse(testProgram)
 
   val vmSimulator = VMSimulator()

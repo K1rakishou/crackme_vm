@@ -336,8 +336,31 @@ class VMParser(
           throw ParsingException(programLine, "Cannot find closing bracket (\']\') for operand ($operandString)")
         }
 
-        val operandName = operandString.substring(1, closingBracketIndex).trim()
-        val operand = parseOperand(programLine, operandName, type)
+        val addressingModeStringIndex = operandString.indexOf(" as ")
+        val addressingMode = if (addressingModeStringIndex != -1) {
+          val addressingModeString = operandString.substring(addressingModeStringIndex + 4).trim().toLowerCase()
+          AddressingMode.fromString(addressingModeString) ?: throw ParsingException(programLine, "Cannot determine addressing mode ($addressingModeString)")
+        } else {
+          //default addressing mode when there is no "as ***" keyword with Memory operand
+          AddressingMode.ModeQword
+        }
+
+        val addressingParameters = operandString.substring(1, closingBracketIndex).trim()
+
+        val (operand, offsetOperand) = if (addressingParameters.contains('+')) {
+          if (addressingParameters.count { it == '+'} > 1) {
+            throw ParsingException(programLine, "Only one offset operand allowed ($addressingParameters)")
+          }
+
+          val (operandName, offsetOperandName) = addressingParameters.split('+').map { it.trim() }
+          val operand = parseOperand(programLine, operandName, type)
+          val offsetOperand = parseOperand(programLine, offsetOperandName, type)
+
+          Pair(operand, offsetOperand)
+        } else {
+          val operand = parseOperand(programLine, addressingParameters, type)
+          Pair(operand, null)
+        }
 
         when (operand) {
           is Variable -> {
@@ -349,10 +372,10 @@ class VMParser(
           is Constant -> {
             //don't need to check anything here since it's not a variable
           }
-          else -> throw ParsingException(programLine, "Operand ($operandName) is not supported by Memory operand")
+          else -> throw ParsingException(programLine, "Operand ($operand) is not supported by Memory operand")
         }
 
-        return Memory(operand)
+        return Memory(operand, offsetOperand, addressingMode)
       }
       ch == '-' || ch.isDigit() -> {
         val constantString = numberRegex.find(operandString)?.value

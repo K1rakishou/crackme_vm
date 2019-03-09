@@ -15,10 +15,10 @@ abstract class AbstractMutationEngineTest {
 
     for (i in 0 until count) {
       val mutatedCode = mutator(mutationEngine)
-
-      for (instruction in mutatedCode) {
-        println("[Attempt $i]: $instruction")
-      }
+//
+//      for (instruction in mutatedCode) {
+//        println("[Attempt $i]: $instruction")
+//      }
 
       val vm = VM(random, mutatedCode)
       val vmSimulator = VMSimulator(true)
