@@ -14,23 +14,19 @@ class AddressingModeTest {
     val vm = vmParser.parse(
       """
         let a: String, "GOOD"
-        mov r0, [a] as byte
-        mov r1, [a + 1] as byte
-        mov r2, [a + 2] as byte
-        mov r3, [a + 3] as byte
+        mov r0, [a + 4] as byte
+        mov r1, [a + 5] as byte
+        mov r2, [a + 6] as byte
+        mov r3, [a + 7] as byte
 
-        mov [a + 3] as byte, r0
-        mov [a + 2] as byte, r1
-        mov [a + 1] as byte, r2
-        mov [a] as byte, r3
+        mov [a + 7] as byte, r0
+        mov [a + 6] as byte, r1
+        mov [a + 5] as byte, r2
+        mov [a + 4] as byte, r3
 
         ret
       """
     )
-
-    for (instruction in vm.instructions) {
-      println(instruction)
-    }
 
     val vmSimulator = VMSimulator()
     vmSimulator.simulate(vm)

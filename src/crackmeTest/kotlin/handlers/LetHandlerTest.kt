@@ -19,7 +19,7 @@ class LetHandlerTest {
     val vm = vmParser.parse(
       """
          let a: Int, 1234
-         mov r0, [a]
+         mov r0, [a] as dword
          ret
       """
     )
@@ -35,7 +35,7 @@ class LetHandlerTest {
     val vm = vmParser.parse(
       """
          let a: Int, -1234
-         mov r0, [a]
+         mov r0, [a] as dword
          ret
       """
     )
@@ -51,7 +51,7 @@ class LetHandlerTest {
     val vm = vmParser.parse(
       """
          let a: Int, 7722334455
-         mov r0, [a]
+         mov r0, [a] as qword
          ret
       """
     )

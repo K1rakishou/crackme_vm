@@ -18,8 +18,8 @@ class IncHandler : Handler<Inc>() {
         vm.vmMemory.putLong(address, oldValue + 1)
       },
       handleMemVar = { operand, eip ->
-        val oldValue = getVmMemoryVariableValue(vm, eip, operand.operand)
-        putVmMemoryVariableValue(operand, vm, oldValue + 1, eip)
+        val oldValue = getVmMemoryValueByVariable(vm, eip, operand)
+        putVmMemoryValueByVariable(operand, vm, oldValue + 1, eip)
       },
       handleMemC64 = { operand, _ ->
         val oldValue = vm.vmMemory.getLong(operand.operand.value.toInt())

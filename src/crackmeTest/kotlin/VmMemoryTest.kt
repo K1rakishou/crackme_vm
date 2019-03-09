@@ -12,8 +12,14 @@ class VmMemoryTests {
 
   @Test
   fun testPutGetInt() {
-    vmMemory.putLong(10, 11223344)
-    assertEquals(11223344, vmMemory.getLong(10))
+    vmMemory.putInt(10, 11223344)
+    assertEquals(11223344, vmMemory.getInt(10))
+  }
+
+  @Test
+  fun testPutGetNegativeInt() {
+    vmMemory.putInt(10, -11223344)
+    assertEquals(-11223344, vmMemory.getInt(10))
   }
 
   @Test
@@ -48,6 +54,12 @@ class VmMemoryTests {
   fun testPutGetLong() {
     vmMemory.putLong(55, 1122334455667788)
     assertEquals(1122334455667788, vmMemory.getLong(55))
+  }
+
+  @Test
+  fun testPutGetNegativeLong() {
+    vmMemory.putLong(55, -1122334455667788)
+    assertEquals(-1122334455667788, vmMemory.getLong(55))
   }
 
   @Test

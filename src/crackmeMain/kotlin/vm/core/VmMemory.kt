@@ -17,11 +17,27 @@ class VmMemory(private val size: Int,
       throw RuntimeException("startIndex must be less than endIndex (startIndex = ${startIndex}, endIndex = ${endIndex})")
     }
 
+    if (startIndex < 0 || startIndex > size) {
+      throw VmIndexOutOfBoundsException(startIndex, size)
+    }
+
+    if (endIndex < 0 || endIndex > size) {
+      throw VmIndexOutOfBoundsException(startIndex, size)
+    }
+
     val count = endIndex - startIndex
     val byteArray = ByteArray(count)
     Utils.copyBytes(memory, startIndex, byteArray, 0, count)
 
     return byteArray
+  }
+
+  fun putBytes(index: Int, bytes: ByteArray) {
+    if (index < 0 || index > size) {
+      throw VmIndexOutOfBoundsException(index, size)
+    }
+
+    Utils.copyBytes(bytes, 0, memory, index, bytes.size)
   }
 
   fun alloc(len: Int): Int {
@@ -107,6 +123,38 @@ class VmMemory(private val size: Int,
     return address
   }
 
+  fun putByte(index: Int, value: Byte) {
+    if (eip < 0 || (eip + BYTE_SIZE) > size) {
+      throw EipIsOutOfBoundsException(eip, size)
+    }
+
+    memory[index] = value
+  }
+
+  fun getByte(index: Int): Byte {
+    if (index < 0 || index > size) {
+      throw VmIndexOutOfBoundsException(index, size)
+    }
+
+    return memory[index]
+  }
+
+  fun putShort(index: Int, value: Short) {
+    if (index < 0 || (index + SHORT_SIZE) > size) {
+      throw VmIndexOutOfBoundsException(index, size)
+    }
+
+    Utils.writeShortToArray(index, value, memory)
+  }
+
+  fun getShort(index: Int): Short {
+    if (index < 0 || index > size) {
+      throw VmIndexOutOfBoundsException(index, size)
+    }
+
+    return Utils.readShortFromByteArray(index, memory)
+  }
+
   fun putInt(index: Int, value: Int) {
     if (index < 0 || (index + INT_SIZE) > size) {
       throw VmIndexOutOfBoundsException(index, size)
@@ -176,10 +224,12 @@ class VmMemory(private val size: Int,
   }
 
   class EipIsOutOfBoundsException(val eip: Int, val upper: Int) : Exception("eip is out of bounds (eip = ${eip}, upperBound = ${upper})")
-  class VmIndexOutOfBoundsException(val index: Int, val upper: Int) : Exception("eip is out of bounds (index = ${index}, upperBound = ${upper})")
+  class VmIndexOutOfBoundsException(val index: Int, val upper: Int) : Exception("index is out of bounds (index = ${index}, upperBound = ${upper})")
 
   companion object {
+    const val BYTE_SIZE = 1
+    const val SHORT_SIZE = 2
     const val INT_SIZE = 4
-    const val LONG_SIZE = 4
+    const val LONG_SIZE = 4 //FIXME wtf???? this is supposed to be 8
   }
 }
