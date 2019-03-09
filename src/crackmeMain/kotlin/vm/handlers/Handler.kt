@@ -89,12 +89,40 @@ abstract class Handler<T : Instruction> {
     return when (memoryOperand.operand.variableType) {
       VariableType.IntType -> {
         val address = operand.address + getOffsetOperandValue(vm, eip, offsetOperand)
-        val value = vm.vmMemory.getInt(address).toLong()
+        val value = when (addressingMode) {
+          AddressingMode.ModeByte -> {
+            vm.vmMemory.getByte(address).toLong()
+          }
+          AddressingMode.ModeWord -> {
+            vm.vmMemory.getShort(address).toLong()
+          }
+          AddressingMode.ModeDword -> {
+            vm.vmMemory.getInt(address).toLong()
+          }
+          AddressingMode.ModeQword -> {
+            vm.vmMemory.getLong(address)
+          }
+        }
+
         applyAddressingMode(value, addressingMode)
       }
       VariableType.LongType -> {
         val address = operand.address + getOffsetOperandValue(vm, eip, offsetOperand)
-        val value = vm.vmMemory.getLong(address)
+        val value = when (addressingMode) {
+          AddressingMode.ModeByte -> {
+            vm.vmMemory.getByte(address).toLong()
+          }
+          AddressingMode.ModeWord -> {
+            vm.vmMemory.getShort(address).toLong()
+          }
+          AddressingMode.ModeDword -> {
+            vm.vmMemory.getInt(address).toLong()
+          }
+          AddressingMode.ModeQword -> {
+            vm.vmMemory.getLong(address)
+          }
+        }
+
         applyAddressingMode(value, addressingMode)
       }
       VariableType.StringType -> {
@@ -147,12 +175,39 @@ abstract class Handler<T : Instruction> {
     when (memoryOperand.operand.variableType) {
       VariableType.IntType -> {
         val address = operand.address + getOffsetOperandValue(vm, eip, offsetOperand)
-        //FIXME: unsafe cast
-        vm.vmMemory.putInt(address, applyAddressingMode(value, addressingMode).toInt())
+
+        when (addressingMode) {
+          AddressingMode.ModeByte -> {
+            vm.vmMemory.putByte(address, applyAddressingMode(value, addressingMode).toByte())
+          }
+          AddressingMode.ModeWord -> {
+            vm.vmMemory.putShort(address, applyAddressingMode(value, addressingMode).toShort())
+          }
+          AddressingMode.ModeDword -> {
+            vm.vmMemory.putInt(address, applyAddressingMode(value, addressingMode).toInt())
+          }
+          AddressingMode.ModeQword -> {
+            vm.vmMemory.putLong(address, applyAddressingMode(value, addressingMode))
+          }
+        }
       }
       VariableType.LongType -> {
         val address = operand.address + getOffsetOperandValue(vm, eip, offsetOperand)
-        vm.vmMemory.putLong(address, applyAddressingMode(value, addressingMode))
+
+        when (addressingMode) {
+          AddressingMode.ModeByte -> {
+            vm.vmMemory.putByte(address, applyAddressingMode(value, addressingMode).toByte())
+          }
+          AddressingMode.ModeWord -> {
+            vm.vmMemory.putShort(address, applyAddressingMode(value, addressingMode).toShort())
+          }
+          AddressingMode.ModeDword -> {
+            vm.vmMemory.putInt(address, applyAddressingMode(value, addressingMode).toInt())
+          }
+          AddressingMode.ModeQword -> {
+            vm.vmMemory.putLong(address, applyAddressingMode(value, addressingMode))
+          }
+        }
       }
       VariableType.StringType -> {
         //we need to add 4 here, because first 4 bytes of the string are it's size

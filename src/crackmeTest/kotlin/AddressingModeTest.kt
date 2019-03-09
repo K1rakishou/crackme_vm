@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 class AddressingModeTest {
 
   @Test
-  fun testAddressingMode() {
+  fun testAddressingModeWithStringVariable() {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
@@ -32,5 +32,33 @@ class AddressingModeTest {
     vmSimulator.simulate(vm)
 
     assertEquals("DOOG", vm.vmMemory.getVariableValue("a", VariableType.StringType))
+  }
+
+  @Test
+  fun testAddressingModeWithIntVariable() {
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+        let a: Int, 11223344
+        mov r0, [a] as byte
+        mov r1, [a + 1] as byte
+        mov r2, [a + 2] as byte
+        mov r3, [a + 3] as byte
+
+        mov [a + 3] as byte, r0
+        mov [a + 2] as byte, r1
+        mov [a + 1] as byte, r2
+        mov [a] as byte, r3
+
+        mov r0, [a] as dword
+
+        ret
+      """
+    )
+
+    val vmSimulator = VMSimulator()
+    vmSimulator.simulate(vm)
+
+    assertEquals(809609984, vm.registers[0])
   }
 }

@@ -38,6 +38,7 @@ fun main() {
         ret
     """
 
+  //TODO: hex numbers!!!!!!!
   //TODO: make Let instruction allocate variable on stack instead of the global memory
   //TODO: Introduce 32, 16 and maybe even 8 bit registers
   //TODO: maybe should have no default addressing? It's kinda error prone.
