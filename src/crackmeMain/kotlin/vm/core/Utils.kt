@@ -14,7 +14,7 @@ object Utils {
   fun bytesToHex(bytes: ByteArray): String {
     return bytes
       .asUByteArray()
-      .joinToString("") { it.toString(16).padStart(2, '0') }
+      .joinToString("") { it.toString(16).toUpperCase().padStart(2, '0') }
   }
 
   fun writeShortToArray(offset: Int, value: Short, array: ByteArray) {

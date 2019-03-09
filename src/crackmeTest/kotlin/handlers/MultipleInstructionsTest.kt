@@ -37,4 +37,39 @@ class MultipleInstructionsTest {
     assertEquals(165, vm.registers[0])
   }
 
+  @Test
+  fun test_MultipleInstructionsWithBranching() {
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+        use println(String)
+
+        mov r0, 1
+        mov r1, 3
+        add r0, r1
+        cmp r0, 4
+        je @BAD
+
+        mov r2, 999
+        jmp @GOOD
+@BAD:
+        mov r2, 888
+        let b: String, "BAD"
+        call println([b])
+        mov r0, r2
+        ret
+@GOOD:
+        let a: String, "GOOD"
+        call println([a])
+        mov r0, r2
+        ret
+    """
+    )
+    val vmSimulator = VMSimulator()
+    vmSimulator.simulate(vm)
+    assertEquals(888, vm.registers[0])
+    assertEquals(3, vm.registers[1])
+    assertEquals(888, vm.registers[2])
+  }
+
 }
