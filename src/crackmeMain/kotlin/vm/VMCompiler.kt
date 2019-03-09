@@ -17,7 +17,10 @@ class VMCompiler {
       println("${instruction.toString().padEnd(30)} (rawSize = ${instruction.getInstructionRawSize().toString().padEnd(4)}) (byte code = [${hexStr}])")
     }
 
-    println("result = ${vm.registers[0]}")
+    for (registerIndex in 0 until vm.registers.size) {
+      println("r$registerIndex = ${vm.registers[registerIndex]}")
+    }
+
   }
 
 }

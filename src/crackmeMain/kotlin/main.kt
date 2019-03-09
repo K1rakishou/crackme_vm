@@ -16,16 +16,18 @@ fun main() {
         cmp r0, 4
         je @BAD
 
-        mov r0, 999
-        jmp @EXIT
+        mov r2, 999
+        jmp @GOOD
 @BAD:
-        mov r0, 888
-        let b: String, "Test string"
+        mov r2, 888
+        let b: String, "BAD"
         call println([b])
+        mov r0, r2
         ret
-@EXIT:
-        let a: String, "Hello from VM!"
+@GOOD:
+        let a: String, "GOOD"
         call println([a])
+        mov r0, r2
         ret
     """
 
