@@ -19,7 +19,7 @@ fun main() {
         mov r0, 999
         jmp @EXIT
 @BAD:
-        mov r0, -888
+        mov r0, 888
         let b: String, "Test string"
         call println([b])
         ret
@@ -33,24 +33,11 @@ fun main() {
   val vmParser = VMParser(vmInstructionObfuscator)
   val vm = vmParser.parse(testProgram)
 
-  println("Native functions: ")
-  vm.nativeFunctions.forEach { nativeFunction ->
-    val funcName = nativeFunction.value.type.funcName
-    val parameters = nativeFunction.value.variableTypeList.joinToString(",") { it.str }
-
-    println("$funcName($parameters)")
-  }
-
-  println("Instructions: ")
-  vm.instructions.forEachIndexed { index, instruction ->
-    println("[$index]: $instruction")
-  }
-
   val vmSimulator = VMSimulator()
   val vmCompiler = VMCompiler()
 
   WinFile.withFileDo("bytecode.txt", WinFile.OpenType.Write) { file ->
     vmSimulator.simulate(vm)
-//    vmCompiler.compile(file, vm)
+    vmCompiler.compile(file, vm)
   }
 }

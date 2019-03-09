@@ -1,8 +1,8 @@
-package crackme.vm.instructions
+package crackme.vm.handlers
 
 import crackme.vm.VM
 import crackme.vm.core.VmExecutionException
-import crackme.vm.handlers.Handler
+import crackme.vm.instructions.Cmp
 import crackme.vm.operands.C32
 import crackme.vm.operands.C64
 import crackme.vm.operands.Constant
