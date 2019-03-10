@@ -2,6 +2,7 @@ package sample.helloworld.handlers
 
 import crackme.vm.VMParser
 import crackme.vm.VMSimulator
+import crackme.vm.core.VariableType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -37,4 +38,40 @@ class MultipleInstructionsTest {
     assertEquals(165, vm.registers[0])
   }
 
+  @Test
+  fun testEncryptDecryptString() {
+    val text = "Cipher text. awr awr aw0ith a98tyha973hytou3htouis3htous3htouh"
+
+    //TODO: remove CMPs after making DEC instruction update flags
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+        let originalString: String, "$text"
+        mov r0, originalString
+        add r0, 4
+        mov r1, [originalString] as dword
+
+@ENCRYPTION_LOOP:
+        xor [r0 + r1] as byte, 0x55
+        dec r1
+        cmp r1, 0
+        jne @ENCRYPTION_LOOP
+
+        mov r1, [originalString] as dword
+
+@DECRYPTION_LOOP:
+        xor [r0 + r1] as byte, 0x55
+        dec r1
+        cmp r1, 0
+        jne @DECRYPTION_LOOP
+
+        ret
+      """
+    )
+    val vmSimulator = VMSimulator()
+    vmSimulator.simulate(vm)
+
+    val resultString = vm.vmMemory.getVariableValue<String>("originalString", VariableType.StringType)
+    assertEquals(text, resultString)
+  }
 }

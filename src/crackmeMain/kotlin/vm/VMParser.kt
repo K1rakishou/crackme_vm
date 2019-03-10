@@ -291,7 +291,7 @@ class VMParser(
       throw ParsingException(programLine, "Cannot parse jump operandType from instruction name ($instructionName)")
     }
 
-    val labelName = body.trim().substring(1)
+    val labelName = parseLabel(programLine, body)
     if (labels[labelName] == null) {
       throw ParsingException(programLine, "Label with name ($labelName) does not exist in the labels map")
     }
@@ -347,6 +347,16 @@ class VMParser(
         } else {
           val operand = parseOperand(programLine, addressingParameters, type)
           Pair(operand, null)
+        }
+
+        if (operand is Memory<*>) {
+          throw ParsingException(programLine, "Cannot use nested memory operands ($operandString)")
+        }
+
+        offsetOperand?.let {
+          if (it is Memory<*>) {
+            throw ParsingException(programLine, "Cannot use Memory as an offset operand ($operandString)")
+          }
         }
 
         when (operand) {

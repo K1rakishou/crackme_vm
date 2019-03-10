@@ -52,12 +52,12 @@ object GenericOneOperandInstructionHandler {
               is C64 -> handleMemC64(memoryOperand as Memory<C64>, eip)
               is C32 -> handleMemC32(memoryOperand as Memory<C32>, eip)
               else -> {
-                throw VmExecutionException(eip, "Operand (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
+                throw VmExecutionException(eip, "Operand of type (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
               }
             }
           }
           else -> {
-            throw VmExecutionException(eip, "Operand (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
+            throw VmExecutionException(eip, "Operand of type (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
           }
         }
       }
@@ -66,12 +66,12 @@ object GenericOneOperandInstructionHandler {
           is C64 -> handleC64(constant, eip)
           is C32 -> handleC32(constant, eip)
           else -> {
-            throw VmExecutionException(eip, "Operand (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
+            throw VmExecutionException(eip, "Operand of type (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
           }
         }
       }
       else -> {
-        throw VmExecutionException(eip, "Operand (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
+        throw VmExecutionException(eip, "Operand of type (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
       }
     }
   }

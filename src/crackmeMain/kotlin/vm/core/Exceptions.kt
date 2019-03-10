@@ -10,7 +10,7 @@ class ParsingException(
 class VmExecutionException(
   eip: Int,
   message: String
-) : Exception("Error at $eip instruction, $message")
+) : Exception("Error at ${eip + 1}th instruction, $message")
 
 class ObfuscationException(
   inputOperand: Operand,

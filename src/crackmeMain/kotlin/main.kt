@@ -15,8 +15,6 @@ import kotlin.random.Random
 
 fun main() {
   val testProgram = """
-        use println(String)
-
         mov r0, 1
         mov r1, 3
         add r0, r1
@@ -27,15 +25,9 @@ fun main() {
         jmp @GOOD
 @BAD:
         mov r2, 888
-        let b: String, "BAD"
-        push [b] as dword
-        call println()
         mov r0, r2
         ret
 @GOOD:
-        let a: String, "GOOD"
-        push [a] as dword
-        call println()
         mov r0, r2
         ret
     """

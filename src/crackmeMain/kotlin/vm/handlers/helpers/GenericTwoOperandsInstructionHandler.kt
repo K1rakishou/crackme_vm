@@ -30,14 +30,20 @@ object GenericTwoOperandsInstructionHandler {
     handle_Reg_Reg: (dest: Register, src: Register, eip: Int) -> Unit,
     //instr r0, abc
     handle_Reg_Var: (dest: Register, src: Variable, eip: Int) -> Unit,
-    //mov [r0], r0
+    //instr [r0], r0
     handle_MemReg_Reg: (dest: Memory<Register>, src: Register, eip: Int) -> Unit,
-    //mov [abc], r0
+    //instr [abc], r0
     handle_MemVar_Reg: (dest: Memory<Variable>, src: Register, eip: Int) -> Unit,
-    //mov [1122334455667788], r0
+    //instr [1122334455667788], r0
     handle_MemC64_Reg: (dest: Memory<C64>, src: Register, eip: Int) -> Unit,
-    //mov [11223344], r0
-    handle_MemC32_Reg: (dest: Memory<C32>, src: Register, eip: Int) -> Unit
+    //instr [11223344], r0
+    handle_MemC32_Reg: (dest: Memory<C32>, src: Register, eip: Int) -> Unit,
+    //instr [r0], 1234
+    handle_MemReg_Const: (dest: Memory<Register>, src: Constant, eip: Int) -> Unit,
+    //instr [abc], r0
+    handle_MemVar_Const: (dest: Memory<Variable>, src: Constant, eip: Int) -> Unit/*,
+    //instr [11223344], r0
+    handle_MemC32_Const: (dest: Memory<C32>, src: Constant, eip: Int) -> Unit*/
   ) {
     if (instruction !is GenericTwoOperandsInstruction) {
       throw RuntimeException("Not implemented for ${instruction.instructionType.instructionName}")
@@ -49,7 +55,7 @@ object GenericTwoOperandsInstructionHandler {
           is Constant -> {
             if (srcOperand is VmString) {
               //instr r0, "test"
-              throw VmExecutionException(eip, "Operand (${srcOperand.operandName}) cannot be used as source with instruction ($instruction)")
+              throw VmExecutionException(eip, "Operand of type (${srcOperand.operandName}) cannot be used as source with instruction ($instruction)")
             }
 
             when (srcOperand) {
@@ -69,12 +75,12 @@ object GenericTwoOperandsInstructionHandler {
                   //instr r0, [11223344]
                   is C32 -> handle_Reg_MemC32(instruction.dest as Register, instruction.src as Memory<C32>, eip)
                   //instr r0, ["test"] etc
-                  else -> throw VmExecutionException(eip, "Operand (${instruction.src.operandName}) cannot be used as source with instruction ($instruction)")
+                  else -> throw VmExecutionException(eip, "Operand of type (${instruction.src.operandName}) cannot be used as source with instruction ($instruction)")
                 }
               }
               is Memory<*> -> {
                 //instr r0, [[???]]
-                throw VmExecutionException(eip, "Operand (${(instruction.src as Memory<*>).operand.operandName}) cannot be used as Memory operand")
+                throw VmExecutionException(eip, "Operand of type (${(instruction.src as Memory<*>).operand.operandName}) cannot be used as Memory operand")
               }
               is Register -> {
                 //instr r0, [r0]
@@ -82,7 +88,6 @@ object GenericTwoOperandsInstructionHandler {
               }
               is Variable -> {
                 //instr r0, [abc]
-                val variableType = ((instruction.src as Memory<*>).operand as Variable).variableType
                 handle_Reg_MemVar(instruction.dest as Register, instruction.src as Memory<Variable>, eip)
               }
             }
@@ -99,11 +104,12 @@ object GenericTwoOperandsInstructionHandler {
           //instr [abc], r0
           //instr [123], r0
           is Register -> {
+            val sourceReg = instruction.src as Register
+
             when ((instruction.dest as Memory<*>).operand) {
               is Register -> {
-                //mov [r0], r0
-                //FIXME: probably a bug here
-                handle_MemReg_Reg(instruction.dest as Memory<Register>, instruction.src as Register, eip)
+                //instr [r0], r0
+                handle_MemReg_Reg(instruction.dest as Memory<Register>, sourceReg, eip)
               }
               is Variable -> {
                 //instr [abc], r0
@@ -111,15 +117,15 @@ object GenericTwoOperandsInstructionHandler {
                   VariableType.IntType,
                   VariableType.LongType,
                   VariableType.StringType -> {
-                    handle_MemVar_Reg(instruction.dest as Memory<Variable>, instruction.src as Register, eip)
+                    handle_MemVar_Reg(instruction.dest as Memory<Variable>, sourceReg, eip)
                   }
                 }
               }
               is Constant -> {
                 when ((instruction.dest as Memory<*>).operand) {
                   //instr [1122334455667788], r0
-                  is C64 -> handle_MemC64_Reg(instruction.dest as Memory<C64>, instruction.src as Register, eip)
-                  is C32 -> handle_MemC32_Reg(instruction.dest as Memory<C32>, instruction.src as Register, eip)
+                  is C64 -> handle_MemC64_Reg(instruction.dest as Memory<C64>, sourceReg, eip)
+                  is C32 -> handle_MemC32_Reg(instruction.dest as Memory<C32>, sourceReg, eip)
                   is VmString -> {
                     throw VmExecutionException(eip, "VmString cannot be used as a memory address")
                   }
@@ -132,12 +138,48 @@ object GenericTwoOperandsInstructionHandler {
             }
           }
           //instr [123], 1234
-          is Constant,
+          //instr [r0], 1234
+          is Constant -> {
+            val sourceConst = instruction.src as Constant
+
+            when ((instruction.dest as Memory<*>).operand) {
+              is Register -> {
+                //instr [r0], 1234
+                handle_MemReg_Const(instruction.dest as Memory<Register>, sourceConst, eip)
+              }
+              is Variable -> {
+                //instr [abc], r0
+                when (val variableType = ((instruction.dest as Memory<*>).operand as Variable).variableType) {
+                  VariableType.IntType,
+                  VariableType.LongType,
+                  VariableType.StringType -> {
+                    handle_MemVar_Const(instruction.dest as Memory<Variable>, sourceConst, eip)
+                  }
+                }
+              }
+              is Constant -> {
+                when ((instruction.dest as Memory<*>).operand) {
+                  //FIXME: not supported for now
+                  //instr [11223344], r0
+//                  is C32 -> handle_MemC32_Const(instruction.dest as Memory<C32>, sourceConst, eip)
+                  //instr [1122334455667788], r0
+                  is C64,
+                  is VmString -> {
+                    throw VmExecutionException(eip, "VmString cannot be used as a memory address")
+                  }
+                }
+              }
+              is Memory<*> -> {
+                //instr [[???]], r0
+                throw VmExecutionException(eip, "Operand (${(instruction.dest as Memory<*>).operand.operandName}) cannot be used as Memory operand")
+              }
+            }
+          }
           //instr [123], abc
           is Variable,
             //instr [123], [1234]
           is Memory<*> -> {
-            throw VmExecutionException(eip, "Operand (${instruction.dest.operandName}) cannot be used as destination with instruction ($instruction)")
+            throw VmExecutionException(eip, "Operand of type (${instruction.src.operandName}) cannot be used as a source with instruction ($instruction)")
           }
         }
       }
@@ -145,7 +187,7 @@ object GenericTwoOperandsInstructionHandler {
         //instr 123, *
       is Variable -> {
         //instr abc, *
-        throw VmExecutionException(eip, "Operand (${instruction.dest.operandName}) cannot be used as destination with instruction ($instruction)")
+        throw VmExecutionException(eip, "Operand of type (${instruction.dest.operandName}) cannot be used asa destination with instruction ($instruction)")
       }
     }
   }
