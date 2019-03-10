@@ -28,12 +28,14 @@ fun main() {
 @BAD:
         mov r2, 888
         let b: String, "BAD"
-        call println([b])
+        push [b] as dword
+        call println()
         mov r0, r2
         ret
 @GOOD:
         let a: String, "GOOD"
-        call println([a])
+        push [a] as dword
+        call println()
         mov r0, r2
         ret
     """

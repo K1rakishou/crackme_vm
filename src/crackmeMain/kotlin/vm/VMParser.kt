@@ -341,8 +341,7 @@ class VMParser(
           val addressingModeString = operandString.substring(addressingModeStringIndex + 4).trim().toLowerCase()
           AddressingMode.fromString(addressingModeString) ?: throw ParsingException(programLine, "Cannot determine addressing mode ($addressingModeString)")
         } else {
-          //default addressing mode when there is no "as ***" keyword with Memory operand
-          AddressingMode.ModeQword
+          throw ParsingException(programLine, "Cannot determine addressing mode ($operandString)")
         }
 
         val addressingParameters = operandString.substring(1, closingBracketIndex).trim()
