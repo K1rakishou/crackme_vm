@@ -39,7 +39,7 @@ class AddressingModeTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        let a: Int, 11223344
+        let a: Int, 0x11223344
         mov r0, [a] as byte
         mov r1, [a + 1] as byte
         mov r2, [a + 2] as byte
@@ -59,6 +59,6 @@ class AddressingModeTest {
     val vmSimulator = VMSimulator()
     vmSimulator.simulate(vm)
 
-    assertEquals(809609984, vm.registers[0])
+    assertEquals(0x44332211, vm.registers[0])
   }
 }

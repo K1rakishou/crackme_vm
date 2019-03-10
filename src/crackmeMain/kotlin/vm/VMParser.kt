@@ -378,12 +378,12 @@ class VMParser(
         return Memory(operand, offsetOperand, addressingMode)
       }
       ch == '-' || ch.isDigit() -> {
-        val constantString = numberRegex.find(operandString)?.value
+        val constantString = hexNumberRegex.find(operandString)?.value
         if (constantString == null) {
           throw ParsingException(programLine, "Cannot parse constant operand ($operandString)")
         }
 
-        return extractConstant(programLine, constantString)
+        return extractConstant(programLine, constantString.toLowerCase())
       }
       ch == '\"' -> {
         val stringEndIndex = operandString.indexOf('\"', 1)
@@ -446,12 +446,32 @@ class VMParser(
       throw ParsingException(programLine, "Constant is empty")
     }
 
-    val extractedValue32 = constantString.toIntOrNull()
+    val isNegative = constantString.startsWith('-')
+    val isHex = constantString.contains("0x")
+
+    if (isNegative && isHex) {
+      throw ParsingException(programLine, "Numeric constant cannot be hexadecimal and negative and the same time!")
+    }
+
+    //remove the '0x' at the beginning of the string if the string is hexadecimal
+    val string = if (isHex) {
+      constantString.substring(2)
+    } else {
+      constantString
+    }
+
+    val radix = if (isHex) {
+      16
+    } else {
+      10
+    }
+
+    val extractedValue32 = string.toIntOrNull(radix)
     if (extractedValue32 != null) {
       return C32(extractedValue32)
     }
 
-    val extractedValue64 = constantString.toLongOrNull()
+    val extractedValue64 = string.toLongOrNull(radix)
     if (extractedValue64 == null) {
       throw ParsingException(programLine, "Cannot parse constant ($extractedValue64), unknown error")
     }
@@ -461,6 +481,7 @@ class VMParser(
 
   companion object {
     val numberRegex = Regex("-?\\d+")
+    val hexNumberRegex = Regex("[(-|0x)?0-9abcdefABCDEF]+")
     val wordRegex = Regex("\\w+")
     val labelRegex = Regex("@([a-zA-Z]+)")
   }
