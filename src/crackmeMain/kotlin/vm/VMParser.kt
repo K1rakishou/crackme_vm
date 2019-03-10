@@ -270,37 +270,18 @@ class VMParser(
   }
 
   private fun parseCall(programLine: Int, body: String, type: InstructionType): Instruction {
-    val functionBody = body.trim()
-    if (functionBody.isEmpty()) {
+    val functionName = body.trim()
+    if (functionName.isEmpty()) {
       throw ParsingException(programLine, "Function body is empty")
     }
 
-    val parametersStart = functionBody.indexOf('(')
-    if (parametersStart == -1) {
-      throw ParsingException(programLine, "Cannot parse function's variableTypeList start")
-    }
-
-    val parametersEnd = functionBody.indexOf(')', parametersStart)
-    if (parametersEnd == -1) {
-      throw ParsingException(programLine, "Cannot parse function's variableTypeList end")
-    }
-
-    val functionName = functionBody.substring(0, parametersStart)
     val functionType = NativeFunctionType.fromString(functionName)
     if (functionType == null) {
       throw ParsingException(programLine, "Cannot parse function operandType ($functionName)")
     }
 
-    //"parametersStart + 1" to skip the opening bracket
-    val operandsList = functionBody.substring(parametersStart + 1, parametersEnd).split(',')
-
-    val operands = operandsList
-      .map { operandString -> operandString.trim() }
-      .map { operandString -> parseOperand(programLine, operandString, type) }
-
     return Call(
-      functionType,
-      operands
+      functionType
     )
   }
 

@@ -18,13 +18,19 @@ class NativeFunctionsTest {
       """
         use testAddNumbers(Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int)
 
-        mov r0, 1
-        mov r1, 2
-        mov r2, 3
-        mov r3, 4
-        mov r4, 5
+        push 10
+        push 1
+        push 2
+        push 3
+        push 4
+        push 5
+        push 6
+        push 7
+        push 8
+        push 9
+        push 10
 
-        call testAddNumbers(10, r0, r1, r2, r3, r4, 6, 7, 8, 9, 10)
+        call testAddNumbers
 
         ret
       """

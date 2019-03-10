@@ -47,9 +47,8 @@ class PushHandler : Handler<Push>() {
         vm.vmStack.push64(operand.value)
       },
       handleC32 = { operand, eip ->
-        //TODO
-        //push64 here too as well because other wise we can't fit this into a register, so 64 should be default for constants
-        //and probably for Mem<Const> as well
+        //TODO addressing mode for push/pop
+        //push64 here because C64 is the default constant size
         vm.vmStack.push64(operand.value.toLong())
       }
     )

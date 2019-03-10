@@ -7,28 +7,25 @@ import crackme.vm.operands.*
 
 object NativeFunctionCallbacks {
 
-  private val vmTestAddNumbers = NativeFunctionType.TestAddNumbers to fun (vm: VM, parameters: List<Any>): Long {
-    if (parameters.isEmpty()) {
-      throw BadParametersCount(NativeFunctionType.TestAddNumbers, 1, parameters.size)
+  private fun <T : Any> getParameterFromStack(vm: VM, variableType: VariableType): T {
+    return when (variableType) {
+      //TODO addressing mode for push/pop
+      //pop64 here because C64 is the default constant size
+      VariableType.IntType -> vm.vmStack.pop64() as T
+      VariableType.LongType -> vm.vmStack.pop64() as T
+      //TODO addressing mode for push/pop
+      //pop64 here because C64 is the default constant size
+      VariableType.StringType -> vm.vmStack.pop64() as T
+      VariableType.AnyType -> throw RuntimeException("AnyType not supported")
     }
+  }
 
-    val paramsCount = parameters[0] as C32
+  private val vmTestAddNumbers = NativeFunctionType.TestAddNumbers to fun (vm: VM, parameters: List<VariableType>): Long {
+    val paramsCount = getParameterFromStack<Int>(vm, parameters[0])
     var sum = 0L
 
-    for (i in 0 until paramsCount.value) {
-      val operand = parameters[i + 1] as Operand
-
-      when (operand) {
-        is Constant -> {
-          when (operand) {
-            is C32 -> sum += operand.value
-            is C64 -> sum += operand.value
-            else -> throw RuntimeException("Not implemented for ${operand.operandName}")
-          }.safe
-        }
-        is Register -> sum += vm.registers[operand.index]
-        else -> throw RuntimeException("Not implemented for ${operand.operandName}")
-      }.safe
+    for (i in 0 until paramsCount) {
+      sum += getParameterFromStack<Int>(vm, parameters[i + 1])
     }
 
     return sum
@@ -129,13 +126,13 @@ object NativeFunctionCallbacks {
   }
 
   private val parametersMap = mapOf(
-    vmTestAddNumbers,
-    vmPrintlnCallback,
-    vmSizeofCallback,
-    vmAllocCallback
+    vmTestAddNumbers
+//    vmPrintlnCallback,
+//    vmSizeofCallback,
+//    vmAllocCallback
   )
 
-  fun getCallbackByFunctionType(type: NativeFunctionType): (vm: VM, parameters: List<Any>) -> Long {
+  fun getCallbackByFunctionType(type: NativeFunctionType): (vm: VM, List<VariableType>) -> Long {
     if (parametersMap[type] == null) {
       throw UnknownFunctionType(type)
     }

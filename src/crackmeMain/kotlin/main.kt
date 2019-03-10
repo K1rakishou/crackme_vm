@@ -40,7 +40,7 @@ fun main() {
         ret
     """
 
-  //TODO: maybe should have no default addressing? It's kinda error prone.
+  //TODO: rework println and other native functions
   //TODO: make Let instruction allocate variable on stack instead of the global memory
   //TODO: Introduce 32, 16 and maybe even 8 bit registers
 

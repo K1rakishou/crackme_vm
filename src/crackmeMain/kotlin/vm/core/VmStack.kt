@@ -17,25 +17,6 @@ class VmStack(
 
     Utils.writeLongToArray(sp, value, stack)
     sp += LONG_SIZE
-
-    println("push: sp = ${sp}, value = ${value}, stacktop = ${peek64()}")
-  }
-
-  fun pop64(): Long {
-    println("pop: sp = ${sp}, stacktop = ${peek64()}")
-
-    if (sp - LONG_SIZE < 0) {
-      throw UnderflowException()
-    }
-
-    sp -= LONG_SIZE
-    val value = Utils.readLongFromByteArray(sp, stack)
-
-    return value
-  }
-
-  fun peek64(): Long {
-    return Utils.readLongFromByteArray(sp - LONG_SIZE, stack)
   }
 
   fun push32(value: Int) {
@@ -47,6 +28,17 @@ class VmStack(
     sp += INT_SIZE
   }
 
+  fun pop64(): Long {
+    if (sp - LONG_SIZE < 0) {
+      throw UnderflowException()
+    }
+
+    sp -= LONG_SIZE
+    val value = Utils.readLongFromByteArray(sp, stack)
+
+    return value
+  }
+
   fun pop32(): Int {
     if (sp - INT_SIZE < 0) {
       throw UnderflowException()
@@ -56,6 +48,10 @@ class VmStack(
     val value = Utils.readIntFromArray(sp, stack)
 
     return value
+  }
+
+  fun peek64(): Long {
+    return Utils.readLongFromByteArray(sp - LONG_SIZE, stack)
   }
 
   fun peek32(): Int {
