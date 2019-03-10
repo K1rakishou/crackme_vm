@@ -23,7 +23,11 @@ object GenericOneOperandInstructionHandler {
     //instr [1122334455667788]
     handleMemC64: (operand: Memory<C64>, eip: Int) -> Unit,
     //instr [11223344]
-    handleMemC32: (operand: Memory<C32>, eip: Int) -> Unit
+    handleMemC32: (operand: Memory<C32>, eip: Int) -> Unit,
+    //instr 11223344
+    handleC64: (operand: C64, eip: Int) -> Unit,
+    //instr 1122334455667788
+    handleC32: (operand: C32, eip: Int) -> Unit
   ) {
     if (instruction !is GenericOneOperandInstruction) {
       throw RuntimeException("Not implemented for ${instruction.instructionType.instructionName}")
@@ -53,6 +57,15 @@ object GenericOneOperandInstructionHandler {
               }
             }
           }
+          else -> {
+            throw VmExecutionException(eip, "Operand (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
+          }
+        }
+      }
+      is Constant -> {
+        when (val constant = instruction.operand) {
+          is C64 -> handleC64(constant, eip)
+          is C32 -> handleC32(constant, eip)
           else -> {
             throw VmExecutionException(eip, "Operand (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
           }

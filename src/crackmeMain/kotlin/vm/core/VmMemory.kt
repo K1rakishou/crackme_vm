@@ -2,11 +2,15 @@ package crackme.vm.core
 
 import kotlin.random.Random
 
-class VmMemory(private val size: Int,
-               private val random: Random) {
-  private var eip = 0
+class VmMemory(
+  private val size: Int,
+  private val random: Random
+) {
+  var ip = 0
+    private set
+
   private val variables = mutableMapOf<String, Pair<Int, VariableType>>()
-  private val memory = ByteArray(size) { 0 } //random.nextBytes(size)
+  private val memory = ByteArray(size) { 0 } //TODO: random.nextBytes(size)
 
   fun isVariableDefined(variableName: String): Boolean {
     return variables.containsKey(variableName)
@@ -41,12 +45,12 @@ class VmMemory(private val size: Int,
   }
 
   fun alloc(len: Int): Int {
-    if (eip < 0 || (eip + len) > size) {
-      throw EipIsOutOfBoundsException(eip, eip + len)
+    if (ip < 0 || (ip + len) > size) {
+      throw EipIsOutOfBoundsException(ip, ip + len)
     }
 
-    val address = eip
-    eip += len
+    val address = ip
+    ip += len
 
     return address
   }
@@ -93,11 +97,11 @@ class VmMemory(private val size: Int,
       VariableType.AnyType -> throw RuntimeException("Cannot use Any as a type of the variable")
     }
 
-    if (eip < 0 || (eip + variableSize) > size) {
-      throw EipIsOutOfBoundsException(eip, eip + variableSize)
+    if (ip < 0 || (ip + variableSize) > size) {
+      throw EipIsOutOfBoundsException(ip, ip + variableSize)
     }
 
-    val address = eip
+    val address = ip
     variables.put(variableName, Pair(address, variableType))
 
     when (variableType) {
@@ -107,25 +111,25 @@ class VmMemory(private val size: Int,
       VariableType.AnyType -> throw RuntimeException("Cannot use Any as variable type")
     }
 
-    eip += variableSize
+    ip += variableSize
     return address
   }
 
   private fun allocInt(value: Int): Int {
-    if (eip < 0 || (eip + INT_SIZE) > size) {
-      throw EipIsOutOfBoundsException(eip, size)
+    if (ip < 0 || (ip + INT_SIZE) > size) {
+      throw EipIsOutOfBoundsException(ip, size)
     }
 
-    val address = eip
-    Utils.writeIntToArray(eip, value, memory)
+    val address = ip
+    Utils.writeIntToArray(ip, value, memory)
 
-    eip += INT_SIZE
+    ip += INT_SIZE
     return address
   }
 
   fun putByte(index: Int, value: Byte) {
-    if (eip < 0 || (eip + BYTE_SIZE) > size) {
-      throw EipIsOutOfBoundsException(eip, size)
+    if (ip < 0 || (ip + BYTE_SIZE) > size) {
+      throw EipIsOutOfBoundsException(ip, size)
     }
 
     memory[index] = value
@@ -180,14 +184,14 @@ class VmMemory(private val size: Int,
   }
 
   fun allocLong(value: Long): Int {
-    if (eip < 0 || (eip + LONG_SIZE) > size) {
-      throw EipIsOutOfBoundsException(eip, size)
+    if (ip < 0 || (ip + LONG_SIZE) > size) {
+      throw EipIsOutOfBoundsException(ip, size)
     }
 
-    val address = eip
-    Utils.writeLongToArray(eip, value, memory)
+    val address = ip
+    Utils.writeLongToArray(ip, value, memory)
 
-    eip += LONG_SIZE
+    ip += LONG_SIZE
     return address
   }
 
@@ -200,14 +204,14 @@ class VmMemory(private val size: Int,
   }
 
   fun allocString(value: String): Int {
-    if (eip < 0 || (eip + value.length) > size) {
-      throw EipIsOutOfBoundsException(eip, size)
+    if (ip < 0 || (ip + value.length) > size) {
+      throw EipIsOutOfBoundsException(ip, size)
     }
 
     val address = allocInt(value.length)
-    Utils.copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, eip, value.length)
+    Utils.copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, ip, value.length)
 
-    eip += value.length
+    ip += value.length
     return address
   }
 
@@ -223,7 +227,7 @@ class VmMemory(private val size: Int,
     return String(bytes.map { it.toChar() }.toCharArray())
   }
 
-  class EipIsOutOfBoundsException(val eip: Int, val upper: Int) : Exception("eip is out of bounds (eip = ${eip}, upperBound = ${upper})")
+  class EipIsOutOfBoundsException(val ip: Int, val upper: Int) : Exception("ip is out of bounds (ip = ${ip}, upperBound = ${upper})")
   class VmIndexOutOfBoundsException(val index: Int, val upper: Int) : Exception("index is out of bounds (index = ${index}, upperBound = ${upper})")
 
   companion object {

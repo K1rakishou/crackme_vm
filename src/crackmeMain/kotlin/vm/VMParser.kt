@@ -79,7 +79,7 @@ class VMParser(
       nativeFunctions,
       mutableListOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L),
       labels,
-      VmStack(1024),
+      VmStack(1024, random),
       vmMemory,
       vmFlags
     )
@@ -164,6 +164,8 @@ class VMParser(
       "sub" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Sub)
       "inc" -> parseGenericOneOperandInstruction(programLine, body, InstructionType.Inc)
       "dec" -> parseGenericOneOperandInstruction(programLine, body, InstructionType.Dec)
+      "push" -> parseGenericOneOperandInstruction(programLine, body, InstructionType.Push)
+      "pop" -> parseGenericOneOperandInstruction(programLine, body, InstructionType.Pop)
       "je",
       "jne",
       "jmp" -> parseJxx(programLine, instructionName, body, InstructionType.Jxx)
@@ -185,6 +187,8 @@ class VMParser(
     return when (type) {
       InstructionType.Inc -> Inc(operand)
       InstructionType.Dec -> Dec(operand)
+      InstructionType.Push -> Push(operand)
+      InstructionType.Pop -> Pop(operand)
       InstructionType.Add,
       InstructionType.Call,
       InstructionType.Cmp,
@@ -220,6 +224,8 @@ class VMParser(
       InstructionType.Mov -> Mov(dest, src)
       InstructionType.Xor -> Xor(dest, src)
       InstructionType.Sub -> Sub(dest, src)
+      InstructionType.Push,
+      InstructionType.Pop,
       InstructionType.Dec,
       InstructionType.Inc,
       InstructionType.Call,
@@ -339,7 +345,8 @@ class VMParser(
         val addressingModeStringIndex = operandString.indexOf(" as ")
         val addressingMode = if (addressingModeStringIndex != -1) {
           val addressingModeString = operandString.substring(addressingModeStringIndex + 4).trim().toLowerCase()
-          AddressingMode.fromString(addressingModeString) ?: throw ParsingException(programLine, "Cannot determine addressing mode ($addressingModeString)")
+          AddressingMode.fromString(addressingModeString)
+            ?: throw ParsingException(programLine, "Cannot determine addressing mode ($addressingModeString)")
         } else {
           throw ParsingException(programLine, "Cannot determine addressing mode ($operandString)")
         }
@@ -347,7 +354,7 @@ class VMParser(
         val addressingParameters = operandString.substring(1, closingBracketIndex).trim()
 
         val (operand, offsetOperand) = if (addressingParameters.contains('+')) {
-          if (addressingParameters.count { it == '+'} > 1) {
+          if (addressingParameters.count { it == '+' } > 1) {
             throw ParsingException(programLine, "Only one offset operand allowed ($addressingParameters)")
           }
 

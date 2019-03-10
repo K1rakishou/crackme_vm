@@ -14,7 +14,7 @@ class VM(
   val nativeFunctions: Map<NativeFunctionType, NativeFunction> = mapOf(),
   val registers: MutableList<Long> = mutableListOf(0, 0, 0, 0, 0, 0, 0, 0),
   val labels: MutableMap<String, Int> = mutableMapOf(),
-  val vmStack: VmStack = VmStack(),
+  val vmStack: VmStack = VmStack(1024, random),
   val vmMemory: VmMemory = VmMemory(1024, random),
   val vmFlags: VmFlags = VmFlags()
 )

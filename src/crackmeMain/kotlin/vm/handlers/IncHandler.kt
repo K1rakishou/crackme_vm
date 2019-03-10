@@ -1,6 +1,7 @@
 package crackme.vm.handlers
 
 import crackme.vm.VM
+import crackme.vm.core.VmExecutionException
 import crackme.vm.handlers.helpers.GenericOneOperandInstructionHandler
 import crackme.vm.instructions.Inc
 
@@ -28,6 +29,12 @@ class IncHandler : Handler<Inc>() {
       handleMemC32 = { operand, _ ->
         val oldValue = vm.vmMemory.getInt(operand.operand.value)
         vm.vmMemory.putInt(operand.operand.value, oldValue + 1)
+      },
+      handleC64 = { _, eip ->
+        throw VmExecutionException(eip, "Cannot inc C64")
+      },
+      handleC32 = { _, eip ->
+        throw VmExecutionException(eip, "Cannot inc C32")
       }
     )
 

@@ -14,14 +14,16 @@ class VMSimulator(
   private val xorHandler: XorHandler = XorHandler(),
   private val subHandler: SubHandler = SubHandler(),
   private val incHandler: IncHandler = IncHandler(),
-  private val decHandler: DecHandler = DecHandler()
+  private val decHandler: DecHandler = DecHandler(),
+  private val pushHandler: PushHandler = PushHandler(),
+  private val popHandler: PopHandler = PopHandler()
 ) {
   private var eip = 0
 
   fun simulate(vm: VM) {
     while (true) {
       if (eip < 0 || eip > vm.instructions.size) {
-        throw RuntimeException("eip is out of bounds eip = ($eip), upperBound = ${vm.instructions.size}")
+        throw RuntimeException("ip is out of bounds ip = ($eip), upperBound = ${vm.instructions.size}")
       }
 
       val instruction = if (debugMode) {
@@ -41,6 +43,8 @@ class VMSimulator(
         InstructionType.Sub -> subHandler.handle(vm, eip, instruction as Sub)
         InstructionType.Inc -> incHandler.handle(vm, eip, instruction as Inc)
         InstructionType.Dec -> decHandler.handle(vm, eip, instruction as Dec)
+        InstructionType.Push -> pushHandler.handle(vm, eip, instruction as Push)
+        InstructionType.Pop -> popHandler.handle(vm, eip, instruction as Pop)
         InstructionType.Ret -> return
       }
     }

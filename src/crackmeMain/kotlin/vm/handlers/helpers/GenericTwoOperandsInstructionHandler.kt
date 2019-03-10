@@ -57,7 +57,7 @@ object GenericTwoOperandsInstructionHandler {
               is C64 -> handle_Reg_C64(instruction.dest as Register, srcOperand, eip)
               //instr r0, 11223344
               is C32 -> handle_Reg_C32(instruction.dest as Register, srcOperand, eip)
-              else -> throw VmExecutionException(eip, "getConstantValue not implemented for constant operandType (${srcOperand.operandName})")
+              else -> throw VmExecutionException(eip, "getConstantValueFromVmMemory not implemented for constant operandType (${srcOperand.operandName})")
             }
           }
           is Memory<*> -> {

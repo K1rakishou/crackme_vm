@@ -1,6 +1,7 @@
 package crackme.vm.handlers
 
 import crackme.vm.VM
+import crackme.vm.core.VmExecutionException
 import crackme.vm.handlers.helpers.GenericOneOperandInstructionHandler
 import crackme.vm.instructions.Dec
 
@@ -13,6 +14,7 @@ class DecHandler : Handler<Dec>() {
       instruction,
       handleReg = { operand, _ -> --vm.registers[operand.index] },
       handleMemReg = { operand, _ ->
+        //FIXME: probably this wont work
         val address = vm.registers[operand.operand.index].toInt()
         val oldValue = vm.vmMemory.getLong(address)
         vm.vmMemory.putLong(address, oldValue - 1)
@@ -28,6 +30,12 @@ class DecHandler : Handler<Dec>() {
       handleMemC32 = { operand, _ ->
         val oldValue = vm.vmMemory.getInt(operand.operand.value)
         vm.vmMemory.putInt(operand.operand.value, oldValue - 1)
+      },
+      handleC64 = { _, eip ->
+        throw VmExecutionException(eip, "Cannot dec C64")
+      },
+      handleC32 = { _, eip ->
+        throw VmExecutionException(eip, "Cannot dec C32")
       }
     )
 

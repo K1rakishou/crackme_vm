@@ -1,36 +1,76 @@
 package crackme.vm.core
 
-class VmStack(
-  private val size: Int = 128
-) {
-  var current: Int = 0
-  val array = arrayOfNulls<Long>(size)
+import kotlin.random.Random
 
-  fun push(value: Long) {
-    if (current + 1 > size) {
+class VmStack(
+  private val size: Int,
+  private val random: Random
+) {
+  var sp: Int = 0
+    private set
+  private val stack = ByteArray(size) { 0 } //TODO: random.nextBytes(size)
+
+  fun push64(value: Long) {
+    if (sp + LONG_SIZE > size) {
       throw OverflowException()
     }
 
-    array[current++] = value
+    Utils.writeLongToArray(sp, value, stack)
+    sp += LONG_SIZE
+
+    println("push: sp = ${sp}, value = ${value}, stacktop = ${peek64()}")
   }
 
-  fun pop(): Long {
-    if (current - 1 < 0) {
+  fun pop64(): Long {
+    println("pop: sp = ${sp}, stacktop = ${peek64()}")
+
+    if (sp - LONG_SIZE < 0) {
       throw UnderflowException()
     }
 
-    return array[current--]!!
+    sp -= LONG_SIZE
+    val value = Utils.readLongFromByteArray(sp, stack)
+
+    return value
   }
 
-  fun peek(index: Int): Long {
-    if (index < 0 || index > size) {
-      throw OutOfBoundsException(index, size)
+  fun peek64(): Long {
+    return Utils.readLongFromByteArray(sp - LONG_SIZE, stack)
+  }
+
+  fun push32(value: Int) {
+    if (sp + INT_SIZE > size) {
+      throw OverflowException()
     }
 
-    return array[current]!!
+    Utils.writeIntToArray(sp, value, stack)
+    sp += INT_SIZE
   }
+
+  fun pop32(): Int {
+    if (sp - INT_SIZE < 0) {
+      throw UnderflowException()
+    }
+
+    sp -= INT_SIZE
+    val value = Utils.readIntFromArray(sp, stack)
+
+    return value
+  }
+
+  fun peek32(): Int {
+    return Utils.readIntFromArray(sp - INT_SIZE, stack)
+  }
+
+  //TODO: maybe push/pop/peek 16 and 8
 
   class OverflowException : Exception("Stack overflow")
   class UnderflowException : Exception("Stack is empty")
-  class OutOfBoundsException(val index: Int, val upper: Int) : Exception("index is out of bounds (index = ${index}, upperBound = ${upper})")
+
+  companion object {
+    const val BYTE_SIZE = 1
+    const val SHORT_SIZE = 2
+    const val INT_SIZE = 4
+    const val LONG_SIZE = 8
+  }
 }
