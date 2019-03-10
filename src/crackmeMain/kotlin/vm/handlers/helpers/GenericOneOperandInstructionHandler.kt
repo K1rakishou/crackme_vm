@@ -9,31 +9,30 @@ import crackme.vm.operands.*
 
 object GenericOneOperandInstructionHandler {
 
-  //TODO: make this function return Long as well as all of the lambdas. This is necessary for vmFlags updating
   fun <T : Instruction> handle(
     vm: VM,
     eip: Int,
     instruction: T,
     //instr r0
-    handleReg: (operand: Register, eip: Int) -> Unit,
+    handleReg: (operand: Register, eip: Int) -> Long,
     //instr [r0]
-    handleMemReg: (operand: Memory<Register>, eip: Int) -> Unit,
+    handleMemReg: (operand: Memory<Register>, eip: Int) -> Long,
     //instr [abc]
-    handleMemVar: (operand: Memory<Variable>, eip: Int) -> Unit,
+    handleMemVar: (operand: Memory<Variable>, eip: Int) -> Long,
     //instr [1122334455667788]
-    handleMemC64: (operand: Memory<C64>, eip: Int) -> Unit,
+    handleMemC64: (operand: Memory<C64>, eip: Int) -> Long,
     //instr [11223344]
-    handleMemC32: (operand: Memory<C32>, eip: Int) -> Unit,
+    handleMemC32: (operand: Memory<C32>, eip: Int) -> Long,
     //instr 11223344
-    handleC64: (operand: C64, eip: Int) -> Unit,
+    handleC64: (operand: C64, eip: Int) -> Long,
     //instr 1122334455667788
-    handleC32: (operand: C32, eip: Int) -> Unit
-  ) {
+    handleC32: (operand: C32, eip: Int) -> Long
+  ): Long {
     if (instruction !is GenericOneOperandInstruction) {
       throw RuntimeException("Not implemented for ${instruction.instructionType.instructionName}")
     }
 
-    when (instruction.operand) {
+    return when (instruction.operand) {
       is Register -> handleReg(instruction.operand as Register, eip)
       is Memory<*> -> {
         when (val memoryOperand = (instruction.operand as Memory<*>).operand) {

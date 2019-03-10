@@ -8,7 +8,7 @@ import crackme.vm.instructions.Dec
 class DecHandler : Handler<Dec>() {
 
   override fun handle(vm: VM, currentEip: Int, instruction: Dec): Int {
-    GenericOneOperandInstructionHandler.handle(
+    val result = GenericOneOperandInstructionHandler.handle(
       vm,
       currentEip,
       instruction,
@@ -16,20 +16,24 @@ class DecHandler : Handler<Dec>() {
       handleMemReg = { operand, _ ->
         //FIXME: probably this wont work
         val address = vm.registers[operand.operand.index].toInt()
-        val oldValue = vm.vmMemory.getLong(address)
-        vm.vmMemory.putLong(address, oldValue - 1)
+        val newValue = vm.vmMemory.getLong(address) - 1
+        vm.vmMemory.putLong(address, newValue)
+        newValue
       },
       handleMemVar = { operand, eip ->
-        val oldValue = getVmMemoryValueByVariable(vm, eip, operand)
-        putVmMemoryValueByVariable(operand, vm, oldValue - 1, eip)
+        val newValue = getVmMemoryValueByVariable(vm, eip, operand) - 1
+        putVmMemoryValueByVariable(operand, vm, newValue, eip)
+        newValue
       },
       handleMemC64 = { operand, _ ->
-        val oldValue = vm.vmMemory.getLong(operand.operand.value.toInt())
-        vm.vmMemory.putLong(operand.operand.value.toInt(), oldValue - 1)
+        val newValue = vm.vmMemory.getLong(operand.operand.value.toInt()) - 1
+        vm.vmMemory.putLong(operand.operand.value.toInt(), newValue)
+        newValue
       },
       handleMemC32 = { operand, _ ->
-        val oldValue = vm.vmMemory.getInt(operand.operand.value)
-        vm.vmMemory.putInt(operand.operand.value, oldValue - 1)
+        val newValue = vm.vmMemory.getInt(operand.operand.value) - 1
+        vm.vmMemory.putInt(operand.operand.value, newValue)
+        newValue.toLong()
       },
       handleC64 = { _, eip ->
         throw VmExecutionException(eip, "Cannot dec C64")
@@ -39,7 +43,7 @@ class DecHandler : Handler<Dec>() {
       }
     )
 
-    //TODO: update flags
+    vm.vmFlags.updateFlagsFromResult(result)
     return currentEip + 1
   }
 

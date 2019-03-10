@@ -42,7 +42,6 @@ class MultipleInstructionsTest {
   fun testEncryptDecryptString() {
     val text = "Cipher text. awr awr aw0ith a98tyha973hytou3htouis3htous3htouh"
 
-    //TODO: remove CMPs after making DEC instruction update flags
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
@@ -54,7 +53,6 @@ class MultipleInstructionsTest {
 @ENCRYPTION_LOOP:
         xor [r0 + r1] as byte, 0x55
         dec r1
-        cmp r1, 0
         jne @ENCRYPTION_LOOP
 
         mov r1, [originalString] as dword
@@ -62,7 +60,6 @@ class MultipleInstructionsTest {
 @DECRYPTION_LOOP:
         xor [r0 + r1] as byte, 0x55
         dec r1
-        cmp r1, 0
         jne @DECRYPTION_LOOP
 
         ret
