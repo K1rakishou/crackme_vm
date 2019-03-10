@@ -83,10 +83,6 @@ object GenericTwoOperandsInstructionHandler {
               is Variable -> {
                 //instr r0, [abc]
                 val variableType = ((instruction.src as Memory<*>).operand as Variable).variableType
-                if (variableType == VariableType.AnyType) {
-                  throw VmExecutionException(eip, "Variable with operandType (${(instruction.src as Memory<*>).operand.operandType}) cannot be used with Memory operand")
-                }
-
                 handle_Reg_MemVar(instruction.dest as Register, instruction.src as Memory<Variable>, eip)
               }
             }
@@ -116,9 +112,6 @@ object GenericTwoOperandsInstructionHandler {
                   VariableType.LongType,
                   VariableType.StringType -> {
                     handle_MemVar_Reg(instruction.dest as Memory<Variable>, instruction.src as Register, eip)
-                  }
-                  VariableType.AnyType -> {
-                    throw VmExecutionException(eip, "Variable with operandType (${(instruction.dest as Memory<*>).operand.operandType}) cannot be used with Memory operand")
                   }
                 }
               }

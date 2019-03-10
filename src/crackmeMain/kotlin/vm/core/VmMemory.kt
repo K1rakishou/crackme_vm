@@ -85,7 +85,6 @@ class VmMemory(
 
         return String(array.map { it.toChar() }.toCharArray()) as T
       }
-      VariableType.AnyType -> throw RuntimeException("Cannot get variable value of type Any")
     }
   }
 
@@ -94,7 +93,6 @@ class VmMemory(
       VariableType.IntType -> 4
       VariableType.LongType -> 8
       VariableType.StringType -> 4
-      VariableType.AnyType -> throw RuntimeException("Cannot use Any as a type of the variable")
     }
 
     if (ip < 0 || (ip + variableSize) > size) {
@@ -108,7 +106,6 @@ class VmMemory(
       VariableType.IntType -> Utils.writeIntToArray(address, 0, memory)
       VariableType.LongType -> Utils.writeLongToArray(address, 0, memory)
       VariableType.StringType -> Utils.writeIntToArray(address, 0, memory)
-      VariableType.AnyType -> throw RuntimeException("Cannot use Any as variable type")
     }
 
     ip += variableSize

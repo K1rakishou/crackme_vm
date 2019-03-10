@@ -42,7 +42,6 @@ object GenericOneOperandInstructionHandler {
             when (memoryOperand.variableType) {
               VariableType.IntType,
               VariableType.LongType -> handleMemVar(memoryOperand as Memory<Variable>, eip)
-              VariableType.AnyType ,
               VariableType.StringType -> {
                 throw VmExecutionException(eip, "Variable with operandType (${(memoryOperand as Memory<*>).operand.operandType}) cannot be used with Memory operand")
               }

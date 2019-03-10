@@ -9,18 +9,6 @@ import crackme.vm.operands.*
 class LetHandler : Handler<Let>() {
 
   override fun handle(vm: VM, currentEip: Int, instruction: Let): Int {
-    if (instruction.variable.variableType == VariableType.AnyType) {
-      throw VmExecutionException(currentEip, "Cannot use Let with \'Any\' type")
-    }
-
-    //let a: String, "Hello from VM!" -> OK
-    //let a: Int, 123 -> OK
-    //let a: Int, 1122334455 -> NOT OK
-    //let a: Long, 123 -> OK
-    //let a: Long, 11223344556677889900 -> NOT OK
-    //let a: Int, r0 -> NOT OK //we can't know what value will be in the register at the parsing stage
-    //let a: Long, r0 -> NOT OK //we can't know what value will be in the register at the parsing stage
-
     when (instruction.initializer) {
       is Constant -> {
         when (val constant = instruction.initializer) {
@@ -69,7 +57,6 @@ class LetHandler : Handler<Let>() {
           VariableType.LongType -> {
             vm.vmMemory.putLong(instruction.variable.address, vm.registers[instruction.initializer.index])
           }
-          VariableType.AnyType,
           VariableType.StringType -> {
             throw VmExecutionException(currentEip, "Cannot initialize variable of type (${instruction.variable.variableType}) with register")
           }

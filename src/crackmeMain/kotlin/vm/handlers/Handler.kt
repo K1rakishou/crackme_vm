@@ -145,9 +145,6 @@ abstract class Handler<T : Instruction> {
           AddressingMode.ModeQword -> Utils.readLongFromByteArray(0, bytes)
         }
       }
-      VariableType.AnyType -> {
-        throw VmExecutionException(eip, "Variable with operandType (${operand.operandType}) cannot be used with Memory operand")
-      }
     }
   }
 
@@ -245,9 +242,6 @@ abstract class Handler<T : Instruction> {
         }
 
         vm.vmMemory.putBytes(address, bytes)
-      }
-      VariableType.AnyType -> {
-        throw VmExecutionException(eip, "Variable with operandType (${operand.operandType}) cannot be used with Memory operand")
       }
     }
   }

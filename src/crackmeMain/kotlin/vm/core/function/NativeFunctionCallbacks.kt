@@ -16,7 +16,6 @@ object NativeFunctionCallbacks {
       //TODO addressing mode for push/pop
       //pop64 here because C64 is the default constant size
       VariableType.StringType -> vm.vmStack.pop64() as T
-      VariableType.AnyType -> throw RuntimeException("AnyType not supported")
     }
   }
 
@@ -70,7 +69,6 @@ object NativeFunctionCallbacks {
                 val string = vm.vmMemory.getVariableValue<String>(memoryOperand.name, memoryOperand.variableType)
                 println(string)
               }
-              VariableType.AnyType -> TODO("AnyType")
             }
           }
           else -> throw RuntimeException("Not implemented for ${operand.operandName}")
@@ -90,7 +88,6 @@ object NativeFunctionCallbacks {
     val type = parameters[1] as VariableType
 
     return when (type) {
-      VariableType.AnyType -> throw ParameterTypeNotSupportedForThisFunction(NativeFunctionType.Sizeof, type)
       VariableType.IntType -> 4
       VariableType.LongType -> 8
       VariableType.StringType -> {
