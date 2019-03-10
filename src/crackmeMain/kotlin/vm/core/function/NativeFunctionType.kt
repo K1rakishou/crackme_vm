@@ -6,7 +6,6 @@ enum class NativeFunctionType(
 ) {
   //functions for test purposes
   TestAddNumbers(255.toByte(), "testAddNumbers"),
-  Println(254.toByte(), "println"),
 
   //real functions
   Sizeof(0, "sizeof"),
@@ -15,7 +14,6 @@ enum class NativeFunctionType(
   companion object {
     private val map = mapOf(
       "testAddNumbers" to TestAddNumbers,
-      "println" to Println,
       "sizeof" to Sizeof,
       "alloc" to Alloc
     )

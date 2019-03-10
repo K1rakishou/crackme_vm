@@ -1,6 +1,5 @@
 package crackme.vm.core.function
 
-import crackme.misc.safe
 import crackme.vm.VM
 import crackme.vm.core.VariableType
 import crackme.vm.operands.*
@@ -28,56 +27,6 @@ object NativeFunctionCallbacks {
     }
 
     return sum
-  }
-
-  private val vmPrintlnCallback = NativeFunctionType.Println to fun (vm: VM, parameters: List<Any>): Long {
-    if (parameters.size != 1) {
-      throw BadParametersCount(NativeFunctionType.Println, 1, parameters.size)
-    }
-
-    val operand = parameters[0] as Operand
-
-    when (operand) {
-      is Constant -> {
-        when (operand) {
-          is C32 -> println(operand.value)
-          is C64 -> println(operand.value)
-          is VmString -> {
-            val string = vm.vmMemory.getString(operand.address)
-            println(string)
-          }
-          else -> throw RuntimeException("Not implemented for ${operand.operandName}")
-        }.safe
-      }
-      is Register -> {
-        val regValue = vm.registers[operand.index]
-        println(regValue)
-      }
-      is Memory<*> -> {
-        when (val memoryOperand = operand.operand) {
-          is Constant -> {
-            TODO("Constant")
-          }
-          is Register -> {
-            TODO("Register")
-          }
-          is Variable -> {
-            when (memoryOperand.variableType) {
-              VariableType.IntType -> TODO("IntType")
-              VariableType.LongType -> TODO("LongType")
-              VariableType.StringType -> {
-                val string = vm.vmMemory.getVariableValue<String>(memoryOperand.name, memoryOperand.variableType)
-                println(string)
-              }
-            }
-          }
-          else -> throw RuntimeException("Not implemented for ${operand.operandName}")
-        }
-      }
-      else -> throw RuntimeException("Not implemented for ${operand.operandName}")
-    }.safe
-
-    return 0
   }
 
   private val vmSizeofCallback = NativeFunctionType.Sizeof to fun (vm: VM, parameters: List<Any>): Long {
@@ -124,7 +73,6 @@ object NativeFunctionCallbacks {
 
   private val parametersMap = mapOf(
     vmTestAddNumbers
-//    vmPrintlnCallback,
 //    vmSizeofCallback,
 //    vmAllocCallback
   )
