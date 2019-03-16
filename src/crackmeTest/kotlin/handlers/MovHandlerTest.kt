@@ -2,7 +2,7 @@ package handlers
 
 import crackme.misc.extractInstructionsAndGetEntryPoint
 import crackme.vm.VMSimulator
-import crackme.vm.VMParser
+import crackme.vm.parser.VMParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -67,7 +67,7 @@ class MovHandlerTest {
     val vm = vmParser.parse(
       """
         def main()
-          mov r0, [0] as dword
+          mov r0, ds@[0] as dword
           ret
         end
       """
@@ -90,7 +90,7 @@ class MovHandlerTest {
       """
         def main()
           mov r1, 0
-          mov r0, [r1] as dword
+          mov r0, ds@[r1] as dword
           ret
         end
       """
@@ -112,7 +112,7 @@ class MovHandlerTest {
       """
         def main()
           let a: Int, 112233
-          mov r0, [a] as dword
+          mov r0, ds@[a] as dword
           ret
         end
       """
@@ -182,7 +182,7 @@ class MovHandlerTest {
         def main()
           mov r0, 112233
           mov r1, 0
-          mov [r1] as dword, r0
+          mov ds@[r1] as dword, r0
           ret
         end
       """
@@ -205,8 +205,8 @@ class MovHandlerTest {
         def main()
           let a: Int, 0
           mov r1, 334455
-          mov [a] as dword, r1
-          mov r0, [a] as dword
+          mov ds@[a] as dword, r1
+          mov r0, ds@[a] as dword
           ret
         end
       """
@@ -232,7 +232,7 @@ class MovHandlerTest {
       """
         def main()
           mov r0, 112233
-          mov [0] as dword, r0
+          mov ds@[0] as dword, r0
           ret
         end
       """

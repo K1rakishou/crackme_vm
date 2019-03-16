@@ -1,7 +1,7 @@
 package sample.helloworld.handlers
 
 import crackme.misc.extractInstructionsAndGetEntryPoint
-import crackme.vm.VMParser
+import crackme.vm.parser.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.VariableType
 import kotlin.test.Test
@@ -54,17 +54,17 @@ class MultipleInstructionsTest {
           let originalString: String, "$text"
           mov r0, originalString
           add r0, 4
-          mov r1, [originalString] as dword
+          mov r1, ds@[originalString] as dword
 
   @ENCRYPTION_LOOP:
-          xor [r0 + r1] as byte, 0x55
+          xor ds@[r0 + r1] as byte, 0x55
           dec r1
           jne @ENCRYPTION_LOOP
 
-          mov r1, [originalString] as dword
+          mov r1, ds@[originalString] as dword
 
   @DECRYPTION_LOOP:
-          xor [r0 + r1] as byte, 0x55
+          xor ds@[r0 + r1] as byte, 0x55
           dec r1
           jne @DECRYPTION_LOOP
 

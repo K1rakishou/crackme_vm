@@ -1,7 +1,7 @@
 package sample.helloworld
 
 import crackme.misc.extractInstructionsAndGetEntryPoint
-import crackme.vm.VMParser
+import crackme.vm.parser.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.VariableType
 import kotlin.test.Test
@@ -16,15 +16,15 @@ class AddressingModeTest {
       """
         def main()
           let a: String, "GOOD"
-          mov r0, [a + 4] as byte
-          mov r1, [a + 5] as byte
-          mov r2, [a + 6] as byte
-          mov r3, [a + 7] as byte
+          mov r0, ds@[a + 4] as byte
+          mov r1, ds@[a + 5] as byte
+          mov r2, ds@[a + 6] as byte
+          mov r3, ds@[a + 7] as byte
 
-          mov [a + 7] as byte, r0
-          mov [a + 6] as byte, r1
-          mov [a + 5] as byte, r2
-          mov [a + 4] as byte, r3
+          mov ds@[a + 7] as byte, r0
+          mov ds@[a + 6] as byte, r1
+          mov ds@[a + 5] as byte, r2
+          mov ds@[a + 4] as byte, r3
 
           ret
         end
@@ -45,17 +45,17 @@ class AddressingModeTest {
       """
         def main()
           let a: Int, 0x11223344
-          mov r0, [a] as byte
-          mov r1, [a + 1] as byte
-          mov r2, [a + 2] as byte
-          mov r3, [a + 3] as byte
+          mov r0, ds@[a] as byte
+          mov r1, ds@[a + 1] as byte
+          mov r2, ds@[a + 2] as byte
+          mov r3, ds@[a + 3] as byte
 
-          mov [a + 3] as byte, r0
-          mov [a + 2] as byte, r1
-          mov [a + 1] as byte, r2
-          mov [a] as byte, r3
+          mov ds@[a + 3] as byte, r0
+          mov ds@[a + 2] as byte, r1
+          mov ds@[a + 1] as byte, r2
+          mov ds@[a] as byte, r3
 
-          mov r0, [a] as dword
+          mov r0, ds@[a] as dword
 
           ret
         end

@@ -1,9 +1,5 @@
 package sample.helloworld.handlers
 
-import crackme.vm.VMParser
-import crackme.vm.VMSimulator
-import kotlin.test.Test
-
 class CallHandlerTest {
 
   /**

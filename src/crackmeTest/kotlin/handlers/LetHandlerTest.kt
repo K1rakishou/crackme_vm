@@ -1,7 +1,7 @@
 package sample.helloworld.handlers
 
 import crackme.misc.extractInstructionsAndGetEntryPoint
-import crackme.vm.VMParser
+import crackme.vm.parser.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.ParsingException
 import crackme.vm.core.VariableType
@@ -21,7 +21,7 @@ class LetHandlerTest {
       """
         def main()
           let a: Int, 1234
-          mov r0, [a] as dword
+          mov r0, ds@[a] as dword
           ret
         end
       """
@@ -41,7 +41,7 @@ class LetHandlerTest {
       """
         def main()
           let a: Int, -1234
-          mov r0, [a] as dword
+          mov r0, ds@[a] as dword
           ret
         end
       """
@@ -61,7 +61,7 @@ class LetHandlerTest {
       """
         def main()
           let a: Int, 7722334455
-          mov r0, [a] as qword
+          mov r0, ds@[a] as qword
           ret
         end
       """
@@ -82,7 +82,7 @@ class LetHandlerTest {
       """
         def main()
           let a: Long, 1234
-          mov r0, [a] as qword
+          mov r0, ds@[a] as qword
           ret
         end
       """
@@ -102,7 +102,7 @@ class LetHandlerTest {
       """
         def main()
           let a: Long, 77223344556677
-          mov r0, [a] as qword
+          mov r0, ds@[a] as qword
           ret
         end
       """
@@ -122,7 +122,7 @@ class LetHandlerTest {
       """
         def main()
           let a: Long, -77223344556677
-          mov r0, [a] as qword
+          mov r0, ds@[a] as qword
           ret
         end
       """
@@ -145,7 +145,7 @@ class LetHandlerTest {
         """
           def main()
             let a: Long, 77223344556677889900
-            mov r0, [a]
+            mov r0, ds@[a]
             ret
           end
         """

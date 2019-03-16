@@ -1,18 +1,10 @@
 package crackme
 
 import crackme.misc.extractInstructionsAndGetEntryPoint
-import crackme.vm.VM
 import crackme.vm.VMCompiler
-import crackme.vm.VMParser
+import crackme.vm.parser.VMParser
 import crackme.vm.VMSimulator
-import crackme.vm.core.os.Time
 import crackme.vm.core.os.WinFile
-import crackme.vm.core.os.WinTime
-import crackme.vm.instructions.Instruction
-import crackme.vm.obfuscator.SimpleVMInstructionObfuscator
-import crackme.vm.obfuscator.engine.ConstantObfuscationEngine
-import crackme.vm.obfuscator.generator.SimpleVMInstructionGenerator
-import crackme.vm.obfuscator.mutation.SimpleMutationEngine
 import platform.windows.GetTickCount64
 import kotlin.random.Random
 

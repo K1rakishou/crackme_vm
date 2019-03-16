@@ -1,5 +1,6 @@
-package crackme.vm
+package crackme.vm.parser
 
+import crackme.vm.VM
 import crackme.vm.core.*
 import crackme.vm.core.VariableType
 import crackme.vm.core.function.*
@@ -12,6 +13,8 @@ import kotlin.random.Random
 
 class VMParser(
   private val random: Random = Random(0),
+  private val constactExtractor: ConstactExtractor = ConstactExtractor(),
+  private val operandParser: OperandParser = OperandParser(constactExtractor),
   private val vmInstructionObfuscator: VMInstructionObfuscator = NoOpInstructionObfuscator()
 ) {
   private lateinit var nativeFunctions: MutableMap<NativeFunctionType, NativeFunction>
@@ -319,7 +322,7 @@ class VMParser(
       )
     }
 
-    val operand = parseOperand(functionName, functionLine, body.trim(), type)
+    val operand = operandParser.parseOperand(functionName, functionLine, body.trim(), type, vmMemory)
 
     return when (type) {
       InstructionType.Inc -> Inc(operand)
@@ -361,8 +364,8 @@ class VMParser(
     val (destOperand, srcOperand) = body.split(',')
       .map { it.trim() }
 
-    val dest = parseOperand(functionName, functionLine, destOperand, type)
-    val src = parseOperand(functionName, functionLine, srcOperand, type)
+    val dest = operandParser.parseOperand(functionName, functionLine, destOperand, type, vmMemory)
+    val src = operandParser.parseOperand(functionName, functionLine, srcOperand, type, vmMemory)
 
     return when (type) {
       InstructionType.Add -> Add(dest, src)
@@ -404,8 +407,8 @@ class VMParser(
     val (variableOperand, initializerOperand) = body.split(',')
       .map { it.trim() }
 
-    val variable = parseOperand(functionName, functionLine, variableOperand, type) as Variable
-    val initializer = parseOperand(functionName, functionLine, initializerOperand, type)
+    val variable = operandParser.parseOperand(functionName, functionLine, variableOperand, type, vmMemory) as Variable
+    val initializer = operandParser.parseOperand(functionName, functionLine, initializerOperand, type, vmMemory)
 
     when (initializer) {
       is Constant -> {
@@ -481,190 +484,6 @@ class VMParser(
     }
 
     return Jxx(jumpType, labels.getValue(labelName))
-  }
-
-  private fun parseOperand(
-    functionName: String,
-    functionLine: Int,
-    operandString: String,
-    type: InstructionType
-  ): Operand {
-    val ch = operandString[0].toLowerCase()
-
-    when {
-      ch == 'r' -> {
-        val registerIndex = numberRegex.find(operandString)?.value?.toInt()
-        if (registerIndex == null) {
-          throw ParsingException(functionName, functionLine, "Cannot parse register index for operand ($operandString)")
-        }
-
-        return Register(registerIndex)
-      }
-      ch == '[' -> {
-        val closingBracketIndex = operandString.indexOf(']')
-        if (closingBracketIndex == -1) {
-          throw ParsingException(functionName, functionLine, "Cannot find closing bracket (\']\') for operand ($operandString)")
-        }
-
-        val addressingModeStringIndex = operandString.indexOf(" as ")
-        val addressingMode = if (addressingModeStringIndex != -1) {
-          val addressingModeString = operandString.substring(addressingModeStringIndex + 4).trim().toLowerCase()
-          AddressingMode.fromString(addressingModeString)
-            ?: throw ParsingException(functionName, functionLine, "Cannot determine addressing mode ($addressingModeString)")
-        } else {
-          throw ParsingException(functionName, functionLine, "Cannot determine addressing mode ($operandString)")
-        }
-
-        val addressingParameters = operandString.substring(1, closingBracketIndex).trim()
-
-        val (operand, offsetOperand) = if (addressingParameters.contains('+')) {
-          if (addressingParameters.count { it == '+' } > 1) {
-            throw ParsingException(functionName, functionLine, "Only one offset operand allowed ($addressingParameters)")
-          }
-
-          val (operandName, offsetOperandName) = addressingParameters.split('+').map { it.trim() }
-          val operand = parseOperand(functionName, functionLine, operandName, type)
-          val offsetOperand = parseOperand(functionName, functionLine, offsetOperandName, type)
-
-          Pair(operand, offsetOperand)
-        } else {
-          val operand = parseOperand(functionName, functionLine, addressingParameters, type)
-          Pair(operand, null)
-        }
-
-        if (operand is Memory<*>) {
-          throw ParsingException(functionName, functionLine, "Cannot use nested memory operands ($operandString)")
-        }
-
-        offsetOperand?.let {
-          if (it is Memory<*>) {
-            throw ParsingException(functionName, functionLine, "Cannot use Memory as an offset operand ($operandString)")
-          }
-        }
-
-        when (operand) {
-          is Variable -> {
-            if (!vmMemory.isVariableDefined(operand.name)) {
-              throw ParsingException(functionName, functionLine, "Variable (${operand.name}) is not defined")
-            }
-          }
-          is Register,
-          is Constant -> {
-            //don't need to check anything here since it's not a variable
-          }
-          else -> throw ParsingException(functionName, functionLine, "Operand ($operand) is not supported by Memory operand")
-        }
-
-        return Memory(operand, offsetOperand, addressingMode)
-      }
-      ch == '-' || ch.isDigit() -> {
-        val constantString = hexNumberRegex.find(operandString)?.value
-        if (constantString == null) {
-          throw ParsingException(functionName, functionLine, "Cannot parse constant operand ($operandString)")
-        }
-
-        return extractConstant(functionName, functionLine, constantString.toLowerCase())
-      }
-      ch == '\"' -> {
-        val stringEndIndex = operandString.indexOf('\"', 1)
-        if (stringEndIndex == -1) {
-          throw ParsingException(functionName, functionLine, "Cannot find end of the string operand (${operandString})")
-        }
-
-        val string = operandString.substring(1, stringEndIndex)
-        val address = vmMemory.allocString(string)
-
-        return VmString(address)
-      }
-      ch.isLetter() -> {
-        if (operandString.indexOf(':') == -1) {
-          if (!vmMemory.isVariableDefined(operandString)) {
-            throw ParsingException(functionName, functionLine, "Cannot determine variable type (${operandString})")
-          }
-
-          val definedVariable = vmMemory.getVariable(operandString)
-          if (definedVariable == null) {
-            throw ParsingException(functionName, functionLine, "Variable (${operandString}) is defined but does not have an address in the variables map!")
-          }
-
-          return Variable(
-            operandString,
-            definedVariable.first,
-            definedVariable.second
-          )
-        }
-
-        val (variableNameRaw, variableTypeRaw) = operandString.split(':').map { it.trim() }
-        val variableName = wordRegex.find(variableNameRaw)?.value
-        if (variableName == null) {
-          throw ParsingException(functionName, functionLine, "Cannot parse variable name (${operandString})")
-        }
-
-        if (type == InstructionType.Let) {
-          if (vmMemory.isVariableDefined(variableName)) {
-            throw ParsingException(functionName, functionLine, "Variable ($variableName) is already defined")
-          }
-        }
-
-        val variableType = VariableType.fromString(variableTypeRaw)
-        if (variableType == null) {
-          throw ParsingException(functionName, functionLine, "Unknown variable type (${variableTypeRaw})")
-        }
-
-        return Variable(
-          variableName,
-          vmMemory.allocVariable(variableName, variableType),
-          variableType
-        )
-      }
-      else -> throw ParsingException(functionName, functionLine, "Cannot parse operand for ($operandString)")
-    }
-  }
-
-  private fun extractConstant(
-    functionName: String,
-    functionLine: Int,
-    constantString: String
-  ): Constant {
-    if (constantString.isEmpty()) {
-      throw ParsingException(functionName, functionLine, "Constant is empty")
-    }
-
-    val isNegative = constantString.startsWith('-')
-    val isHex = constantString.contains("0x")
-
-    if (isNegative && isHex) {
-      throw ParsingException(
-        functionName,
-        functionLine,
-        "Numeric constant cannot be hexadecimal and negative and the same time!"
-      )
-    }
-
-    //remove the '0x' at the beginning of the string if the string is hexadecimal
-    val string = if (isHex) {
-      constantString.substring(2)
-    } else {
-      constantString
-    }
-
-    val radix = if (isHex) {
-      16
-    } else {
-      10
-    }
-
-    val extractedValue32 = string.toIntOrNull(radix)
-    if (extractedValue32 != null) {
-      return C32(extractedValue32)
-    }
-
-    val extractedValue64 = string.toLongOrNull(radix)
-    if (extractedValue64 == null) {
-      throw ParsingException(functionName, functionLine, "Cannot parse constant ($extractedValue64), unknown error")
-    }
-
-    return C64(extractedValue64)
   }
 
   companion object {

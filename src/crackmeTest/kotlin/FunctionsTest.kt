@@ -1,7 +1,7 @@
 package sample.helloworld
 
 import crackme.misc.extractInstructionsAndGetEntryPoint
-import crackme.vm.VMParser
+import crackme.vm.parser.VMParser
 import crackme.vm.VMSimulator
 import kotlin.test.Test
 import kotlin.test.assertEquals
