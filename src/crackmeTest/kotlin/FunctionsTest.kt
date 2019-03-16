@@ -1,5 +1,6 @@
 package sample.helloworld
 
+import crackme.misc.extractInstructionsAndGetEntryPoint
 import crackme.vm.VMParser
 import crackme.vm.VMSimulator
 import kotlin.test.Test
@@ -43,7 +44,9 @@ class FunctionsTest {
     )
 
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(70, vm.registers[0])
   }

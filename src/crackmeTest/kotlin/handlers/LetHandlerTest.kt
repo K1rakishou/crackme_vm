@@ -1,5 +1,6 @@
 package sample.helloworld.handlers
 
+import crackme.misc.extractInstructionsAndGetEntryPoint
 import crackme.vm.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.ParsingException
@@ -18,13 +19,17 @@ class LetHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-         let a: Int, 1234
-         mov r0, [a] as dword
-         ret
+        def main()
+          let a: Int, 1234
+          mov r0, [a] as dword
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
     assertEquals(1234, vm.registers[0])
   }
 
@@ -34,13 +39,17 @@ class LetHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-         let a: Int, -1234
-         mov r0, [a] as dword
-         ret
+        def main()
+          let a: Int, -1234
+          mov r0, [a] as dword
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
     assertEquals(-1234, vm.registers[0])
   }
 
@@ -50,15 +59,18 @@ class LetHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-         let a: Int, 7722334455
-         mov r0, [a] as qword
-         ret
+        def main()
+          let a: Int, 7722334455
+          mov r0, [a] as qword
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
 
     expectException<VmExecutionException> {
-      vmSimulator.simulate(vm)
+      val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+      vmSimulator.simulate(vm, entryPoint, instructions)
     }
   }
 
@@ -68,13 +80,17 @@ class LetHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-         let a: Long, 1234
-         mov r0, [a] as qword
-         ret
+        def main()
+          let a: Long, 1234
+          mov r0, [a] as qword
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
     assertEquals(1234, vm.registers[0])
   }
 
@@ -84,13 +100,17 @@ class LetHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-         let a: Long, 77223344556677
-         mov r0, [a] as qword
-         ret
+        def main()
+          let a: Long, 77223344556677
+          mov r0, [a] as qword
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
     assertEquals(77223344556677, vm.registers[0])
   }
 
@@ -100,13 +120,17 @@ class LetHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-         let a: Long, -77223344556677
-         mov r0, [a] as qword
-         ret
+        def main()
+          let a: Long, -77223344556677
+          mov r0, [a] as qword
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
     assertEquals(-77223344556677, vm.registers[0])
   }
 
@@ -119,10 +143,12 @@ class LetHandlerTest {
     expectException<ParsingException> {
       vmParser.parse(
         """
-         let a: Long, 77223344556677889900
-         mov r0, [a]
-         ret
-      """
+          def main()
+            let a: Long, 77223344556677889900
+            mov r0, [a]
+            ret
+          end
+        """
       )
     }
   }
@@ -135,12 +161,15 @@ class LetHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-         let a: String, "${string}"
-         ret
+         def main()
+           let a: String, "${string}"
+           ret
+         end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(string, vm.vmMemory.getVariableValue("a", VariableType.StringType))
   }
@@ -154,16 +183,19 @@ class LetHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-         let a: String, "${string1}"
-         let b: String, "${string2}"
-         let c: String, "${string3}"
-         let d: Int, 1234
-         let aavvss: Long, 1122334455667788
-         ret
+        def main()
+          let a: String, "${string1}"
+          let b: String, "${string2}"
+          let c: String, "${string3}"
+          let d: Int, 1234
+          let aavvss: Long, 1122334455667788
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(string1, vm.vmMemory.getVariableValue("a", VariableType.StringType))
     assertEquals(string2, vm.vmMemory.getVariableValue("b", VariableType.StringType))
@@ -179,9 +211,11 @@ class LetHandlerTest {
     val exception = expectException<ParsingException> {
       vmParser.parse(
         """
-         let a: Int, 123
-         let a: Int, 123456
-         ret
+         def main()
+           let a: Int, 123
+           let a: Int, 123456
+           ret
+         end
       """
       )
     }

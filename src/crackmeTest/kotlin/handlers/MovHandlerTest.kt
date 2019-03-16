@@ -1,5 +1,6 @@
 package handlers
 
+import crackme.misc.extractInstructionsAndGetEntryPoint
 import crackme.vm.VMSimulator
 import crackme.vm.VMParser
 import kotlin.test.Test
@@ -21,12 +22,15 @@ class MovHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        mov r0, 1122334455667788
-        ret
+        def main()
+          mov r0, 1122334455667788
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(1122334455667788L, vm.registers[0])
   }
@@ -39,12 +43,15 @@ class MovHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        mov r0, 11223344
-        ret
+        def main()
+          mov r0, 11223344
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(11223344L, vm.registers[0])
   }
@@ -59,13 +66,16 @@ class MovHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        mov r0, [0] as dword
-        ret
+        def main()
+          mov r0, [0] as dword
+          ret
+        end
       """
     )
     vm.vmMemory.putInt(0, 112233)
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(112233, vm.registers[0])
   }
@@ -78,14 +88,17 @@ class MovHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
+        def main()
           mov r1, 0
           mov r0, [r1] as dword
           ret
-        """
+        end
+      """
     )
     vm.vmMemory.putInt(0, 112233)
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(112233, vm.registers[0])
   }
@@ -97,14 +110,17 @@ class MovHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
+        def main()
           let a: Int, 112233
           mov r0, [a] as dword
           ret
-        """
+        end
+      """
     )
 
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(112233, vm.registers[0])
   }
@@ -117,13 +133,16 @@ class MovHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        mov r1, 112233
-        mov r0, r1
-        ret
+        def main()
+          mov r1, 112233
+          mov r0, r1
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(112233, vm.registers[0])
   }
@@ -136,14 +155,17 @@ class MovHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-         let a: Int, 0
-         mov r0, a
-         ret
+        def main()
+          let a: Int, 0
+          mov r0, a
+          ret
+        end
       """
     )
 
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     //first allocation should be at 0 address
     assertEquals(0, vm.registers[0])
@@ -157,14 +179,17 @@ class MovHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        mov r0, 112233
-        mov r1, 0
-        mov [r1] as dword, r0
-        ret
+        def main()
+          mov r0, 112233
+          mov r1, 0
+          mov [r1] as dword, r0
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(112233, vm.vmMemory.getInt(0))
   }
@@ -177,16 +202,19 @@ class MovHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-         let a: Int, 0
-         mov r1, 334455
-         mov [a] as dword, r1
-         mov r0, [a] as dword
-         ret
+        def main()
+          let a: Int, 0
+          mov r1, 334455
+          mov [a] as dword, r1
+          mov r0, [a] as dword
+          ret
+        end
       """
     )
 
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(334455, vm.registers[0])
   }
@@ -202,13 +230,16 @@ class MovHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        mov r0, 112233
-        mov [0] as dword, r0
-        ret
+        def main()
+          mov r0, 112233
+          mov [0] as dword, r0
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(112233, vm.vmMemory.getInt(0))
   }

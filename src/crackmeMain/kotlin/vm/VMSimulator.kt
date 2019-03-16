@@ -21,30 +21,20 @@ class VMSimulator(
   private val retHandler: RetHandler = RetHandler()
 ) {
 
-  fun simulate(vm: VM) {
-    var entryPoint = 0
-
-    for (vmFunction in vm.vmFunctions) {
-      if (vmFunction.key == "main") {
-        break
-      }
-
-      entryPoint += vmFunction.value.instructions.size
-    }
-
+  fun simulate(vm: VM, entryPoint: Int, instructions: List<Instruction>) {
     var eip = entryPoint
-    val instructions = mutableListOf<Instruction>()
-
-    for (vmFunction in vm.vmFunctions) {
-      instructions.addAll(vmFunction.value.instructions.map { it.value })
-    }
 
     while (true) {
       if (eip < 0 || eip > instructions.size) {
         throw RuntimeException("ip is out of bounds ip = ($eip), upperBound = ${instructions.size}")
       }
 
-      val currentInstruction = instructions[eip]
+      val currentInstruction = if (debugMode) {
+        instructions.getOrNull(eip) ?: return
+      } else {
+        instructions[eip]
+      }
+
       eip = when (currentInstruction.instructionType) {
         InstructionType.Add -> addHandler.handle(vm, eip, currentInstruction as Add)
         InstructionType.Call -> callHandler.handle(vm, eip, currentInstruction as Call)

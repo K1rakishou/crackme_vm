@@ -1,11 +1,14 @@
 package crackme
 
+import crackme.misc.extractInstructionsAndGetEntryPoint
+import crackme.vm.VM
 import crackme.vm.VMCompiler
 import crackme.vm.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.os.Time
 import crackme.vm.core.os.WinFile
 import crackme.vm.core.os.WinTime
+import crackme.vm.instructions.Instruction
 import crackme.vm.obfuscator.SimpleVMInstructionObfuscator
 import crackme.vm.obfuscator.engine.ConstantObfuscationEngine
 import crackme.vm.obfuscator.generator.SimpleVMInstructionGenerator
@@ -43,8 +46,10 @@ fun main() {
   val vmSimulator = VMSimulator()
   val vmCompiler = VMCompiler()
 
+  val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+
   WinFile.withFileDo("bytecode.txt", WinFile.OpenType.Write) { file ->
-    vmSimulator.simulate(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 //    vmCompiler.compile(file, vm)
   }
 }

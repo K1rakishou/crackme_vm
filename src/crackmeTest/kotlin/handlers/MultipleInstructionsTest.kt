@@ -1,5 +1,6 @@
 package sample.helloworld.handlers
 
+import crackme.misc.extractInstructionsAndGetEntryPoint
 import crackme.vm.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.VariableType
@@ -17,24 +18,28 @@ class MultipleInstructionsTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        mov r0, 0
-        mov r1, 11
-        mov r2, 22
-        mov r3, 33
-        mov r4, 44
-        mov r5, 55
+        def main()
+          mov r0, 0
+          mov r1, 11
+          mov r2, 22
+          mov r3, 33
+          mov r4, 44
+          mov r5, 55
 
-        add r0, r1
-        add r0, r2
-        add r0, r3
-        add r0, r4
-        add r0, r5
+          add r0, r1
+          add r0, r2
+          add r0, r3
+          add r0, r4
+          add r0, r5
 
-        ret
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
     assertEquals(165, vm.registers[0])
   }
 
@@ -45,28 +50,31 @@ class MultipleInstructionsTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        let originalString: String, "$text"
-        mov r0, originalString
-        add r0, 4
-        mov r1, [originalString] as dword
+        def main()
+          let originalString: String, "$text"
+          mov r0, originalString
+          add r0, 4
+          mov r1, [originalString] as dword
 
-@ENCRYPTION_LOOP:
-        xor [r0 + r1] as byte, 0x55
-        dec r1
-        jne @ENCRYPTION_LOOP
+  @ENCRYPTION_LOOP:
+          xor [r0 + r1] as byte, 0x55
+          dec r1
+          jne @ENCRYPTION_LOOP
 
-        mov r1, [originalString] as dword
+          mov r1, [originalString] as dword
 
-@DECRYPTION_LOOP:
-        xor [r0 + r1] as byte, 0x55
-        dec r1
-        jne @DECRYPTION_LOOP
+  @DECRYPTION_LOOP:
+          xor [r0 + r1] as byte, 0x55
+          dec r1
+          jne @DECRYPTION_LOOP
 
-        ret
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     val resultString = vm.vmMemory.getVariableValue<String>("originalString", VariableType.StringType)
     assertEquals(text, resultString)

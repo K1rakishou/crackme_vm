@@ -1,5 +1,6 @@
 package sample.helloworld.handlers
 
+import crackme.misc.extractInstructionsAndGetEntryPoint
 import crackme.vm.VMParser
 import crackme.vm.VMSimulator
 import kotlin.test.Test
@@ -12,17 +13,21 @@ class DecHandlerTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        mov r0, 15
-        dec r0
-        dec r0
-        dec r0
-        dec r0
-        dec r0
-        ret
+        def main()
+          mov r0, 15
+          dec r0
+          dec r0
+          dec r0
+          dec r0
+          dec r0
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
     assertEquals(10, vm.registers[0])
   }
 

@@ -1,5 +1,6 @@
 package sample.helloworld
 
+import crackme.misc.extractInstructionsAndGetEntryPoint
 import crackme.vm.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.VariableType
@@ -13,23 +14,26 @@ class AddressingModeTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        let a: String, "GOOD"
-        mov r0, [a + 4] as byte
-        mov r1, [a + 5] as byte
-        mov r2, [a + 6] as byte
-        mov r3, [a + 7] as byte
+        def main()
+          let a: String, "GOOD"
+          mov r0, [a + 4] as byte
+          mov r1, [a + 5] as byte
+          mov r2, [a + 6] as byte
+          mov r3, [a + 7] as byte
 
-        mov [a + 7] as byte, r0
-        mov [a + 6] as byte, r1
-        mov [a + 5] as byte, r2
-        mov [a + 4] as byte, r3
+          mov [a + 7] as byte, r0
+          mov [a + 6] as byte, r1
+          mov [a + 5] as byte, r2
+          mov [a + 4] as byte, r3
 
-        ret
+          ret
+        end
       """
     )
 
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals("DOOG", vm.vmMemory.getVariableValue("a", VariableType.StringType))
   }
@@ -39,25 +43,28 @@ class AddressingModeTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        let a: Int, 0x11223344
-        mov r0, [a] as byte
-        mov r1, [a + 1] as byte
-        mov r2, [a + 2] as byte
-        mov r3, [a + 3] as byte
+        def main()
+          let a: Int, 0x11223344
+          mov r0, [a] as byte
+          mov r1, [a + 1] as byte
+          mov r2, [a + 2] as byte
+          mov r3, [a + 3] as byte
 
-        mov [a + 3] as byte, r0
-        mov [a + 2] as byte, r1
-        mov [a + 1] as byte, r2
-        mov [a] as byte, r3
+          mov [a + 3] as byte, r0
+          mov [a + 2] as byte, r1
+          mov [a + 1] as byte, r2
+          mov [a] as byte, r3
 
-        mov r0, [a] as dword
+          mov r0, [a] as dword
 
-        ret
+          ret
+        end
       """
     )
 
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(0x44332211, vm.registers[0])
   }

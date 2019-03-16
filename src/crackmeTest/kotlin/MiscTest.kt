@@ -1,5 +1,6 @@
 package sample.helloworld
 
+import crackme.misc.extractInstructionsAndGetEntryPoint
 import crackme.vm.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.ParsingException
@@ -13,12 +14,16 @@ class MiscTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        mov r0, 0xDeaDBeeF
-        ret
+        def main()
+          mov r0, 0xDeaDBeeF
+          ret
+        end
       """
     )
     val vmSimulator = VMSimulator()
-    vmSimulator.simulate(vm)
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
     assertEquals(0xdeadbeef, vm.registers[0])
   }
 
@@ -29,8 +34,10 @@ class MiscTest {
     expectException<ParsingException> {
       vmParser.parse(
         """
-          mov r0, -0xDeaDBeeF
-          ret
+          def main()
+            mov r0, -0xDeaDBeeF
+            ret
+          end
         """
       )
     }
