@@ -9,7 +9,13 @@ import crackme.vm.instructions.Call
 class CallHandler : Handler<Call>() {
 
   override fun handle(vm: VM, currentEip: Int, instruction: Call): Int {
-    return currentEip + 1
+    val vmFunction = vm.vmFunctions[instruction.functionName]
+    if (vmFunction == null) {
+      throw RuntimeException("No function defined with name (${instruction.functionName})")
+    }
+
+    vm.vmStack.push64(currentEip + 1L)
+    return vmFunction.start
   }
 
   //TODO: move this too native_call instruction

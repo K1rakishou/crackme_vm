@@ -33,6 +33,7 @@ class FunctionsTest {
 
           mov r1, 10
 @LOOP:
+          inc r0
           dec r1
           jne @LOOP
 
@@ -44,6 +45,6 @@ class FunctionsTest {
     val vmSimulator = VMSimulator()
     vmSimulator.simulate(vm)
 
-    assertEquals(60, vm.registers[0])
+    assertEquals(70, vm.registers[0])
   }
 }

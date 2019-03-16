@@ -54,13 +54,13 @@ class VMParser(
 
   private fun parseFunctionBody(
     vmFunctionScope: VmFunctionScope,
-    instructionId: Int,
+    _instructionId: Int,
     functionName: String,
     funcBody: List<String>
   ): VmFunction {
     val labels = mutableMapOf<String, Int>()
     val instructions = linkedMapOf<Int, Instruction>()
-    var localInstructionId = instructionId
+    var instructionId = _instructionId
 
     for ((lineIndex, funcLine) in funcBody.withIndex()) {
       val instructionLine = funcLine.trim()
@@ -73,7 +73,7 @@ class VMParser(
       //label declaration
       if (funcLine.startsWith('@') && funcLine.endsWith(':')) {
         val labelName = parseLabel(functionName, lineIndex, funcLine)
-        labels[labelName] = localInstructionId
+        labels[labelName] = instructionId
         continue
       }
 
@@ -83,7 +83,7 @@ class VMParser(
       }
 
       for (newInstruction in newInstructions) {
-        instructions[localInstructionId++] = newInstruction
+        instructions[instructionId++] = newInstruction
       }
     }
 
@@ -480,7 +480,7 @@ class VMParser(
       )
     }
 
-    return Jxx(jumpType, labelName)
+    return Jxx(jumpType, labels.getValue(labelName))
   }
 
   private fun parseOperand(

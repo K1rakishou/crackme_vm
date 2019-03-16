@@ -8,21 +8,23 @@ import crackme.vm.instructions.Jxx
 class JxxHandler : Handler<Jxx>() {
 
   override fun handle(vm: VM, currentEip: Int, instruction: Jxx): Int {
-//    when (instruction.jumpType) {
-//      JumpType.Je -> {
-//        if (vm.vmFlags.isFlagSet(VmFlags.Flag.ZF)) {
-//          return vm.labels.getValue(instruction.labelName)
-//        }
-//      }
-//      JumpType.Jne -> {
-//        if (!vm.vmFlags.isFlagSet(VmFlags.Flag.ZF)) {
-//          return vm.labels.getValue(instruction.labelName)
-//        }
-//      }
-//      JumpType.Jmp -> return vm.labels.getValue(instruction.labelName)
-//    }
+    when (instruction.jumpType) {
+      JumpType.Je -> {
+        if (vm.vmFlags.isFlagSet(VmFlags.Flag.ZF)) {
+          return instruction.instructionId
+        }
+      }
+      JumpType.Jne -> {
+        if (!vm.vmFlags.isFlagSet(VmFlags.Flag.ZF)) {
+          return instruction.instructionId
+        }
+      }
+      JumpType.Jmp -> return instruction.instructionId
+    }
 
     return currentEip + 1
   }
+
+
 
 }

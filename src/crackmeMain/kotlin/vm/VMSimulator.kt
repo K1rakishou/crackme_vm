@@ -17,36 +17,11 @@ class VMSimulator(
   private val incHandler: IncHandler = IncHandler(),
   private val decHandler: DecHandler = DecHandler(),
   private val pushHandler: PushHandler = PushHandler(),
-  private val popHandler: PopHandler = PopHandler()
+  private val popHandler: PopHandler = PopHandler(),
+  private val retHandler: RetHandler = RetHandler()
 ) {
 
   fun simulate(vm: VM) {
-//    for (vmFunctionEntry in vm.vmFunctions) {
-//      val vmFunction = vmFunctionEntry.value
-//
-//      println("function ${vmFunction.name}")
-//
-//      for (label in vmFunction.labels) {
-//        println("label name = ${label.key}, label address = ${label.value}")
-//      }
-//
-//      for (instruction in vmFunction.instructions) {
-//        when {
-//          instruction.value is Jxx -> {
-//            val jxx = instruction.value as Jxx
-//            println("[${instruction.key}] ${jxx.jumpType.jumpName} @${vmFunctionEntry.value.labels[jxx.labelName]}")
-//          }
-//          instruction.value is Call -> {
-//            val call = instruction.value as Call
-//            println("[${instruction.key}] call @${vm.vmFunctions[call.functionName]!!.instructions.keys.first()}")
-//          }
-//          else -> {
-//            println("[${instruction.key}] ${instruction.value}")
-//          }
-//        }
-//      }
-//    }
-
     var entryPoint = 0
 
     for (vmFunction in vm.vmFunctions) {
@@ -65,23 +40,14 @@ class VMSimulator(
     }
 
     while (true) {
-      val currentInstruction = instructions[eip]
-      println("eip = $eip, instruction = $currentInstruction")
+      if (eip < 0 || eip > instructions.size) {
+        throw RuntimeException("ip is out of bounds ip = ($eip), upperBound = ${instructions.size}")
+      }
 
+      val currentInstruction = instructions[eip]
       eip = when (currentInstruction.instructionType) {
         InstructionType.Add -> addHandler.handle(vm, eip, currentInstruction as Add)
-        InstructionType.Call -> {
-          val call = currentInstruction as Call
-
-          val vmFunction = vm.vmFunctions[call.functionName]
-          if (vmFunction == null) {
-            throw RuntimeException("No function defined with name (${call.functionName})")
-          }
-
-          println("Pushing eip (${eip + 1}) into stack")
-          vm.vmStack.push64(eip + 1L)
-          vmFunction.start
-        }
+        InstructionType.Call -> callHandler.handle(vm, eip, currentInstruction as Call)
         InstructionType.Cmp -> cmpHandler.handle(vm, eip, currentInstruction as Cmp)
         InstructionType.Jxx -> jxxHandler.handle(vm, eip, currentInstruction as Jxx)
         InstructionType.Let -> letHandler.handle(vm, eip, currentInstruction as Let)
@@ -92,42 +58,12 @@ class VMSimulator(
         InstructionType.Dec -> decHandler.handle(vm, eip, currentInstruction as Dec)
         InstructionType.Push -> pushHandler.handle(vm, eip, currentInstruction as Push)
         InstructionType.Pop -> popHandler.handle(vm, eip, currentInstruction as Pop)
-        InstructionType.Ret -> {
-          if (vm.vmStack.isEmpty()) {
-            return
-          }
+        InstructionType.Ret -> retHandler.handle(vm, eip, currentInstruction as Ret)
+      }
 
-          val newEip = vm.vmStack.pop64()
-          println("new eip = ${newEip}")
-
-          newEip.toInt()
-        }
+      if (eip == Int.MAX_VALUE) {
+        return
       }
     }
-
-//    var instructionPointer = 0
-//
-//    while (true) {
-//      val currentInstruction = currentInstructions[0]
-////      simulateInstruction(currentInstruction)
-//    }
-
-//    while (true) {
-//      if (eip < 0 || eip > vm.instructions.size) {
-//        throw RuntimeException("ip is out of bounds ip = ($eip), upperBound = ${vm.instructions.size}")
-//      }
-//
-//      val instruction = if (debugMode) {
-//        vm.instructions.getOrNull(eip) ?: return
-//      } else {
-//        vm.instructions[eip]
-//      }
-//
-//
-//    }
-  }
-
-  fun simulateInstruction(instruction: Instruction) {
-
   }
 }
