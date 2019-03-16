@@ -1,11 +1,9 @@
 package crackme.vm
 
 import crackme.vm.core.*
-import crackme.vm.core.function.NativeFunctionCallbacks
-import crackme.vm.core.function.NativeFunctionType
 import crackme.vm.core.VariableType
+import crackme.vm.core.function.*
 import crackme.vm.instructions.*
-import crackme.vm.core.function.NativeFunction
 import crackme.vm.obfuscator.NoOpInstructionObfuscator
 import crackme.vm.obfuscator.VMInstructionObfuscator
 import crackme.vm.operands.*
@@ -16,17 +14,13 @@ class VMParser(
   private val random: Random = Random(0),
   private val vmInstructionObfuscator: VMInstructionObfuscator = NoOpInstructionObfuscator()
 ) {
-  private lateinit var instructions: MutableList<Instruction>
   private lateinit var nativeFunctions: MutableMap<NativeFunctionType, NativeFunction>
-  private lateinit var labels: MutableMap<String, Int>
   //this list is to keep track of all added string to the memory (their addresses in the memory)
   private lateinit var vmMemory: VmMemory
   private lateinit var vmFlags: VmFlags
 
   fun parse(program: String): VM {
-    instructions = mutableListOf()
     nativeFunctions = mutableMapOf()
-    labels = mutableMapOf()
     vmMemory = VmMemory(1024, Random(GetTickCount().toInt()))
     vmFlags = VmFlags()
 
@@ -34,61 +28,189 @@ class VMParser(
       .map { it.trim() }
       .filterNot { it.isEmpty() }
 
+    val vmFunctionScopes = parseVmFunctionScopes(lines)
 
-    for ((programLine, line) in lines.withIndex()) {
-      if (line.startsWith("@")) {
-        val label = parseLabel(programLine, line)
-        labels.put(label, -1)
-      }
-    }
+    val vmFunctions = mutableMapOf<String, VmFunction>()
+    var instructionId = 0
 
-    var instructionIndex = 0
+    for (vmFunctionScope in vmFunctionScopes) {
+      val funcBody = lines.subList(vmFunctionScope.value.start, vmFunctionScope.value.start + vmFunctionScope.value.length)
 
-    for ((programLine, line) in lines.withIndex()) {
-      if (line.startsWith("use")) {
-        val nativeFunction = parseNativeFunction(programLine, line)
-        nativeFunctions[nativeFunction.type] = nativeFunction
-      } else {
-        val trimmed = line.trim()
-
-        if (trimmed.contains('@') && trimmed.endsWith(':')) {
-          val labelName = parseLabel(instructionIndex, trimmed)
-          if (!labels.containsKey(labelName)) {
-            throw ParsingException(instructionIndex, "Label ($labelName) was not defined")
-          }
-
-          labels[labelName] = instructionIndex
-          continue
-        }
-
-        val newInstructions = parseInstruction(programLine, trimmed)
-
-        instructions.addAll(newInstructions)
-        instructionIndex += newInstructions.size
-      }
-    }
-
-    val uninitializedLabels = labels.filter { it.value == -1 }
-    if (uninitializedLabels.isNotEmpty()) {
-      throw RuntimeException("There are uninitialized labels after parsing: (${uninitializedLabels.map { it.key }})")
+      val vmFunction = parseFunctionBody(vmFunctionScope.value, instructionId, vmFunctionScope.key, funcBody)
+      vmFunctions.put(vmFunction.name, vmFunction)
+      instructionId += vmFunction.instructions.size
     }
 
     return VM(
       random,
-      instructions,
+      vmFunctions,
       nativeFunctions,
       mutableListOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L),
-      labels,
       VmStack(1024, random),
       vmMemory,
       vmFlags
     )
   }
 
-  private fun parseLabel(programLine: Int, line: String): String {
+  private fun parseFunctionBody(
+    vmFunctionScope: VmFunctionScope,
+    instructionId: Int,
+    functionName: String,
+    funcBody: List<String>
+  ): VmFunction {
+    val labels = mutableMapOf<String, Int>()
+    val instructions = linkedMapOf<Int, Instruction>()
+    var localInstructionId = instructionId
+
+    for ((lineIndex, funcLine) in funcBody.withIndex()) {
+      val instructionLine = funcLine.trim()
+
+      //function prolog and epilog
+      if (funcLine.startsWith("def") || funcLine.startsWith("end")) {
+        continue
+      }
+
+      //label declaration
+      if (funcLine.startsWith('@') && funcLine.endsWith(':')) {
+        val labelName = parseLabel(functionName, lineIndex, funcLine)
+        labels[labelName] = localInstructionId
+        continue
+      }
+
+      val newInstructions = parseInstruction(functionName, lineIndex, instructionLine, labels)
+      if (newInstructions.isEmpty()) {
+        continue
+      }
+
+      for (newInstruction in newInstructions) {
+        instructions[localInstructionId++] = newInstruction
+      }
+    }
+
+    val uninitializedLabels = labels.filter { it.value == -1 }
+    if (uninitializedLabels.isNotEmpty()) {
+      throw RuntimeException("There are uninitialized labels after parsing at function ($functionName) : (${uninitializedLabels.map { it.key }})")
+    }
+
+    return VmFunction(
+      functionName,
+      vmFunctionScope.start,
+      vmFunctionScope.length,
+      labels,
+      instructions
+    )
+  }
+
+  private fun parseVmFunctionScopes(lines: List<String>): Map<String, VmFunctionScope> {
+    var programLine = 0
+    val vmFunctionScopes = mutableMapOf<String, VmFunctionScope>()
+
+    while (programLine < lines.size) {
+      val line = lines.getOrNull(programLine)?.trim()
+      if (line == null) {
+        throw ScopeParsingException(programLine, "Prepare error, current programLine is out of bounds (programLine = $programLine), (linesCount = ${lines.size})")
+      }
+
+      when {
+        line.startsWith("use") -> {
+          val nativeFunction = parseNativeFunction(programLine, line)
+          nativeFunctions[nativeFunction.type] = nativeFunction
+        }
+        line.startsWith("def") -> {
+          val vmFunctionScope = parseFunctionScope(lines, programLine)
+
+          if (vmFunctionScope.start < 0 || vmFunctionScope.length < 0 || vmFunctionScope.start >= vmFunctionScope.length) {
+            throw ScopeParsingException(programLine, "Could not parse function starting at line $programLine")
+          }
+
+          vmFunctionScopes.put(vmFunctionScope.name, vmFunctionScope)
+          programLine += vmFunctionScope.length
+        }
+        else -> ++programLine
+      }
+    }
+
+    return vmFunctionScopes
+  }
+
+  private fun parseFunctionScope(lines: List<String>, programLineIndex: Int): VmFunctionScope {
+    val functionStartLine = lines.getOrNull(programLineIndex)?.substring(4)
+    if (functionStartLine == null) {
+      throw ScopeParsingException(
+        programLineIndex,
+        "ParseFunction error: current programLine is out of bounds (programLineIndex = $programLineIndex), (linesCount = ${lines.size})"
+      )
+    }
+
+    val funcName = funcNameRegex.find(functionStartLine)?.value
+    if (funcName == null) {
+      throw ScopeParsingException(programLineIndex, "Cannot find function name ($functionStartLine)")
+    }
+
+    val parametersStartIndex = functionStartLine.indexOf('(')
+    if (parametersStartIndex == -1) {
+      throw ScopeParsingException(programLineIndex, "Cannot find parameters start for function ($funcName)")
+    }
+
+    val parametersEndIndex = functionStartLine.indexOf(')', parametersStartIndex)
+    if (parametersEndIndex == -1) {
+      throw ScopeParsingException(programLineIndex, "Cannot find parameters end for function ($funcName)")
+    }
+
+    val parametersString = functionStartLine.substring(parametersStartIndex + 1, parametersEndIndex)
+
+    val parameters = if (parametersString.isNotEmpty()) {
+      parametersString.split(',')
+        .map { it.trim() }
+        .map { parameter ->
+          val (parameterName, parameterTypeString) = parameter.split(':').map { it.trim() }
+          val parameterType = VariableType.fromString(parameterTypeString)
+          if (parameterType == null) {
+            throw ScopeParsingException(programLineIndex, "Cannot parse parameter type for parameter (${parameter})")
+          }
+
+          return@map FunctionParameter(parameterName, parameterType)
+        }
+    } else {
+      //function with no parameters
+      emptyList()
+    }
+
+    var functionLength = 0
+
+    for (index in programLineIndex until lines.size) {
+      val line = lines.getOrNull(index)?.trim()
+      if (line == null) {
+        throw ScopeParsingException(index, "Cannot find end of the function (${funcName})")
+      }
+
+      ++functionLength
+
+      if (line == "end") {
+        break
+      }
+    }
+
+    if (funcName.equals("main", true) && parameters.isNotEmpty()) {
+      throw ScopeParsingException(programLineIndex, "Main function must have no parameters!")
+    }
+
+    return VmFunctionScope(
+      funcName,
+      programLineIndex,
+      functionLength,
+      parameters
+    )
+  }
+
+  private fun parseLabel(
+    functionName: String,
+    functionLine: Int,
+    line: String
+  ): String {
     val labelName = labelRegex.find(line)?.value?.substring(1)
     if (labelName == null) {
-      throw ParsingException(programLine, "Line contains label symbol but no label name")
+      throw ParsingException(functionName, functionLine, "Line contains label symbol but no label name")
     }
 
     if (labelName.endsWith(':')) {
@@ -98,26 +220,29 @@ class VMParser(
     return labelName
   }
 
-  private fun parseNativeFunction(programLine: Int, line: String): NativeFunction {
+  private fun parseNativeFunction(
+    functionLine: Int,
+    line: String
+  ): NativeFunction {
     val functionBody = line.substring(4)
     if (functionBody.isEmpty()) {
-      throw ParsingException(programLine, "Cannot parse native function body ($line)")
+      throw ScopeParsingException(functionLine, "Cannot parse native function body ($line)")
     }
 
     val parametersStart = functionBody.indexOf('(')
     if (parametersStart == -1) {
-      throw ParsingException(programLine, "Cannot parse function's variableTypeList start")
+      throw ScopeParsingException(functionLine, "Cannot parse function's variableTypeList start")
     }
 
     val parametersEnd = functionBody.indexOf(')', parametersStart)
     if (parametersEnd == -1) {
-      throw ParsingException(programLine, "Cannot parse function's variableTypeList end")
+      throw ScopeParsingException(functionLine, "Cannot parse function's variableTypeList end")
     }
 
-    val functionName = functionBody.substring(0, parametersStart)
-    val functionType = NativeFunctionType.fromString(functionName)
+    val nativeFunctionName = functionBody.substring(0, parametersStart)
+    val functionType = NativeFunctionType.fromString(nativeFunctionName)
     if (functionType == null) {
-      throw ParsingException(programLine, "Cannot parse function operandType ($functionName)")
+      throw ScopeParsingException(functionLine, "parseNativeFunction Cannot parse function operandType ($nativeFunctionName)")
     }
 
     //"parametersStart + 1" to skip the opening bracket
@@ -127,7 +252,7 @@ class VMParser(
       .map { parameter ->
         val parameterType = VariableType.fromString(parameter)
         if (parameterType == null) {
-          throw ParsingException(programLine, "Unknown parameter operandType ($parameter)")
+          throw ScopeParsingException(functionLine, "Unknown parameter operandType ($parameter)")
         }
 
         parameterType!!
@@ -141,48 +266,60 @@ class VMParser(
   }
 
   private fun parseInstruction(
-    programLine: Int,
-    line: String
+    functionName: String,
+    functionLine: Int,
+    line: String,
+    labels: MutableMap<String, Int>
   ): List<Instruction> {
+    //return from a function
     if (line.startsWith("ret")) {
       return listOf(Ret())
     }
 
     val indexOfFirstSpace = line.indexOfFirst { it == ' ' }
     if (indexOfFirstSpace == -1) {
-      throw ParsingException(programLine, "Cannot parse instruction name ($line)")
+      throw ParsingException(functionName, functionLine, "Cannot parse instruction name ($line)")
     }
 
     val instructionName = line.substring(0, indexOfFirstSpace).toLowerCase()
     val body = line.substring(indexOfFirstSpace)
 
     val instruction = when (instructionName) {
-      "mov" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Mov)
-      "add" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Add)
-      "cmp" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Cmp)
-      "xor" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Xor)
-      "sub" -> parseGenericTwoOperandsInstruction(programLine, body, InstructionType.Sub)
-      "inc" -> parseGenericOneOperandInstruction(programLine, body, InstructionType.Inc)
-      "dec" -> parseGenericOneOperandInstruction(programLine, body, InstructionType.Dec)
-      "push" -> parseGenericOneOperandInstruction(programLine, body, InstructionType.Push)
-      "pop" -> parseGenericOneOperandInstruction(programLine, body, InstructionType.Pop)
+      "mov" -> parseGenericTwoOperandsInstruction(functionName, functionLine, body, InstructionType.Mov)
+      "add" -> parseGenericTwoOperandsInstruction(functionName, functionLine, body, InstructionType.Add)
+      "cmp" -> parseGenericTwoOperandsInstruction(functionName, functionLine, body, InstructionType.Cmp)
+      "xor" -> parseGenericTwoOperandsInstruction(functionName, functionLine, body, InstructionType.Xor)
+      "sub" -> parseGenericTwoOperandsInstruction(functionName, functionLine, body, InstructionType.Sub)
+      "inc" -> parseGenericOneOperandInstruction(functionName, functionLine, body, InstructionType.Inc)
+      "dec" -> parseGenericOneOperandInstruction(functionName, functionLine, body, InstructionType.Dec)
+      "push" -> parseGenericOneOperandInstruction(functionName, functionLine, body, InstructionType.Push)
+      "pop" -> parseGenericOneOperandInstruction(functionName, functionLine, body, InstructionType.Pop)
       "je",
       "jne",
-      "jmp" -> parseJxx(programLine, instructionName, body, InstructionType.Jxx)
-      "call" -> parseCall(programLine, body, InstructionType.Call)
-      "let" -> parseLet(programLine, body, InstructionType.Let)
-      else -> throw ParsingException(programLine, "Unknown instruction name ($instructionName)")
+      "jmp" -> parseJxx(functionName, functionLine, instructionName, body, labels, InstructionType.Jxx)
+      "call" -> parseCall(functionName, functionLine, body, InstructionType.Call)
+      "let" -> parseLet(functionName, functionLine, body, InstructionType.Let)
+      else -> throw ParsingException(functionName, functionLine, "Unknown instruction name ($instructionName)")
     }
 
     return vmInstructionObfuscator.obfuscate(vmMemory, instruction)
   }
 
-  private fun parseGenericOneOperandInstruction(programLine: Int, body: String, type: InstructionType): Instruction {
+  private fun parseGenericOneOperandInstruction(
+    functionName: String,
+    functionLine: Int,
+    body: String,
+    type: InstructionType
+  ): Instruction {
     if (body.isEmpty()) {
-      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
+      throw ParsingException(
+        functionName,
+        functionLine,
+        "Instruction has name but does not have a body ($body)"
+      )
     }
 
-    val operand = parseOperand(programLine, body.trim(), type)
+    val operand = parseOperand(functionName, functionLine, body.trim(), type)
 
     return when (type) {
       InstructionType.Inc -> Inc(operand)
@@ -198,25 +335,34 @@ class VMParser(
       InstructionType.Ret,
       InstructionType.Xor,
       InstructionType.Sub -> {
-        throw ParsingException(programLine, "Instruction ${type.instructionName} is not a generic one operand instruction")
+        throw ParsingException(
+          functionName,
+          functionLine,
+          "Instruction ${type.instructionName} is not a generic one operand instruction"
+        )
       }
     }
   }
 
-  private fun parseGenericTwoOperandsInstruction(programLine: Int, body: String, type: InstructionType): Instruction {
+  private fun parseGenericTwoOperandsInstruction(
+    functionName: String,
+    functionLine: Int,
+    body: String,
+    type: InstructionType
+  ): Instruction {
     if (body.isEmpty()) {
-      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
+      throw ParsingException(functionName, functionLine, "Instruction has name but does not have a body ($body)")
     }
 
     if (body.indexOf(',') == -1) {
-      throw ParsingException(programLine, "Cannot parse operands because there is no \',\' symbol")
+      throw ParsingException(functionName, functionLine, "Cannot parse operands because there is no \',\' symbol")
     }
 
     val (destOperand, srcOperand) = body.split(',')
       .map { it.trim() }
 
-    val dest = parseOperand(programLine, destOperand, type)
-    val src = parseOperand(programLine, srcOperand, type)
+    val dest = parseOperand(functionName, functionLine, destOperand, type)
+    val src = parseOperand(functionName, functionLine, srcOperand, type)
 
     return when (type) {
       InstructionType.Add -> Add(dest, src)
@@ -232,25 +378,34 @@ class VMParser(
       InstructionType.Jxx,
       InstructionType.Let,
       InstructionType.Ret -> {
-        throw ParsingException(programLine, "Instruction ${type.instructionName} is not a generic two operands instruction")
+        throw ParsingException(
+          functionName,
+          functionLine,
+          "Instruction ${type.instructionName} is not a generic two operands instruction"
+        )
       }
     }
   }
 
-  private fun parseLet(programLine: Int, body: String, type: InstructionType): Instruction {
+  private fun parseLet(
+    functionName: String,
+    functionLine: Int,
+    body: String,
+    type: InstructionType
+  ): Instruction {
     if (body.isEmpty()) {
-      throw ParsingException(programLine, "Instruction has name but does not have a body ($body)")
+      throw ParsingException(functionName, functionLine, "Instruction has name but does not have a body ($body)")
     }
 
     if (body.indexOf(',') == -1) {
-      throw ParsingException(programLine, "Cannot parse operands because there is no \',\' symbol")
+      throw ParsingException(functionName, functionLine, "Cannot parse operands because there is no \',\' symbol")
     }
 
     val (variableOperand, initializerOperand) = body.split(',')
       .map { it.trim() }
 
-    val variable = parseOperand(programLine, variableOperand, type) as Variable
-    val initializer = parseOperand(programLine, initializerOperand, type)
+    val variable = parseOperand(functionName, functionLine, variableOperand, type) as Variable
+    val initializer = parseOperand(functionName, functionLine, initializerOperand, type)
 
     when (initializer) {
       is Constant -> {
@@ -260,7 +415,11 @@ class VMParser(
           is VmString -> vmMemory.putInt(variable.address, initializer.address)
         }
       }
-      else -> throw ParsingException(programLine, "Initialization not implemented for initializer of type (${initializer.operandName})")
+      else -> throw ParsingException(
+        functionName,
+        functionLine,
+        "Initialization not implemented for initializer of type (${initializer.operandName})"
+      )
     }
 
     return Let(
@@ -269,50 +428,74 @@ class VMParser(
     )
   }
 
-  private fun parseCall(programLine: Int, body: String, type: InstructionType): Instruction {
-    val functionName = body.trim()
-    if (functionName.isEmpty()) {
-      throw ParsingException(programLine, "Function body is empty")
-    }
-
-    val functionType = NativeFunctionType.fromString(functionName)
-    if (functionType == null) {
-      throw ParsingException(programLine, "Cannot parse function operandType ($functionName)")
+  private fun parseCall(
+    functionName: String,
+    functionLine: Int,
+    body: String,
+    type: InstructionType
+  ): Instruction {
+    val instructionFunctionName = body.trim()
+    if (instructionFunctionName.isEmpty()) {
+      throw ParsingException(functionName, functionLine, "VmFunctionScope body is empty")
     }
 
     return Call(
-      functionType
+      instructionFunctionName
     )
   }
 
-  private fun parseJxx(programLine: Int, instructionName: String, body: String, type: InstructionType): Instruction {
+  private fun parseJxx(
+    functionName: String,
+    functionLine: Int,
+    instructionName: String,
+    body: String,
+    labels: Map<String, Int>,
+    type: InstructionType
+  ): Instruction {
     val jumpType = JumpType.fromString(instructionName)
     if (jumpType == null) {
-      throw ParsingException(programLine, "Cannot parse jump operandType from instruction name ($instructionName)")
+      throw ParsingException(
+        functionName,
+        functionLine,
+        "Cannot parse jump operandType from instruction name ($instructionName)"
+      )
     }
 
-    val labelName = parseLabel(programLine, body)
+    val labelName = parseLabel(functionName, functionLine, body)
     if (labels[labelName] == null) {
-      throw ParsingException(programLine, "Label with name ($labelName) does not exist in the labels map")
+      throw ParsingException(
+        functionName,
+        functionLine,
+        "Label with name ($labelName) does not exist in the labels map"
+      )
     }
 
     //TODO: we probably should not check for whether the label was initialized here,
     // it's better to do it after all of the instructions has been parsed
     if (labels[labelName] == null) {
-      throw ParsingException(programLine, "Label with name ($labelName) was not initialized, instructionIndex = (${labels[labelName]})")
+      throw ParsingException(
+        functionName,
+        functionLine,
+        "Label with name ($labelName) was not initialized, instructionIndex = (${labels[labelName]})"
+      )
     }
 
     return Jxx(jumpType, labelName)
   }
 
-  private fun parseOperand(programLine: Int, operandString: String, type: InstructionType): Operand {
+  private fun parseOperand(
+    functionName: String,
+    functionLine: Int,
+    operandString: String,
+    type: InstructionType
+  ): Operand {
     val ch = operandString[0].toLowerCase()
 
     when {
       ch == 'r' -> {
         val registerIndex = numberRegex.find(operandString)?.value?.toInt()
         if (registerIndex == null) {
-          throw ParsingException(programLine, "Cannot parse register index for operand ($operandString)")
+          throw ParsingException(functionName, functionLine, "Cannot parse register index for operand ($operandString)")
         }
 
         return Register(registerIndex)
@@ -320,56 +503,56 @@ class VMParser(
       ch == '[' -> {
         val closingBracketIndex = operandString.indexOf(']')
         if (closingBracketIndex == -1) {
-          throw ParsingException(programLine, "Cannot find closing bracket (\']\') for operand ($operandString)")
+          throw ParsingException(functionName, functionLine, "Cannot find closing bracket (\']\') for operand ($operandString)")
         }
 
         val addressingModeStringIndex = operandString.indexOf(" as ")
         val addressingMode = if (addressingModeStringIndex != -1) {
           val addressingModeString = operandString.substring(addressingModeStringIndex + 4).trim().toLowerCase()
           AddressingMode.fromString(addressingModeString)
-            ?: throw ParsingException(programLine, "Cannot determine addressing mode ($addressingModeString)")
+            ?: throw ParsingException(functionName, functionLine, "Cannot determine addressing mode ($addressingModeString)")
         } else {
-          throw ParsingException(programLine, "Cannot determine addressing mode ($operandString)")
+          throw ParsingException(functionName, functionLine, "Cannot determine addressing mode ($operandString)")
         }
 
         val addressingParameters = operandString.substring(1, closingBracketIndex).trim()
 
         val (operand, offsetOperand) = if (addressingParameters.contains('+')) {
           if (addressingParameters.count { it == '+' } > 1) {
-            throw ParsingException(programLine, "Only one offset operand allowed ($addressingParameters)")
+            throw ParsingException(functionName, functionLine, "Only one offset operand allowed ($addressingParameters)")
           }
 
           val (operandName, offsetOperandName) = addressingParameters.split('+').map { it.trim() }
-          val operand = parseOperand(programLine, operandName, type)
-          val offsetOperand = parseOperand(programLine, offsetOperandName, type)
+          val operand = parseOperand(functionName, functionLine, operandName, type)
+          val offsetOperand = parseOperand(functionName, functionLine, offsetOperandName, type)
 
           Pair(operand, offsetOperand)
         } else {
-          val operand = parseOperand(programLine, addressingParameters, type)
+          val operand = parseOperand(functionName, functionLine, addressingParameters, type)
           Pair(operand, null)
         }
 
         if (operand is Memory<*>) {
-          throw ParsingException(programLine, "Cannot use nested memory operands ($operandString)")
+          throw ParsingException(functionName, functionLine, "Cannot use nested memory operands ($operandString)")
         }
 
         offsetOperand?.let {
           if (it is Memory<*>) {
-            throw ParsingException(programLine, "Cannot use Memory as an offset operand ($operandString)")
+            throw ParsingException(functionName, functionLine, "Cannot use Memory as an offset operand ($operandString)")
           }
         }
 
         when (operand) {
           is Variable -> {
             if (!vmMemory.isVariableDefined(operand.name)) {
-              throw ParsingException(programLine, "Variable (${operand.name}) is not defined")
+              throw ParsingException(functionName, functionLine, "Variable (${operand.name}) is not defined")
             }
           }
           is Register,
           is Constant -> {
             //don't need to check anything here since it's not a variable
           }
-          else -> throw ParsingException(programLine, "Operand ($operand) is not supported by Memory operand")
+          else -> throw ParsingException(functionName, functionLine, "Operand ($operand) is not supported by Memory operand")
         }
 
         return Memory(operand, offsetOperand, addressingMode)
@@ -377,15 +560,15 @@ class VMParser(
       ch == '-' || ch.isDigit() -> {
         val constantString = hexNumberRegex.find(operandString)?.value
         if (constantString == null) {
-          throw ParsingException(programLine, "Cannot parse constant operand ($operandString)")
+          throw ParsingException(functionName, functionLine, "Cannot parse constant operand ($operandString)")
         }
 
-        return extractConstant(programLine, constantString.toLowerCase())
+        return extractConstant(functionName, functionLine, constantString.toLowerCase())
       }
       ch == '\"' -> {
         val stringEndIndex = operandString.indexOf('\"', 1)
         if (stringEndIndex == -1) {
-          throw ParsingException(programLine, "Cannot find end of the string operand (${operandString})")
+          throw ParsingException(functionName, functionLine, "Cannot find end of the string operand (${operandString})")
         }
 
         val string = operandString.substring(1, stringEndIndex)
@@ -396,12 +579,12 @@ class VMParser(
       ch.isLetter() -> {
         if (operandString.indexOf(':') == -1) {
           if (!vmMemory.isVariableDefined(operandString)) {
-            throw ParsingException(programLine, "Cannot determine variable type (${operandString})")
+            throw ParsingException(functionName, functionLine, "Cannot determine variable type (${operandString})")
           }
 
           val definedVariable = vmMemory.getVariable(operandString)
           if (definedVariable == null) {
-            throw ParsingException(programLine, "Variable (${operandString}) is defined but does not have an address in the variables map!")
+            throw ParsingException(functionName, functionLine, "Variable (${operandString}) is defined but does not have an address in the variables map!")
           }
 
           return Variable(
@@ -414,18 +597,18 @@ class VMParser(
         val (variableNameRaw, variableTypeRaw) = operandString.split(':').map { it.trim() }
         val variableName = wordRegex.find(variableNameRaw)?.value
         if (variableName == null) {
-          throw ParsingException(programLine, "Cannot parse variable name (${operandString})")
+          throw ParsingException(functionName, functionLine, "Cannot parse variable name (${operandString})")
         }
 
         if (type == InstructionType.Let) {
           if (vmMemory.isVariableDefined(variableName)) {
-            throw ParsingException(programLine, "Variable ($variableName) is already defined")
+            throw ParsingException(functionName, functionLine, "Variable ($variableName) is already defined")
           }
         }
 
         val variableType = VariableType.fromString(variableTypeRaw)
         if (variableType == null) {
-          throw ParsingException(programLine, "Unknown variable type (${variableTypeRaw})")
+          throw ParsingException(functionName, functionLine, "Unknown variable type (${variableTypeRaw})")
         }
 
         return Variable(
@@ -434,20 +617,28 @@ class VMParser(
           variableType
         )
       }
-      else -> throw ParsingException(programLine, "Cannot parse operand for ($operandString)")
+      else -> throw ParsingException(functionName, functionLine, "Cannot parse operand for ($operandString)")
     }
   }
 
-  private fun extractConstant(programLine: Int, constantString: String): Constant {
+  private fun extractConstant(
+    functionName: String,
+    functionLine: Int,
+    constantString: String
+  ): Constant {
     if (constantString.isEmpty()) {
-      throw ParsingException(programLine, "Constant is empty")
+      throw ParsingException(functionName, functionLine, "Constant is empty")
     }
 
     val isNegative = constantString.startsWith('-')
     val isHex = constantString.contains("0x")
 
     if (isNegative && isHex) {
-      throw ParsingException(programLine, "Numeric constant cannot be hexadecimal and negative and the same time!")
+      throw ParsingException(
+        functionName,
+        functionLine,
+        "Numeric constant cannot be hexadecimal and negative and the same time!"
+      )
     }
 
     //remove the '0x' at the beginning of the string if the string is hexadecimal
@@ -470,7 +661,7 @@ class VMParser(
 
     val extractedValue64 = string.toLongOrNull(radix)
     if (extractedValue64 == null) {
-      throw ParsingException(programLine, "Cannot parse constant ($extractedValue64), unknown error")
+      throw ParsingException(functionName, functionLine, "Cannot parse constant ($extractedValue64), unknown error")
     }
 
     return C64(extractedValue64)
@@ -480,6 +671,7 @@ class VMParser(
     val numberRegex = Regex("-?\\d+")
     val hexNumberRegex = Regex("[(-|0x)?0-9abcdefABCDEF]+")
     val wordRegex = Regex("\\w+")
+    val funcNameRegex = Regex("^[^0-9][a-zA-Z0-9_]+")
     val labelRegex = Regex("@([a-zA-Z]+)")
   }
 }

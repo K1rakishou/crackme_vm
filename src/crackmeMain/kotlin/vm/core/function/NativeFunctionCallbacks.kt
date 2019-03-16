@@ -89,7 +89,7 @@ object NativeFunctionCallbacks {
                                            val operand: Operand) : Exception("Operand (${operand.operandName}) is not supported by function (${funcType.funcName})")
   class ParameterTypeNotSupportedForThisFunction(val funcType: NativeFunctionType,
                                                  val type: VariableType) : Exception("Parameter of operandType (${type.str} is not supported by function (${funcType.funcName}))")
-  class UnknownFunctionType(type: NativeFunctionType) : Exception("Unknown Function operandType ${type.funcName}")
+  class UnknownFunctionType(type: NativeFunctionType) : Exception("Unknown VmFunctionScope operandType ${type.funcName}")
   class BadParametersCount(val funcType: NativeFunctionType,
                            val expected: Int,
                            val actual: Int) : Exception("Bad parameters count for function ${funcType.funcName} expected ${expected} but actual count is ${actual}")

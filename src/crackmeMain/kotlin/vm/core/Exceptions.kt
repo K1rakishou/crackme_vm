@@ -2,10 +2,16 @@ package crackme.vm.core
 
 import crackme.vm.operands.Operand
 
-class ParsingException(
-  programLine: Int,
+class ScopeParsingException(
+  functionLine: Int,
   message: String
-) : Exception("[Error at line ${programLine + 1}]: $message")
+) : Exception("[Error while trying to parse vm scope at line ${functionLine + 1}]: $message")
+
+class ParsingException(
+  functionName: String,
+  functionLine: Int,
+  message: String
+) : Exception("[Error at function ($functionName) at line ${functionLine + 1}]: $message")
 
 class VmExecutionException(
   eip: Int,

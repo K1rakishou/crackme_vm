@@ -10,16 +10,16 @@ class VMCompiler {
     val REGISTERS_OFFSET = 0
     val SIZE_OF_REGISTER = 8
 
-    for (instruction in vm.instructions) {
-      val compiled = instruction.compile()
-      val hexStr = compiled.map { Utils.bytesToHex(it) }.joinToString()
-
-      println("${instruction.toString().padEnd(30)} (rawSize = ${instruction.getInstructionRawSize().toString().padEnd(4)}) (byte code = [${hexStr}])")
-    }
-
-    for (registerIndex in 0 until vm.registers.size) {
-      println("r$registerIndex = ${vm.registers[registerIndex]}")
-    }
+//    for (instruction in vm.instructions) {
+//      val compiled = instruction.compile()
+//      val hexStr = compiled.map { Utils.bytesToHex(it) }.joinToString()
+//
+//      println("${instruction.toString().padEnd(30)} (rawSize = ${instruction.getInstructionRawSize().toString().padEnd(4)}) (byte code = [${hexStr}])")
+//    }
+//
+//    for (registerIndex in 0 until vm.registers.size) {
+//      println("r$registerIndex = ${vm.registers[registerIndex]}")
+//    }
 
   }
 

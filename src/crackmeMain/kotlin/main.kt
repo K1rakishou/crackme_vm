@@ -14,24 +14,17 @@ import platform.windows.GetTickCount64
 import kotlin.random.Random
 
 fun main() {
-  val testProgram = """
-        mov r0, 1
-        mov r1, 3
-        add r0, r1
-        cmp r0, 4
-        je @BAD
+  val testProgram =
 
-        mov r2, 999
-        jmp @GOOD
-@BAD:
-        mov r2, 888
-        mov r0, r2
+    """
+      def main()
+        mov r0, 1
         ret
-@GOOD:
-        mov r0, r2
-        ret
+      end
     """
 
+  //TODO: stack operand
+  //TODO: update flags in two operand instructions
   //TODO: rework println and other native functions
   //TODO: make Let instruction allocate variable on stack instead of the global memory
   //TODO: Introduce 32, 16 and maybe even 8 bit registers
@@ -52,6 +45,6 @@ fun main() {
 
   WinFile.withFileDo("bytecode.txt", WinFile.OpenType.Write) { file ->
     vmSimulator.simulate(vm)
-    vmCompiler.compile(file, vm)
+//    vmCompiler.compile(file, vm)
   }
 }

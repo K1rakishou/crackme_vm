@@ -10,6 +10,8 @@ class VmStack(
     private set
   private val stack = ByteArray(size) { 0 } //TODO: random.nextBytes(size)
 
+  fun isEmpty() = sp == 0
+
   fun push64(value: Long) {
     if (sp + LONG_SIZE > size) {
       throw OverflowException()
