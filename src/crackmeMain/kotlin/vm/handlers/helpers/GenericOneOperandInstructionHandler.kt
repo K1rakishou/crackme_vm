@@ -19,44 +19,44 @@ object GenericOneOperandInstructionHandler {
     handleMemReg: (operand: Memory<Register>, eip: Int) -> Long,
     //instr [abc]
     handleMemVar: (operand: Memory<Variable>, eip: Int) -> Long,
-    //instr [1122334455667788]
-    handleMemC64: (operand: Memory<C64>, eip: Int) -> Long,
-    //instr [11223344]
-    handleMemC32: (operand: Memory<C32>, eip: Int) -> Long,
+    //instr [1122334455667788]/[11223344]
+    handleMemConstant: (operand: Memory<Constant>, eip: Int) -> Long,
     //instr 11223344
     handleC64: (operand: C64, eip: Int) -> Long,
     //instr 1122334455667788
     handleC32: (operand: C32, eip: Int) -> Long
   ): Long {
     if (instruction !is GenericOneOperandInstruction) {
-      throw RuntimeException("Not implemented for ${instruction.instructionType.instructionName}")
+      throw RuntimeException("instruction ${instruction} is not a GenericOneOperandInstruction")
     }
 
     return when (instruction.operand) {
       is Register -> handleReg(instruction.operand as Register, eip)
       is Memory<*> -> {
-        when (val memoryOperand = (instruction.operand as Memory<*>).operand) {
-          is Register -> handleMemReg(memoryOperand as Memory<Register>, eip)
+        val memoryOperand = instruction.operand as Memory<*>
+
+        when (val innerOperand = memoryOperand.operand) {
+          is Register -> handleMemReg(instruction.operand as Memory<Register>, eip)
           is Variable -> {
-            when (memoryOperand.variableType) {
+            when (innerOperand.variableType) {
               VariableType.IntType,
               VariableType.LongType -> handleMemVar(memoryOperand as Memory<Variable>, eip)
               VariableType.StringType -> {
-                throw VmExecutionException(eip, "Variable with operandType (${(memoryOperand as Memory<*>).operand.operandType}) cannot be used with Memory operand")
+                throw VmExecutionException(eip, "Variable with operandType (${innerOperand.operandType}) cannot be used with Memory operand")
               }
             }
           }
           is Constant -> {
-            when (memoryOperand) {
-              is C64 -> handleMemC64(memoryOperand as Memory<C64>, eip)
-              is C32 -> handleMemC32(memoryOperand as Memory<C32>, eip)
+            when (innerOperand) {
+              is C64 -> handleMemConstant(memoryOperand as Memory<Constant>, eip)
+              is C32 -> handleMemConstant(memoryOperand as Memory<Constant>, eip)
               else -> {
-                throw VmExecutionException(eip, "Operand of type (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
+                throw VmExecutionException(eip, "Operand of type (${innerOperand.operandName}) cannot be used with instruction ($instruction)")
               }
             }
           }
           else -> {
-            throw VmExecutionException(eip, "Operand of type (${instruction.operand.operandName}) cannot be used with instruction ($instruction)")
+            throw VmExecutionException(eip, "Operand of type (${innerOperand.operandName}) cannot be used with instruction ($instruction)")
           }
         }
       }

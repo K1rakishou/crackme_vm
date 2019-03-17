@@ -13,11 +13,9 @@ class DecHandler : Handler<Dec>() {
       currentEip,
       instruction,
       handleReg = { operand, _ -> --vm.registers[operand.index] },
-      handleMemReg = { operand, _ ->
-        //FIXME: probably this wont work
-        val address = vm.registers[operand.operand.index].toInt()
-        val newValue = vm.vmMemory.getLong(address) - 1
-        vm.vmMemory.putLong(address, newValue)
+      handleMemReg = { operand, eip ->
+        val newValue = getVmMemoryValueByRegister(vm, eip, operand) - 1
+        putVmMemoryValueByRegister(operand, vm, newValue, eip)
         newValue
       },
       handleMemVar = { operand, eip ->
@@ -25,15 +23,10 @@ class DecHandler : Handler<Dec>() {
         putVmMemoryValueByVariable(operand, vm, newValue, eip)
         newValue
       },
-      handleMemC64 = { operand, _ ->
-        val newValue = vm.vmMemory.getLong(operand.operand.value.toInt()) - 1
-        vm.vmMemory.putLong(operand.operand.value.toInt(), newValue)
+      handleMemConstant = { operand, eip ->
+        val newValue = getVmMemoryValueByConstant(vm, eip, operand) - 1
+        putVmMemoryValueByConstant(operand, vm, newValue, eip)
         newValue
-      },
-      handleMemC32 = { operand, _ ->
-        val newValue = vm.vmMemory.getInt(operand.operand.value) - 1
-        vm.vmMemory.putInt(operand.operand.value, newValue)
-        newValue.toLong()
       },
       handleC64 = { _, eip ->
         throw VmExecutionException(eip, "Cannot dec C64")

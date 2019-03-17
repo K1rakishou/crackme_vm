@@ -41,7 +41,7 @@ object GenericTwoOperandsInstructionHandler {
     handle_MemC32_Const: (dest: Memory<C32>, src: Constant, eip: Int) -> Unit
   ) {
     if (instruction !is GenericTwoOperandsInstruction) {
-      throw RuntimeException("Not implemented for ${instruction.instructionType.instructionName}")
+      throw RuntimeException("instruction ${instruction} is not a GenericTwoOperandsInstruction")
     }
 
     when (instruction.dest) {

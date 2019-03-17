@@ -5,6 +5,7 @@ import crackme.vm.core.AddressingMode
 import crackme.vm.core.VmExecutionException
 import crackme.vm.handlers.helpers.GenericOneOperandInstructionHandler
 import crackme.vm.instructions.Pop
+import crackme.vm.operands.*
 
 class PopHandler : Handler<Pop>() {
 
@@ -19,47 +20,18 @@ class PopHandler : Handler<Pop>() {
         value
       },
       handleMemReg = { operand, eip ->
-
-        //TODO: extract into a separate method
-        when (operand.addressingMode) {
-          AddressingMode.ModeByte -> TODO("push8  not implemented yet")
-          AddressingMode.ModeWord -> TODO("push16 not implemented yet")
-          AddressingMode.ModeDword -> {
-            val value = vm.vmStack.pop32()
-            putVmMemoryValueByRegister(operand, vm, value.toLong(), eip)
-            value.toLong()
-          }
-          AddressingMode.ModeQword -> {
-            val value = vm.vmStack.pop64()
-            putVmMemoryValueByRegister(operand, vm, value, eip)
-            value
-          }
-        }
+        popIntoVmMemoryByRegister(operand, vm, eip)
       },
       handleMemVar = { operand, eip ->
-        //TODO: extract into a separate method
-        when (operand.addressingMode) {
-          AddressingMode.ModeByte -> TODO("push8  not implemented yet")
-          AddressingMode.ModeWord -> TODO("push16 not implemented yet")
-          AddressingMode.ModeDword -> {
-            val value = vm.vmStack.pop32()
-            putVmMemoryValueByVariable(operand, vm, value.toLong(), eip)
-            value.toLong()
-          }
-          AddressingMode.ModeQword -> {
-            val value = vm.vmStack.pop64()
-            putVmMemoryValueByVariable(operand, vm, value, eip)
-            value
-          }
+        popIntoVmMemoryByVariable(operand, vm, eip)
+      },
+      handleMemConstant = { operand, eip ->
+        val value = when (operand.operand) {
+          is C64 -> vm.vmStack.pop64()
+          is C32 -> vm.vmStack.pop32().toLong()
+          else -> throw VmExecutionException(eip, "Cannot pop into VmString")
         }
-      },
-      handleMemC64 = { operand, _ ->
-        val value = vm.vmStack.pop64()
-        putConstantValueIntoMemory(vm, operand.operand, value)
-        value
-      },
-      handleMemC32 = { operand, _ ->
-        val value = vm.vmStack.pop32().toLong()
+
         putConstantValueIntoMemory(vm, operand.operand, value)
         value
       },
@@ -73,6 +45,40 @@ class PopHandler : Handler<Pop>() {
 
     vm.vmFlags.updateFlagsFromResult(result)
     return currentEip + 1
+  }
+
+  private fun popIntoVmMemoryByVariable(operand: Memory<Variable>, vm: VM, eip: Int): Long {
+    return when (operand.addressingMode) {
+      AddressingMode.ModeByte -> TODO("push8  not implemented yet")
+      AddressingMode.ModeWord -> TODO("push16 not implemented yet")
+      AddressingMode.ModeDword -> {
+        val value = vm.vmStack.pop32()
+        putVmMemoryValueByVariable(operand, vm, value.toLong(), eip)
+        value.toLong()
+      }
+      AddressingMode.ModeQword -> {
+        val value = vm.vmStack.pop64()
+        putVmMemoryValueByVariable(operand, vm, value, eip)
+        value
+      }
+    }
+  }
+
+  private fun popIntoVmMemoryByRegister(operand: Memory<Register>, vm: VM, eip: Int): Long {
+    return when (operand.addressingMode) {
+      AddressingMode.ModeByte -> TODO("push8  not implemented yet")
+      AddressingMode.ModeWord -> TODO("push16 not implemented yet")
+      AddressingMode.ModeDword -> {
+        val value = vm.vmStack.pop32()
+        putVmMemoryValueByRegister(operand, vm, value.toLong(), eip)
+        value.toLong()
+      }
+      AddressingMode.ModeQword -> {
+        val value = vm.vmStack.pop64()
+        putVmMemoryValueByRegister(operand, vm, value, eip)
+        value
+      }
+    }
   }
 
 }

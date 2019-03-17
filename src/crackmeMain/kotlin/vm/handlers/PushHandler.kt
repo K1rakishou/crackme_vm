@@ -2,8 +2,11 @@ package crackme.vm.handlers
 
 import crackme.vm.VM
 import crackme.vm.core.AddressingMode
+import crackme.vm.core.VmExecutionException
 import crackme.vm.handlers.helpers.GenericOneOperandInstructionHandler
 import crackme.vm.instructions.Push
+import crackme.vm.operands.C32
+import crackme.vm.operands.C64
 
 class PushHandler : Handler<Push>() {
 
@@ -50,12 +53,15 @@ class PushHandler : Handler<Push>() {
           }
         }
       },
-      handleMemC64 = { operand, _ ->
-        vm.vmStack.push64(getConstantValueFromVmMemory(vm, operand.operand))
-        0
-      },
-      handleMemC32 = { operand, _ ->
-        vm.vmStack.push32(getConstantValueFromVmMemory(vm, operand.operand).toInt())
+      handleMemConstant = { operand, eip ->
+        //TODO: may work incorrectly, needs additional testing
+        when (operand.operand) {
+          is C32 -> vm.vmStack.push64(getConstantValueFromVmMemory(vm, operand.operand))
+          //TODO: probably we don't even need C64 here since VmMemory size is a 32 bit value and will never be 64 bit value
+          is C64 -> vm.vmStack.push64(getConstantValueFromVmMemory(vm, operand.operand))
+          else -> throw VmExecutionException(eip, "Cannot push VmString to the stack")
+        }
+
         0
       },
       handleC64 = { operand, eip ->

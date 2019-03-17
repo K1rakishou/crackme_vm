@@ -253,4 +253,30 @@ class MovHandlerTest {
     assertEquals(112233, vm.registers[1])
   }
 
+  @Test
+  fun test_MovVariableAddressToRegister() {
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+        def main()
+          let a: Int, 10
+          let b: Int, 10
+          let c: Int, 10
+
+          mov r0, a
+          mov r1, b
+          mov r2, c
+
+          ret
+        end
+      """
+    )
+    val vmSimulator = VMSimulator()
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
+    assertEquals(0, vm.registers[0])
+    assertEquals(4, vm.registers[1])
+    assertEquals(8, vm.registers[2])
+  }
 }
