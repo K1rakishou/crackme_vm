@@ -274,18 +274,17 @@ class VMParser(
     line: String,
     labels: MutableMap<String, Int>
   ): List<Instruction> {
-    //return from a function
-    if (line.startsWith("ret")) {
-      return listOf(Ret())
-    }
-
     val indexOfFirstSpace = line.indexOfFirst { it == ' ' }
-    if (indexOfFirstSpace == -1) {
-      throw ParsingException(functionName, functionLine, "Cannot parse instruction name ($line)")
-    }
 
-    val instructionName = line.substring(0, indexOfFirstSpace).toLowerCase()
-    val body = line.substring(indexOfFirstSpace)
+    val (instructionName, body) = if (indexOfFirstSpace == -1) {
+      //some instruction may not have any operands (like ret)
+      Pair(line, "")
+    } else {
+      val instructionName = line.substring(0, indexOfFirstSpace).toLowerCase()
+      val body = line.substring(indexOfFirstSpace)
+
+      Pair(instructionName, body)
+    }
 
     val instruction = when (instructionName) {
       "mov" -> parseGenericTwoOperandsInstruction(functionName, functionLine, body, InstructionType.Mov)
@@ -297,6 +296,7 @@ class VMParser(
       "dec" -> parseGenericOneOperandInstruction(functionName, functionLine, body, InstructionType.Dec)
       "push" -> parseGenericOneOperandInstruction(functionName, functionLine, body, InstructionType.Push)
       "pop" -> parseGenericOneOperandInstruction(functionName, functionLine, body, InstructionType.Pop)
+      "ret" -> parseRet(functionName, functionLine, body, InstructionType.Ret)
       "je",
       "jne",
       "jmp" -> parseJxx(functionName, functionLine, instructionName, body, labels, InstructionType.Jxx)
@@ -306,6 +306,23 @@ class VMParser(
     }
 
     return vmInstructionObfuscator.obfuscate(vmMemory, instruction)
+  }
+
+  private fun parseRet(functionName: String, functionLine: Int, body: String, type: InstructionType): Instruction {
+    if (body.isEmpty()) {
+      return Ret(0)
+    }
+
+    val operand = operandParser.parseOperand(functionName, functionLine, body.trim(), type, vmMemory)
+    if (operand !is C32) {
+      throw ParsingException(functionName, functionLine, "Ret can only be used with C32 operand")
+    }
+
+    if (operand.value < 0 || operand.value > Short.MAX_VALUE.toInt()) {
+      throw ParsingException(functionName, functionLine, "Ret operand overflow (${operand.value})")
+    }
+
+    return Ret(operand.value.toShort())
   }
 
   private fun parseGenericOneOperandInstruction(
@@ -329,13 +346,13 @@ class VMParser(
       InstructionType.Dec -> Dec(operand)
       InstructionType.Push -> Push(operand)
       InstructionType.Pop -> Pop(operand)
+      InstructionType.Ret,
       InstructionType.Add,
       InstructionType.Call,
       InstructionType.Cmp,
       InstructionType.Jxx,
       InstructionType.Let,
       InstructionType.Mov,
-      InstructionType.Ret,
       InstructionType.Xor,
       InstructionType.Sub -> {
         throw ParsingException(

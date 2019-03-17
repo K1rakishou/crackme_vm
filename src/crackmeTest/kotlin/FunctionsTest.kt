@@ -1,8 +1,8 @@
 package sample.helloworld
 
 import crackme.misc.extractInstructionsAndGetEntryPoint
-import crackme.vm.parser.VMParser
 import crackme.vm.VMSimulator
+import crackme.vm.parser.VMParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -14,16 +14,14 @@ class FunctionsTest {
     val vm = vmParser.parse(
       """
         def sum_of_three(a: Int, b: Int, c: Int)
-          pop r7
-          pop r0
-          pop r1
-          pop r2
-          push r7
+          mov r0, ss@[0x8] as qword
+          mov r1, ss@[0x10] as qword
+          mov r2, ss@[0x18] as qword
 
           add r0, r1
           add r0, r2
 
-          ret
+          ret 0x18
         end
 
         def main()

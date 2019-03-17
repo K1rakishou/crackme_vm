@@ -2,9 +2,9 @@ package crackme
 
 import crackme.misc.extractInstructionsAndGetEntryPoint
 import crackme.vm.VMCompiler
-import crackme.vm.parser.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.os.WinFile
+import crackme.vm.parser.VMParser
 import platform.windows.GetTickCount64
 import kotlin.random.Random
 
@@ -18,7 +18,6 @@ fun main() {
       end
     """
 
-  //TODO: update flags in two operand instructions
   //TODO: rework println and other native functions
   //TODO: make Let instruction allocate variable on stack instead of the global memory
   //TODO: Introduce 32, 16 and maybe even 8 bit registers

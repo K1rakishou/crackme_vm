@@ -16,6 +16,13 @@ abstract class Instruction {
     return array
   }
 
+  protected fun Short.toByteArray(): ByteArray {
+    val array = ByteArray(2)
+    Utils.writeShortToArray(0, this, array)
+
+    return array
+  }
+
   protected fun Int.toByteArray(): ByteArray {
     val array = ByteArray(4)
     Utils.writeIntToArray(0, this, array)
