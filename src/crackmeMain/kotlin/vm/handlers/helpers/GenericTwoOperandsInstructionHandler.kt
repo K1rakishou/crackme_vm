@@ -9,42 +9,40 @@ import crackme.vm.operands.*
 
 object GenericTwoOperandsInstructionHandler {
 
-  //TODO: make this function return Long as well as all of the lambdas. This is necessary for vmFlags updating
-
   fun <T : Instruction> handle(
     vm: VM,
     eip: Int,
     instruction: T,
     //instr r0, 1122334455667788/11223344
-    handle_Reg_Constant: (dest: Register, src: Constant, eip: Int) -> Unit,
+    handle_Reg_Constant: (dest: Register, src: Constant, eip: Int) -> Long,
     //instr r0, ss/ds@[11223344]
-    handle_Reg_MemC32: (dest: Register, src: Memory<C32>, eip: Int) -> Unit,
+    handle_Reg_MemC32: (dest: Register, src: Memory<C32>, eip: Int) -> Long,
     //instr r0, ss/ds@[r0]
-    handle_Reg_MemReg: (dest: Register, src: Memory<Register>, eip: Int) -> Unit,
+    handle_Reg_MemReg: (dest: Register, src: Memory<Register>, eip: Int) -> Long,
     //instr r0, ds@[abc]
-    handle_Reg_MemVar: (dest: Register, src: Memory<Variable>, eip: Int) -> Unit,
+    handle_Reg_MemVar: (dest: Register, src: Memory<Variable>, eip: Int) -> Long,
     //instr r0, r1
-    handle_Reg_Reg: (dest: Register, src: Register, eip: Int) -> Unit,
+    handle_Reg_Reg: (dest: Register, src: Register, eip: Int) -> Long,
     //instr r0, abc
-    handle_Reg_Var: (dest: Register, src: Variable, eip: Int) -> Unit,
+    handle_Reg_Var: (dest: Register, src: Variable, eip: Int) -> Long,
     //instr ss/ds@[r0], r0
-    handle_MemReg_Reg: (dest: Memory<Register>, src: Register, eip: Int) -> Unit,
+    handle_MemReg_Reg: (dest: Memory<Register>, src: Register, eip: Int) -> Long,
     //instr ds@[abc], r0
-    handle_MemVar_Reg: (dest: Memory<Variable>, src: Register, eip: Int) -> Unit,
+    handle_MemVar_Reg: (dest: Memory<Variable>, src: Register, eip: Int) -> Long,
     //instr ss/ds@[11223344], r0
-    handle_MemC32_Reg: (dest: Memory<C32>, src: Register, eip: Int) -> Unit,
+    handle_MemC32_Reg: (dest: Memory<C32>, src: Register, eip: Int) -> Long,
     //instr ss/ds@[r0], 1234
-    handle_MemReg_Const: (dest: Memory<Register>, src: Constant, eip: Int) -> Unit,
+    handle_MemReg_Const: (dest: Memory<Register>, src: Constant, eip: Int) -> Long,
     //instr ds@[abc], r0
-    handle_MemVar_Const: (dest: Memory<Variable>, src: Constant, eip: Int) -> Unit,
+    handle_MemVar_Const: (dest: Memory<Variable>, src: Constant, eip: Int) -> Long,
     //instr [11223344], 123
-    handle_MemC32_Const: (dest: Memory<C32>, src: Constant, eip: Int) -> Unit
-  ) {
+    handle_MemC32_Const: (dest: Memory<C32>, src: Constant, eip: Int) -> Long
+  ): Long {
     if (instruction !is GenericTwoOperandsInstruction) {
       throw RuntimeException("instruction ${instruction} is not a GenericTwoOperandsInstruction")
     }
 
-    when (instruction.dest) {
+    return when (instruction.dest) {
       is Register -> {
         when (val srcOperand = instruction.src) {
           is Constant -> {
@@ -101,6 +99,7 @@ object GenericTwoOperandsInstructionHandler {
                   else -> throw VmExecutionException(eip, "Unknown segment (${srcInstruction.segment.segmentName})")
                 }
               }
+              else -> throw VmExecutionException(eip, "Unknown operand (${srcInstruction.operand})")
             }
           }
           //instr r0, r1
@@ -158,6 +157,7 @@ object GenericTwoOperandsInstructionHandler {
                   is VmString -> {
                     throw VmExecutionException(eip, "VmString cannot be used as a memory address")
                   }
+                  else -> throw VmExecutionException(eip, "Unknown operand (${destInstruction.operand})")
                 }
               }
               is Memory<*> -> {

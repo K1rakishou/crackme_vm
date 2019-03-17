@@ -1,8 +1,8 @@
 package sample.helloworld.handlers
 
 import crackme.misc.extractInstructionsAndGetEntryPoint
-import crackme.vm.parser.VMParser
 import crackme.vm.VMSimulator
+import crackme.vm.parser.VMParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -45,5 +45,30 @@ class XorHandlerTest {
     vmSimulator.simulate(vm, entryPoint, instructions)
 
     assertEquals(0, vm.registers[1])
+  }
+
+  @Test
+  fun test_EnsureFlagsAreBeingUpdated() {
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+        def main()
+          mov r1, 100
+          xor r1, 100
+          jne @BAD
+
+          mov r0, 1122
+          ret
+@BAD:
+          mov r0, -1
+          ret
+        end
+      """
+    )
+    val vmSimulator = VMSimulator()
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
+    assertEquals(1122, vm.registers[0])
   }
 }

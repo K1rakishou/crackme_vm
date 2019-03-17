@@ -4,7 +4,8 @@ import crackme.vm.core.JumpType
 
 class Jxx(
   val jumpType: JumpType,
-  val instructionId: Int,
+  val functionName: String,
+  val labelName: String,
   override val instructionType: InstructionType = InstructionType.Jxx
 ) : Instruction() {
   override fun rawSize(): Int = 1 + 1 + 4 //instructionType + jumpType + instructionId
@@ -12,14 +13,15 @@ class Jxx(
   override fun compile(): List<ByteArray> {
     val parts = mutableListOf<ByteArray>()
 
-    parts += instructionType.value.toByteArray()
-    parts += jumpType.type.toByteArray()
-    parts += instructionId.toByteArray()
+    //FIXME
+//    parts += instructionType.value.toByteArray()
+//    parts += jumpType.type.toByteArray()
+//    parts += labelName.toByteArray()
 
     return parts
   }
 
   override fun toString(): String {
-    return "${jumpType.jumpName} @$instructionId"
+    return "${jumpType.jumpName} @$labelName"
   }
 }

@@ -2,8 +2,9 @@ package crackme.vm.parser
 
 import crackme.vm.VM
 import crackme.vm.core.*
-import crackme.vm.core.VariableType
-import crackme.vm.core.function.*
+import crackme.vm.core.function.NativeFunction
+import crackme.vm.core.function.NativeFunctionCallbacks
+import crackme.vm.core.function.NativeFunctionType
 import crackme.vm.instructions.*
 import crackme.vm.obfuscator.NoOpInstructionObfuscator
 import crackme.vm.obfuscator.VMInstructionObfuscator
@@ -36,10 +37,10 @@ class VMParser(
     val vmFunctions = mutableMapOf<String, VmFunction>()
     var instructionId = 0
 
-    for (vmFunctionScope in vmFunctionScopes) {
-      val funcBody = lines.subList(vmFunctionScope.value.start, vmFunctionScope.value.start + vmFunctionScope.value.length)
+    for ((_, vmScope) in vmFunctionScopes) {
+      val funcBody = lines.subList(vmScope.start, vmScope.start + vmScope.length)
 
-      val vmFunction = parseFunctionBody(vmFunctionScope.value, instructionId, vmFunctionScope.key, funcBody)
+      val vmFunction = parseFunctionBody(vmScope, instructionId, funcBody)
       vmFunctions.put(vmFunction.name, vmFunction)
       instructionId += vmFunction.instructions.size
     }
@@ -58,7 +59,6 @@ class VMParser(
   private fun parseFunctionBody(
     vmFunctionScope: VmFunctionScope,
     _instructionId: Int,
-    functionName: String,
     funcBody: List<String>
   ): VmFunction {
     val labels = mutableMapOf<String, Int>()
@@ -75,12 +75,12 @@ class VMParser(
 
       //label declaration
       if (funcLine.startsWith('@') && funcLine.endsWith(':')) {
-        val labelName = parseLabel(functionName, lineIndex, funcLine)
+        val labelName = parseLabel(vmFunctionScope.name, lineIndex, funcLine)
         labels[labelName] = instructionId
         continue
       }
 
-      val newInstructions = parseInstruction(functionName, lineIndex, instructionLine, labels)
+      val newInstructions = parseInstruction(vmFunctionScope.name, lineIndex, instructionLine, labels)
       if (newInstructions.isEmpty()) {
         continue
       }
@@ -92,11 +92,11 @@ class VMParser(
 
     val uninitializedLabels = labels.filter { it.value == -1 }
     if (uninitializedLabels.isNotEmpty()) {
-      throw RuntimeException("There are uninitialized labels after parsing at function ($functionName) : (${uninitializedLabels.map { it.key }})")
+      throw RuntimeException("There are uninitialized labels after parsing vmScope ($vmFunctionScope.name) : (${uninitializedLabels.map { it.key }})")
     }
 
     return VmFunction(
-      functionName,
+      vmFunctionScope.name,
       vmFunctionScope.start,
       vmFunctionScope.length,
       labels,
@@ -465,25 +465,7 @@ class VMParser(
     }
 
     val labelName = parseLabel(functionName, functionLine, body)
-    if (labels[labelName] == null) {
-      throw ParsingException(
-        functionName,
-        functionLine,
-        "Label with name ($labelName) does not exist in the labels map"
-      )
-    }
-
-    //TODO: we probably should not check for whether the label was initialized here,
-    // it's better to do it after all of the instructions has been parsed
-    if (labels[labelName] == null) {
-      throw ParsingException(
-        functionName,
-        functionLine,
-        "Label with name ($labelName) was not initialized, instructionIndex = (${labels[labelName]})"
-      )
-    }
-
-    return Jxx(jumpType, labels.getValue(labelName))
+    return Jxx(jumpType, functionName, labelName)
   }
 
   companion object {
