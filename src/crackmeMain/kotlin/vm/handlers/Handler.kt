@@ -93,60 +93,7 @@ abstract class Handler<T : Instruction> {
     }
   }
 
-  //TODO: merge getVmMemoryValueByConstant and getVmStackValueByConstant into one function
-  //TODO: merge putVmStackValueByConstant and putVmMemoryValueByConstant into one function
-  //TODO: merge getVmMemoryValueByRegister and getVmStackValueByRegister into one function
-  //TODO: merge putVmMemoryValueByRegister and putVmStackValueByRegister into one function
-
-  protected fun getVmMemoryValueByRegister(vm: VM, eip: Int, memoryOperand: Memory<Register>): Long {
-    if (memoryOperand.segment != Segment.Memory) {
-      throw VmExecutionException(eip, "Bad segment (${memoryOperand.segment.segmentName}), supposed to be Memory")
-    }
-
-    val operand = memoryOperand.operand
-    val offsetOperand = memoryOperand.offsetOperand
-    val addressingMode = memoryOperand.addressingMode
-
-    //FIXME: unsafe cast
-    val address = vm.registers[operand.index].toInt() + getOffsetOperandValue(vm, eip, offsetOperand)
-
-    val value = when (addressingMode) {
-      AddressingMode.ModeByte -> vm.vmMemory.getByte(address).toLong()
-      AddressingMode.ModeWord -> vm.vmMemory.getShort(address).toLong()
-      AddressingMode.ModeDword -> vm.vmMemory.getInt(address).toLong()
-      AddressingMode.ModeQword -> vm.vmMemory.getLong(address)
-    }
-
-    return applyAddressingMode(value, addressingMode)
-  }
-
-  protected fun getVmStackValueByRegister(vm: VM, eip: Int, memoryOperand: Memory<Register>): Long {
-    if (memoryOperand.segment != Segment.Stack) {
-      throw VmExecutionException(eip, "Bad segment (${memoryOperand.segment.segmentName}), supposed to be Stack")
-    }
-
-    val operand = memoryOperand.operand
-    val offsetOperand = memoryOperand.offsetOperand
-    val addressingMode = memoryOperand.addressingMode
-
-    //FIXME: unsafe cast
-    val address = vm.registers[operand.index].toInt() + getOffsetOperandValue(vm, eip, offsetOperand)
-
-    val value = when (addressingMode) {
-      AddressingMode.ModeDword -> vm.vmStack.peek32At(address).toLong()
-      AddressingMode.ModeQword -> vm.vmStack.peek64At(address)
-      AddressingMode.ModeByte,
-      AddressingMode.ModeWord -> throw VmExecutionException(eip, "Stack read with byte/word addressing is not implemented yet")
-    }
-
-    return applyAddressingMode(value, addressingMode)
-  }
-
   protected fun getVmMemoryValueByConstant(vm: VM, eip: Int, memoryOperand: Memory<Constant>): Long {
-    if (memoryOperand.segment != Segment.Memory) {
-      throw VmExecutionException(eip, "Bad segment (${memoryOperand.segment.segmentName}), supposed to be Memory")
-    }
-
     val operand = memoryOperand.operand
     val offsetOperand = memoryOperand.offsetOperand
     val addressingMode = memoryOperand.addressingMode
@@ -161,90 +108,25 @@ abstract class Handler<T : Instruction> {
     //FIXME: unsafe cast
     val address = constantValue + getOffsetOperandValue(vm, eip, offsetOperand)
 
-    val value = when (addressingMode) {
-      AddressingMode.ModeDword -> vm.vmMemory.getInt(address).toLong()
-      AddressingMode.ModeQword -> vm.vmMemory.getLong(address)
-      AddressingMode.ModeByte,
-      AddressingMode.ModeWord -> throw VmExecutionException(eip, "Stack read with byte/word addressing is not implemented yet")
+    val value = when (memoryOperand.segment) {
+      Segment.Memory -> when (addressingMode) {
+        AddressingMode.ModeByte -> vm.vmMemory.getByte(address).toLong()
+        AddressingMode.ModeWord -> vm.vmMemory.getShort(address).toLong()
+        AddressingMode.ModeDword -> vm.vmMemory.getInt(address).toLong()
+        AddressingMode.ModeQword -> vm.vmMemory.getLong(address)
+      }
+      Segment.Stack -> when (addressingMode) {
+        AddressingMode.ModeDword -> vm.vmStack.peek32At(address).toLong()
+        AddressingMode.ModeQword -> vm.vmStack.peek64At(address)
+        AddressingMode.ModeByte -> throw VmExecutionException(eip, "Stack read with byte addressing is not implemented yet")
+        AddressingMode.ModeWord -> throw VmExecutionException(eip, "Stack read with word addressing is not implemented yet")
+      }
     }
 
     return applyAddressingMode(value, addressingMode)
   }
 
-  protected fun getVmStackValueByConstant(vm: VM, eip: Int, memoryOperand: Memory<Constant>): Long {
-    if (memoryOperand.segment != Segment.Stack) {
-      throw VmExecutionException(eip, "Bad segment (${memoryOperand.segment.segmentName}), supposed to be Stack")
-    }
-
-    val operand = memoryOperand.operand
-    val offsetOperand = memoryOperand.offsetOperand
-    val addressingMode = memoryOperand.addressingMode
-
-    val constantValue = when (operand) {
-      is C64 -> operand.value.toInt()
-      is C32 -> operand.value
-      is VmString -> throw VmExecutionException(eip, "Cannot use VmString with Memory operand")
-      else -> throw VmExecutionException(eip, "Unknown constant type ($operand)")
-    }
-
-    //FIXME: unsafe cast
-    val address = constantValue + getOffsetOperandValue(vm, eip, offsetOperand)
-
-    val value = when (addressingMode) {
-      AddressingMode.ModeDword -> vm.vmStack.peek32At(address).toLong()
-      AddressingMode.ModeQword -> vm.vmStack.peek64At(address)
-      AddressingMode.ModeByte,
-      AddressingMode.ModeWord -> throw VmExecutionException(eip, "Stack read with byte/word addressing is not implemented yet")
-    }
-
-    return applyAddressingMode(value, addressingMode)
-  }
-
-  protected fun putVmMemoryValueByRegister(memoryOperand: Memory<Register>, vm: VM, value: Long, eip: Int) {
-    if (memoryOperand.segment != Segment.Memory) {
-      throw VmExecutionException(eip, "Bad segment (${memoryOperand.segment.segmentName}), supposed to be Memory")
-    }
-
-    val operand = memoryOperand.operand
-    val offsetOperand = memoryOperand.offsetOperand
-    val addressingMode = memoryOperand.addressingMode
-
-    //FIXME: unsafe cast
-    val address = vm.registers[operand.index].toInt() + getOffsetOperandValue(vm, eip, offsetOperand)
-
-    when (addressingMode) {
-      AddressingMode.ModeByte -> vm.vmMemory.putByte(address, applyAddressingMode(value, addressingMode).toByte())
-      AddressingMode.ModeWord -> vm.vmMemory.putShort(address, applyAddressingMode(value, addressingMode).toShort())
-      AddressingMode.ModeDword -> vm.vmMemory.putInt(address, applyAddressingMode(value, addressingMode).toInt())
-      AddressingMode.ModeQword -> vm.vmMemory.putLong(address, applyAddressingMode(value, addressingMode))
-    }
-  }
-
-  protected fun putVmStackValueByRegister(memoryOperand: Memory<Register>, vm: VM, value: Long, eip: Int) {
-    if (memoryOperand.segment != Segment.Stack) {
-      throw VmExecutionException(eip, "Bad segment (${memoryOperand.segment.segmentName}), supposed to be Stack")
-    }
-
-    val operand = memoryOperand.operand
-    val offsetOperand = memoryOperand.offsetOperand
-    val addressingMode = memoryOperand.addressingMode
-
-    //FIXME: unsafe cast
-    val address = vm.registers[operand.index].toInt() + getOffsetOperandValue(vm, eip, offsetOperand)
-
-    when (addressingMode) {
-      AddressingMode.ModeDword -> vm.vmStack.set32At(address, applyAddressingMode(value, addressingMode).toInt())
-      AddressingMode.ModeQword -> vm.vmStack.set64At(address, applyAddressingMode(value, addressingMode))
-      AddressingMode.ModeByte,
-      AddressingMode.ModeWord -> throw VmExecutionException(eip, "Stack write with byte/word addressing is not implemented yet")
-    }
-  }
-
-  protected fun putVmStackValueByConstant(memoryOperand: Memory<Constant>, vm: VM, value: Long, eip: Int) {
-    if (memoryOperand.segment != Segment.Stack) {
-      throw VmExecutionException(eip, "Bad segment (${memoryOperand.segment.segmentName}), supposed to be Stack")
-    }
-
+  protected fun putVmMemoryValueByConstant(memoryOperand: Memory<Constant>, vm: VM, value: Long, eip: Int) {
     val operand = memoryOperand.operand
     val offsetOperand = memoryOperand.offsetOperand
     val addressingMode = memoryOperand.addressingMode
@@ -260,38 +142,69 @@ abstract class Handler<T : Instruction> {
     val address = constantValue + getOffsetOperandValue(vm, eip, offsetOperand)
     val convertedValue = applyAddressingMode(value, addressingMode)
 
-    when (addressingMode) {
-      AddressingMode.ModeDword -> vm.vmStack.set32At(address, convertedValue.toInt())
-      AddressingMode.ModeQword -> vm.vmStack.set64At(address, convertedValue)
-      AddressingMode.ModeByte,
-      AddressingMode.ModeWord -> throw VmExecutionException(eip, "Stack write with byte/word addressing is not implemented yet")
+    when (memoryOperand.segment) {
+      Segment.Memory -> when (addressingMode) {
+        AddressingMode.ModeByte -> vm.vmMemory.putByte(address, convertedValue.toByte())
+        AddressingMode.ModeWord -> vm.vmMemory.putShort(address, convertedValue.toShort())
+        AddressingMode.ModeDword -> vm.vmMemory.putInt(address, convertedValue.toInt())
+        AddressingMode.ModeQword -> vm.vmMemory.putLong(address, convertedValue)
+      }
+      Segment.Stack -> when (addressingMode) {
+        AddressingMode.ModeDword -> vm.vmStack.set32At(address, convertedValue.toInt())
+        AddressingMode.ModeQword -> vm.vmStack.set64At(address, convertedValue)
+        AddressingMode.ModeByte,
+        AddressingMode.ModeWord -> throw VmExecutionException(eip, "Stack write with byte/word addressing is not implemented yet")
+      }
     }
   }
 
-  protected fun putVmMemoryValueByConstant(memoryOperand: Memory<Constant>, vm: VM, value: Long, eip: Int) {
-    if (memoryOperand.segment != Segment.Memory) {
-      throw VmExecutionException(eip, "Bad segment (${memoryOperand.segment.segmentName}), supposed to be Memory")
-    }
-
+  protected fun getVmMemoryValueByRegister(vm: VM, eip: Int, memoryOperand: Memory<Register>): Long {
     val operand = memoryOperand.operand
     val offsetOperand = memoryOperand.offsetOperand
     val addressingMode = memoryOperand.addressingMode
 
-    val constantValue = when (operand) {
-      is C64 -> operand.value.toInt()
-      is C32 -> operand.value
-      is VmString -> throw VmExecutionException(eip, "Cannot use VmString with Memory operand")
-      else -> throw VmExecutionException(eip, "Unknown constant type ($operand)")
+    //FIXME: unsafe cast
+    val address = vm.registers[operand.index].toInt() + getOffsetOperandValue(vm, eip, offsetOperand)
+
+    val value = when (memoryOperand.segment) {
+      Segment.Memory -> when (addressingMode) {
+        AddressingMode.ModeByte -> vm.vmMemory.getByte(address).toLong()
+        AddressingMode.ModeWord -> vm.vmMemory.getShort(address).toLong()
+        AddressingMode.ModeDword -> vm.vmMemory.getInt(address).toLong()
+        AddressingMode.ModeQword -> vm.vmMemory.getLong(address)
+      }
+      Segment.Stack -> when (addressingMode) {
+        AddressingMode.ModeDword -> vm.vmStack.peek32At(address).toLong()
+        AddressingMode.ModeQword -> vm.vmStack.peek64At(address)
+        AddressingMode.ModeByte,
+        AddressingMode.ModeWord -> throw VmExecutionException(eip, "Stack read with byte/word addressing is not implemented yet")
+      }
     }
 
-    //FIXME: unsafe cast
-    val address = constantValue + getOffsetOperandValue(vm, eip, offsetOperand)
+    return applyAddressingMode(value, addressingMode)
+  }
 
-    when (addressingMode) {
-      AddressingMode.ModeByte -> vm.vmMemory.putByte(address, applyAddressingMode(value, addressingMode).toByte())
-      AddressingMode.ModeWord -> vm.vmMemory.putShort(address, applyAddressingMode(value, addressingMode).toShort())
-      AddressingMode.ModeDword -> vm.vmMemory.putInt(address, applyAddressingMode(value, addressingMode).toInt())
-      AddressingMode.ModeQword -> vm.vmMemory.putLong(address, applyAddressingMode(value, addressingMode))
+  protected fun putVmMemoryValueByRegister(memoryOperand: Memory<Register>, vm: VM, value: Long, eip: Int) {
+    val operand = memoryOperand.operand
+    val offsetOperand = memoryOperand.offsetOperand
+    val addressingMode = memoryOperand.addressingMode
+
+    //FIXME: unsafe cast
+    val address = vm.registers[operand.index].toInt() + getOffsetOperandValue(vm, eip, offsetOperand)
+
+    when (memoryOperand.segment) {
+      Segment.Memory -> when (addressingMode) {
+        AddressingMode.ModeByte -> vm.vmMemory.putByte(address, applyAddressingMode(value, addressingMode).toByte())
+        AddressingMode.ModeWord -> vm.vmMemory.putShort(address, applyAddressingMode(value, addressingMode).toShort())
+        AddressingMode.ModeDword -> vm.vmMemory.putInt(address, applyAddressingMode(value, addressingMode).toInt())
+        AddressingMode.ModeQword -> vm.vmMemory.putLong(address, applyAddressingMode(value, addressingMode))
+      }
+      Segment.Stack ->  when (addressingMode) {
+        AddressingMode.ModeDword -> vm.vmStack.set32At(address, applyAddressingMode(value, addressingMode).toInt())
+        AddressingMode.ModeQword -> vm.vmStack.set64At(address, applyAddressingMode(value, addressingMode))
+        AddressingMode.ModeByte,
+        AddressingMode.ModeWord -> throw VmExecutionException(eip, "Stack write with byte/word addressing is not implemented yet")
+      }
     }
   }
 
