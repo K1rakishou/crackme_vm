@@ -56,8 +56,64 @@ class VmStack(
     return Utils.readLongFromByteArray(sp - LONG_SIZE, stack)
   }
 
+  fun peek64At(address: Int): Long {
+    if (address < 0) {
+      throw UnderflowException()
+    }
+
+    if ((address - LONG_SIZE) >= size) {
+      throw OverflowException()
+    }
+
+    return Utils.readLongFromByteArray(address, stack)
+  }
+
   fun peek32(): Int {
     return Utils.readIntFromArray(sp - INT_SIZE, stack)
+  }
+
+  fun peek32At(address: Int): Int {
+    if (address < 0) {
+      throw UnderflowException()
+    }
+
+    if ((address - INT_SIZE) >= size) {
+      throw OverflowException()
+    }
+
+    return Utils.readIntFromArray(address, stack)
+  }
+
+  fun set32(value: Int) {
+    Utils.writeIntToArray(sp, value, stack)
+  }
+
+  fun set32At(address: Int, value: Int) {
+    if (address < 0) {
+      throw UnderflowException()
+    }
+
+    if ((address - INT_SIZE) >= size) {
+      throw OverflowException()
+    }
+
+    Utils.writeIntToArray(address, value, stack)
+  }
+
+  fun set64(value: Long) {
+    Utils.writeLongToArray(sp, value, stack)
+  }
+
+  fun set64At(address: Int, value: Long) {
+    if (address < 0) {
+      throw UnderflowException()
+    }
+
+    if ((address - LONG_SIZE) >= size) {
+      throw OverflowException()
+    }
+
+    Utils.writeLongToArray(address, value, stack)
   }
 
   //TODO: maybe push/pop/peek 16 and 8

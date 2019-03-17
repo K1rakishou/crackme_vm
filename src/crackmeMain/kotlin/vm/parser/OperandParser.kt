@@ -86,8 +86,6 @@ class OperandParser(
     vmMemory: VmMemory
   ): Memory<Operand> {
     //memory/stack
-    println("operandString = $operandString")
-
     val indexOfSegmentNameEnd = operandString.indexOf('@')
     if (indexOfSegmentNameEnd == -1) {
       throw ParsingException(functionName, functionLine, "Cannot parse segment name for Memory operand ($operandString)")

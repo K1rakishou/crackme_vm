@@ -14,7 +14,6 @@ class MovHandlerTest {
    * Mov
    * */
 
-  //Reg_C64
   @Test
   fun test_MovReg_Const64() {
     //mov r0, 123L
@@ -35,7 +34,6 @@ class MovHandlerTest {
     assertEquals(1122334455667788L, vm.registers[0])
   }
 
-  //Reg_C32
   @Test
   fun test_MovReg_Const32() {
     //mov r0, 123
@@ -56,13 +54,9 @@ class MovHandlerTest {
     assertEquals(11223344L, vm.registers[0])
   }
 
-  //TODO: is this even possible? Maybe this should be removed completely?
-  //Reg_MemC64
-
-  //Reg_MemC32
   @Test
   fun test_MovReg_MemConst() {
-    //mov r0, [11223344]
+    //mov r0, ds@[11223344]
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
@@ -80,10 +74,9 @@ class MovHandlerTest {
     assertEquals(112233, vm.registers[0])
   }
 
-  //Reg_MemReg
   @Test
   fun test_MovReg_MemReg() {
-    //mov r0, [r0]
+    //mov r0, ds@[r0]
 
     val vmParser = VMParser()
     val vm = vmParser.parse(
@@ -103,10 +96,9 @@ class MovHandlerTest {
     assertEquals(112233, vm.registers[0])
   }
 
-  //Reg_MemVar
   @Test
   fun test_MovReg_MemVar() {
-    //mov r0, [abc]
+    //mov r0, ds@[abc]
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
@@ -125,7 +117,6 @@ class MovHandlerTest {
     assertEquals(112233, vm.registers[0])
   }
 
-  //Reg_Reg
   @Test
   fun test_MovReg_Reg() {
     //mov r0, r1
@@ -147,7 +138,6 @@ class MovHandlerTest {
     assertEquals(112233, vm.registers[0])
   }
 
-  //Reg_Var
   @Test
   fun test_MovReg_Var() {
     //instr r0, abc
@@ -171,10 +161,9 @@ class MovHandlerTest {
     assertEquals(0, vm.registers[0])
   }
 
-  //  MemReg_Reg
   @Test
   fun test_MovMemReg_Reg() {
-    //mov [r0], r0
+    //mov ds@[r0], r0
 
     val vmParser = VMParser()
     val vm = vmParser.parse(
@@ -195,10 +184,9 @@ class MovHandlerTest {
   }
 
 
-  //MemVar_Reg
   @Test
   fun test_MovMemVar_Reg() {
-    //mov [abc], r0
+    //mov ds@[abc], r0
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
@@ -219,13 +207,9 @@ class MovHandlerTest {
     assertEquals(334455, vm.registers[0])
   }
 
-  //TODO: is this even possible? Maybe this should be removed completely?
-  //MemC64_Reg
-
-  //  MemC32_Reg
   @Test
   fun test_MovMemConst_Reg() {
-    //mov [123], r0
+    //mov ds@[123], r0
 
     val vmParser = VMParser()
     val vm = vmParser.parse(
@@ -244,5 +228,29 @@ class MovHandlerTest {
     assertEquals(112233, vm.vmMemory.getInt(0))
   }
 
+  @Test
+  fun test_MovStackConst_Reg() {
+    //mov ss@[123], r0
+
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+        def main()
+          mov r1, 112233
+          push 0x11223344AABBCCDD
+          mov ss@[0] as qword, r1
+          mov r0, ss@[0] as qword
+          pop r1
+          ret
+        end
+      """
+    )
+    val vmSimulator = VMSimulator()
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
+    assertEquals(112233, vm.registers[0])
+    assertEquals(112233, vm.registers[1])
+  }
 
 }

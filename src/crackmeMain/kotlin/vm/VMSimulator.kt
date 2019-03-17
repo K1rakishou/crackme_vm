@@ -1,11 +1,9 @@
 package crackme.vm
 
-import crackme.vm.core.VmExecutionException
 import crackme.vm.handlers.*
 import crackme.vm.instructions.*
 
 class VMSimulator(
-  private val debugMode: Boolean = false,
   private val movHandler: MovHandler = MovHandler(),
   private val addHandler: AddHandler = AddHandler(),
   private val callHandler: CallHandler = CallHandler(),
@@ -25,14 +23,9 @@ class VMSimulator(
     var eip = entryPoint
 
     while (true) {
-      if (eip < 0 || eip > instructions.size) {
+      val currentInstruction = instructions.getOrNull(eip)
+      if (currentInstruction == null) {
         throw RuntimeException("ip is out of bounds ip = ($eip), upperBound = ${instructions.size}")
-      }
-
-      val currentInstruction = if (debugMode) {
-        instructions.getOrNull(eip) ?: return
-      } else {
-        instructions[eip]
       }
 
       eip = when (currentInstruction.instructionType) {
@@ -56,4 +49,5 @@ class VMSimulator(
       }
     }
   }
+
 }
