@@ -5,8 +5,7 @@ import crackme.vm.core.AddressingMode
 import crackme.vm.core.VmExecutionException
 import crackme.vm.handlers.helpers.GenericOneOperandInstructionHandler
 import crackme.vm.instructions.Push
-import crackme.vm.operands.C32
-import crackme.vm.operands.C64
+import crackme.vm.operands.*
 
 class PushHandler : Handler<Push>() {
 
@@ -20,38 +19,10 @@ class PushHandler : Handler<Push>() {
         0
       },
       handleMemReg = { operand, eip ->
-        val value = getVmMemoryValueByRegister(vm, eip, operand)
-
-        //TODO: extract into a separate method
-        when (operand.addressingMode) {
-          AddressingMode.ModeByte -> TODO("push8  not implemented yet")
-          AddressingMode.ModeWord -> TODO("push16 not implemented yet")
-          AddressingMode.ModeDword -> {
-            vm.vmStack.push32(value.toInt())
-            0
-          }
-          AddressingMode.ModeQword -> {
-            vm.vmStack.push64(value)
-            0
-          }
-        }
+        pushByMemoryRegister(vm, eip, operand)
       },
       handleMemVar = { operand, eip ->
-        val value = getVmMemoryValueByVariable(vm, eip, operand)
-
-        //TODO: extract into a separate method
-        when (operand.addressingMode) {
-          AddressingMode.ModeByte -> TODO("push8  not implemented yet")
-          AddressingMode.ModeWord -> TODO("push16 not implemented yet")
-          AddressingMode.ModeDword -> {
-            vm.vmStack.push32(value.toInt())
-            0
-          }
-          AddressingMode.ModeQword -> {
-            vm.vmStack.push64(value)
-            0
-          }
-        }
+        pushByMemoryVariable(vm, eip, operand)
       },
       handleMemConstant = { operand, eip ->
         //TODO: may work incorrectly, needs additional testing
@@ -78,6 +49,40 @@ class PushHandler : Handler<Push>() {
 
     //we do need to update flags here because this instruction does not change registers
     return currentEip + 1
+  }
+
+  private fun pushByMemoryVariable(vm: VM, eip: Int, operand: Memory<Variable>): Long {
+    val value = getVmMemoryValueByVariable(vm, eip, operand)
+
+    return when (operand.addressingMode) {
+      AddressingMode.ModeByte -> TODO("push8  not implemented yet")
+      AddressingMode.ModeWord -> TODO("push16 not implemented yet")
+      AddressingMode.ModeDword -> {
+        vm.vmStack.push32(value.toInt())
+        0
+      }
+      AddressingMode.ModeQword -> {
+        vm.vmStack.push64(value)
+        0
+      }
+    }
+  }
+
+  private fun pushByMemoryRegister(vm: VM, eip: Int, operand: Memory<Register>): Long {
+    val value = getVmMemoryValueByRegister(vm, eip, operand)
+
+    return when (operand.addressingMode) {
+      AddressingMode.ModeByte -> TODO("push8  not implemented yet")
+      AddressingMode.ModeWord -> TODO("push16 not implemented yet")
+      AddressingMode.ModeDword -> {
+        vm.vmStack.push32(value.toInt())
+        0
+      }
+      AddressingMode.ModeQword -> {
+        vm.vmStack.push64(value)
+        0
+      }
+    }
   }
 
 }
