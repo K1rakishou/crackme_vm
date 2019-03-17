@@ -10,45 +10,31 @@ import crackme.vm.operands.*
 object GenericTwoOperandsInstructionHandler {
 
   //TODO: make this function return Long as well as all of the lambdas. This is necessary for vmFlags updating
-  //TODO: merge handle_Reg_MemC32 and handle_Reg_StackC32 into one function
-  //TODO: merge handle_MemC32_Reg and handle_StackC32_Reg into one function
 
   fun <T : Instruction> handle(
     vm: VM,
     eip: Int,
     instruction: T,
-    //instr r0, 1122334455667788
-    handle_Reg_C64: (dest: Register, src: C64, eip: Int) -> Unit,
-    //instr r0, 11223344
-    handle_Reg_C32: (dest: Register, src: C32, eip: Int) -> Unit,
-    //instr r0, ds@[11223344]
+    //instr r0, 1122334455667788/11223344
+    handle_Reg_Constant: (dest: Register, src: Constant, eip: Int) -> Unit,
+    //instr r0, ss/ds@[11223344]
     handle_Reg_MemC32: (dest: Register, src: Memory<C32>, eip: Int) -> Unit,
-    //instr r0, ss@[11223344]
-    handle_Reg_StackC32: (dest: Register, src: Memory<C32>, eip: Int) -> Unit,
-    //instr r0, ds@[r0]
+    //instr r0, ss/ds@[r0]
     handle_Reg_MemReg: (dest: Register, src: Memory<Register>, eip: Int) -> Unit,
-    //instr r0, ss@[r0]
-    handle_Reg_StackReg: (dest: Register, src: Memory<Register>, eip: Int) -> Unit,
     //instr r0, ds@[abc]
     handle_Reg_MemVar: (dest: Register, src: Memory<Variable>, eip: Int) -> Unit,
     //instr r0, r1
     handle_Reg_Reg: (dest: Register, src: Register, eip: Int) -> Unit,
     //instr r0, abc
     handle_Reg_Var: (dest: Register, src: Variable, eip: Int) -> Unit,
-    //instr ds@[r0], r0
+    //instr ss/ds@[r0], r0
     handle_MemReg_Reg: (dest: Memory<Register>, src: Register, eip: Int) -> Unit,
-    //instr ss@[r0], r0
-    handle_StackReg_Reg: (dest: Memory<Register>, src: Register, eip: Int) -> Unit,
     //instr ds@[abc], r0
     handle_MemVar_Reg: (dest: Memory<Variable>, src: Register, eip: Int) -> Unit,
-    //instr ds@[11223344], r0
+    //instr ss/ds@[11223344], r0
     handle_MemC32_Reg: (dest: Memory<C32>, src: Register, eip: Int) -> Unit,
-    //instr ss@[11223344], r0
-    handle_StackC32_Reg: (dest: Memory<C32>, src: Register, eip: Int) -> Unit,
-    //instr ds@[r0], 1234
+    //instr ss/ds@[r0], 1234
     handle_MemReg_Const: (dest: Memory<Register>, src: Constant, eip: Int) -> Unit,
-    //instr ss@[r0], 1234
-    handle_StackReg_Const: (dest: Memory<Register>, src: Constant, eip: Int) -> Unit,
     //instr ds@[abc], r0
     handle_MemVar_Const: (dest: Memory<Variable>, src: Constant, eip: Int) -> Unit/*,
     //instr [11223344], 123
@@ -69,9 +55,9 @@ object GenericTwoOperandsInstructionHandler {
 
             when (srcOperand) {
               //instr r0, 1122334455667788
-              is C64 -> handle_Reg_C64(instruction.dest as Register, srcOperand, eip)
+              is C64 -> handle_Reg_Constant(instruction.dest as Register, srcOperand, eip)
               //instr r0, 11223344
-              is C32 -> handle_Reg_C32(instruction.dest as Register, srcOperand, eip)
+              is C32 -> handle_Reg_Constant(instruction.dest as Register, srcOperand, eip)
               else -> throw VmExecutionException(eip, "getConstantValueFromVmMemory not implemented for constant operandType (${srcOperand.operandName})")
             }
           }
@@ -87,7 +73,7 @@ object GenericTwoOperandsInstructionHandler {
                   is C32 -> {
                     when (srcInstruction.segment) {
                       Segment.Memory -> handle_Reg_MemC32(instruction.dest as Register, instruction.src as Memory<C32>, eip)
-                      Segment.Stack -> handle_Reg_StackC32(instruction.dest as Register, instruction.src as Memory<C32>, eip)
+                      Segment.Stack -> handle_Reg_MemC32(instruction.dest as Register, instruction.src as Memory<C32>, eip)
                       else -> throw VmExecutionException(eip, "Unknown segment (${srcInstruction.segment.segmentName})")
                     }
                   }
@@ -103,7 +89,7 @@ object GenericTwoOperandsInstructionHandler {
                 //instr r0, [r0]
                 when (srcInstruction.segment) {
                   Segment.Memory -> handle_Reg_MemReg(instruction.dest as Register, instruction.src as Memory<Register>, eip)
-                  Segment.Stack -> handle_Reg_StackReg(instruction.dest as Register, instruction.src as Memory<Register>, eip)
+                  Segment.Stack -> handle_Reg_MemReg(instruction.dest as Register, instruction.src as Memory<Register>, eip)
                   else -> throw VmExecutionException(eip, "Unknown segment (${srcInstruction.segment.segmentName})")
                 }
               }
@@ -137,7 +123,7 @@ object GenericTwoOperandsInstructionHandler {
                 //instr [r0], r0
                 when (destInstruction.segment) {
                   Segment.Memory -> handle_MemReg_Reg(destInstruction as Memory<Register>, sourceReg, eip)
-                  Segment.Stack -> handle_StackReg_Reg(destInstruction as Memory<Register>, sourceReg, eip)
+                  Segment.Stack -> handle_MemReg_Reg(destInstruction as Memory<Register>, sourceReg, eip)
                   else -> throw VmExecutionException(eip, "Unknown segment (${destInstruction.segment.segmentName})")
                 }
               }
@@ -164,7 +150,7 @@ object GenericTwoOperandsInstructionHandler {
                   is C32 -> {
                     when (destInstruction.segment) {
                       Segment.Memory -> handle_MemC32_Reg(destInstruction as Memory<C32>, sourceReg, eip)
-                      Segment.Stack -> handle_StackC32_Reg(destInstruction as Memory<C32>, sourceReg, eip)
+                      Segment.Stack -> handle_MemC32_Reg(destInstruction as Memory<C32>, sourceReg, eip)
                       else -> throw VmExecutionException(eip, "Unknown segment (${destInstruction.segment.segmentName})")
                     }
                   }
@@ -190,7 +176,7 @@ object GenericTwoOperandsInstructionHandler {
                 //instr [r0], 1234
                 when (destInstruction.segment) {
                   Segment.Memory -> handle_MemReg_Const(destInstruction as Memory<Register>, sourceConst, eip)
-                  Segment.Stack -> handle_StackReg_Const(destInstruction as Memory<Register>, sourceConst, eip)
+                  Segment.Stack -> handle_MemReg_Const(destInstruction as Memory<Register>, sourceConst, eip)
                   else -> throw VmExecutionException(eip, "Unknown segment (${destInstruction.segment.segmentName})")
                 }
               }

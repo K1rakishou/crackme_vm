@@ -17,6 +17,14 @@ abstract class Handler<T : Instruction> {
     println("Warning at $eip instruction, $message")
   }
 
+  protected fun extractValueFromConstant(eip: Int, constant: Constant): Long {
+    return when (constant) {
+      is C64 -> constant.value
+      is C32 -> constant.value.toLong()
+      else -> throw VmExecutionException(eip, "Not implemented for constant of type ($constant)")
+    }
+  }
+
   private fun applyAddressingMode(value: Long, addressingMode: AddressingMode): Long {
     return when (addressingMode) {
       //FIXME: there may be a bug left. Gotta test this with negative numbers a little bit more
@@ -65,14 +73,8 @@ abstract class Handler<T : Instruction> {
 
   protected fun getConstantValueFromVmStack(vm: VM, operand: Constant): Long {
     return when (operand) {
-      is C64 -> {
-        println("C64 address = ${operand.value.toInt()}, value = ${vm.vmStack.peek64At(operand.value.toInt())}")
-        vm.vmStack.peek64At(operand.value.toInt())
-      }
-      is C32 -> {
-        println("C32 address = ${operand.value}, value = ${vm.vmStack.peek32At(operand.value).toLong()}")
-        vm.vmStack.peek32At(operand.value).toLong()
-      }
+      is C64 -> vm.vmStack.peek64At(operand.value.toInt())
+      is C32 -> vm.vmStack.peek32At(operand.value).toLong()
       else -> throw NotImplementedError("getConstantValueFromVmStack not implemented for constant operandType (${operand.operandName})")
     }
   }
@@ -99,6 +101,7 @@ abstract class Handler<T : Instruction> {
     val addressingMode = memoryOperand.addressingMode
 
     val constantValue = when (operand) {
+      //TODO: probably should forbid C64 here
       is C64 -> operand.value.toInt()
       is C32 -> operand.value
       is VmString -> throw VmExecutionException(eip, "Cannot use VmString with Memory operand")
@@ -132,6 +135,7 @@ abstract class Handler<T : Instruction> {
     val addressingMode = memoryOperand.addressingMode
 
     val constantValue = when (operand) {
+      //TODO: probably should forbid C64 here
       is C64 -> operand.value.toInt()
       is C32 -> operand.value
       is VmString -> throw VmExecutionException(eip, "Cannot use VmString with Memory operand")
