@@ -27,4 +27,23 @@ class XorHandlerTest {
     assertEquals(0, vm.registers[0])
   }
 
+  @Test
+  fun test_XorStack_Reg() {
+    val vmParser = VMParser()
+    val vm = vmParser.parse(
+      """
+        def main()
+          push 0xDEADBEEF112233
+          xor ss@[0] as qword, 0xDEADBEEF112233
+          pop r1
+          ret
+        end
+      """
+    )
+    val vmSimulator = VMSimulator()
+    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
+    vmSimulator.simulate(vm, entryPoint, instructions)
+
+    assertEquals(0, vm.registers[1])
+  }
 }

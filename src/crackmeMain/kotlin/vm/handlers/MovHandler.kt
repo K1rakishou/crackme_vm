@@ -23,7 +23,8 @@ class MovHandler : Handler<Mov>() {
       handle_MemVar_Reg = { dest, src, eip -> putVmMemoryValueByVariable(dest, vm, vm.registers[src.index], eip) },
       handle_MemC32_Reg = { dest, src, eip -> putVmMemoryValueByConstant(dest as Memory<Constant>, vm, vm.registers[src.index], eip) },
       handle_MemReg_Const = { dest, src, eip -> putVmMemoryValueByRegister(dest, vm, getConstantValueFromVmMemory(vm, src), eip) },
-      handle_MemVar_Const = { dest, src, eip -> putVmMemoryValueByVariable(dest, vm, getConstantValueFromVmMemory(vm, src), eip) }
+      handle_MemVar_Const = { dest, src, eip -> putVmMemoryValueByVariable(dest, vm, getConstantValueFromVmMemory(vm, src), eip) },
+      handle_MemC32_Const = { dest, src, eip -> putVmMemoryValueByConstant(dest as Memory<Constant>, vm, extractValueFromConstant(eip, src), eip) }
     )
 
     return currentEip + 1

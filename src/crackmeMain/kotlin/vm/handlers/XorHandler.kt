@@ -3,11 +3,12 @@ package crackme.vm.handlers
 import crackme.vm.VM
 import crackme.vm.handlers.helpers.GenericTwoOperandsInstructionHandler
 import crackme.vm.instructions.Xor
+import crackme.vm.operands.Constant
+import crackme.vm.operands.Memory
 
 class XorHandler : Handler<Xor>() {
 
   override fun handle(vm: VM, currentEip: Int, instruction: Xor): Int {
-    //FIXME
     GenericTwoOperandsInstructionHandler.handle(
       vm,
       currentEip,
@@ -52,6 +53,11 @@ class XorHandler : Handler<Xor>() {
         val constantValue = getConstantValueFromVmMemory(vm, src)
         val newValue = getVmMemoryValueByVariable(vm, eip, dest) xor constantValue
         putVmMemoryValueByVariable(dest, vm, newValue, eip)
+      },
+      handle_MemC32_Const = { dest, src, eip ->
+        val constantValue = extractValueFromConstant(eip, src)
+        val newValue = getVmMemoryValueByConstant(vm, eip, dest as Memory<Constant>) xor constantValue
+        putVmMemoryValueByConstant(dest, vm, newValue, eip)
       }
     )
 

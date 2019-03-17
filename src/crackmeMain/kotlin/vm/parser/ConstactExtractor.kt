@@ -28,7 +28,7 @@ class ConstactExtractor {
     }
 
     //remove the '0x' at the beginning of the string if the string is hexadecimal
-    val string = if (isHex) {
+    val constantStringTrimmed = if (isHex) {
       constantString.substring(2)
     } else {
       constantString
@@ -40,14 +40,18 @@ class ConstactExtractor {
       10
     }
 
-    val extractedValue32 = string.toIntOrNull(radix)
+    val extractedValue32 = constantStringTrimmed.toIntOrNull(radix)
     if (extractedValue32 != null) {
       return C32(extractedValue32)
     }
 
-    val extractedValue64 = string.toLongOrNull(radix)
+    val extractedValue64 = constantStringTrimmed.toLongOrNull(radix)
     if (extractedValue64 == null) {
-      throw ParsingException(functionName, functionLine, "Cannot parse constant ($extractedValue64), unknown error")
+      throw ParsingException(
+        functionName,
+        functionLine,
+        "Cannot parse constant ($constantStringTrimmed), radix = $radix (probably Long overflow)"
+      )
     }
 
     return C64(extractedValue64)
