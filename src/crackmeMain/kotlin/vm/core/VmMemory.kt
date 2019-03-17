@@ -231,6 +231,6 @@ class VmMemory(
     const val BYTE_SIZE = 1
     const val SHORT_SIZE = 2
     const val INT_SIZE = 4
-    const val LONG_SIZE = 4 //FIXME wtf???? this is supposed to be 8
+    const val LONG_SIZE = 8
   }
 }

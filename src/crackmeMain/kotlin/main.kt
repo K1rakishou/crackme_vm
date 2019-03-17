@@ -18,7 +18,6 @@ fun main() {
       end
     """
 
-  //TODO: stack operand
   //TODO: update flags in two operand instructions
   //TODO: rework println and other native functions
   //TODO: make Let instruction allocate variable on stack instead of the global memory

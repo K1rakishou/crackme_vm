@@ -4,6 +4,7 @@ import crackme.misc.extractInstructionsAndGetEntryPoint
 import crackme.vm.parser.VMParser
 import crackme.vm.VMSimulator
 import crackme.vm.core.ParsingException
+import platform.windows.TEKPUBKEY
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
