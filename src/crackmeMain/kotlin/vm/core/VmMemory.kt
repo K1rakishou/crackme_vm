@@ -9,7 +9,7 @@ class VmMemory(
   var ip = 0
     private set
 
-  private val variables = mutableMapOf<String, Pair<Int, VariableType>>()
+  private val variables = mutableMapOf<String, MemoryVariable>()
   private val memory = ByteArray(size) { 0 } //TODO: random.nextBytes(size)
 
   fun isVariableDefined(variableName: String): Boolean {
@@ -55,7 +55,7 @@ class VmMemory(
     return address
   }
 
-  fun getVariable(variableName: String): Pair<Int, VariableType>? {
+  fun getVariable(variableName: String): MemoryVariable? {
     return variables[variableName]
   }
 
@@ -65,19 +65,19 @@ class VmMemory(
       throw RuntimeException("Unknown variable (${variableName})")
     }
 
-    if (variable.second != variableType) {
-      throw RuntimeException("Variable types do not match (expected = ${variable.second}, actual = ${variableType})")
+    if (variable.variableType != variableType) {
+      throw RuntimeException("Variable types do not match (expected = ${variable.variableType}, actual = ${variableType})")
     }
 
     return when (variableType) {
       VariableType.IntType -> {
-        Utils.readIntFromArray(variable.first, memory) as T
+        Utils.readIntFromArray(variable.address, memory) as T
       }
       VariableType.LongType -> {
-        Utils.readLongFromByteArray(variable.first, memory) as T
+        Utils.readLongFromByteArray(variable.address, memory) as T
       }
       VariableType.StringType -> {
-        val address = Utils.readIntFromArray(variable.first, memory)
+        val address = Utils.readIntFromArray(variable.address, memory)
         val stringLen = Utils.readIntFromArray(address, memory)
 
         val array = ByteArray(stringLen)
@@ -100,7 +100,7 @@ class VmMemory(
     }
 
     val address = ip
-    variables.put(variableName, Pair(address, variableType))
+    variables.put(variableName, MemoryVariable(address, variableType))
 
     when (variableType) {
       VariableType.IntType -> Utils.writeIntToArray(address, 0, memory)
@@ -223,6 +223,11 @@ class VmMemory(
 
     return String(bytes.map { it.toChar() }.toCharArray())
   }
+
+  class MemoryVariable(
+    val address: Int,
+    val variableType: VariableType
+  )
 
   class EipIsOutOfBoundsException(val ip: Int, val upper: Int) : Exception("ip is out of bounds (ip = ${ip}, upperBound = ${upper})")
   class VmIndexOutOfBoundsException(val index: Int, val upper: Int) : Exception("index is out of bounds (index = ${index}, upperBound = ${upper})")

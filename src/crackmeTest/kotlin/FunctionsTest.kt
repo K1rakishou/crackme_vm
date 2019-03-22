@@ -13,10 +13,10 @@ class FunctionsTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        def sum_of_three(a: Int, b: Int, c: Int)
-          mov r0, ss@[0x8] as qword
-          mov r1, ss@[0x10] as qword
-          mov r2, ss@[0x18] as qword
+        def sum_of_three(a: Long, b: Long, c: Long)
+          mov r0, ss@[a] as qword
+          mov r1, ss@[b] as qword
+          mov r2, ss@[c] as qword
 
           add r0, r1
           add r0, r2

@@ -16,7 +16,8 @@ class VMParser(
   private val random: Random = Random(0),
   private val constactExtractor: ConstactExtractor = ConstactExtractor(),
   private val operandParser: OperandParser = OperandParser(constactExtractor),
-  private val vmInstructionObfuscator: VMInstructionObfuscator = NoOpInstructionObfuscator()
+  private val vmInstructionObfuscator: VMInstructionObfuscator = NoOpInstructionObfuscator(),
+  private val letTransformer: LetTransformer = LetTransformer()
 ) {
   private lateinit var nativeFunctions: MutableMap<NativeFunctionType, NativeFunction>
   //this list is to keep track of all added string to the memory (their addresses in the memory)
@@ -65,6 +66,8 @@ class VMParser(
     val instructions = linkedMapOf<Int, Instruction>()
     var instructionId = _instructionId
 
+    //insert function prolog here
+
     for ((lineIndex, funcLine) in funcBody.withIndex()) {
       val instructionLine = funcLine.trim()
 
@@ -80,7 +83,7 @@ class VMParser(
         continue
       }
 
-      val newInstructions = parseInstruction(vmFunctionScope.name, lineIndex, instructionLine, labels)
+      val newInstructions = parseInstruction(vmFunctionScope, lineIndex, instructionLine, labels)
       if (newInstructions.isEmpty()) {
         continue
       }
@@ -94,6 +97,8 @@ class VMParser(
     if (uninitializedLabels.isNotEmpty()) {
       throw RuntimeException("There are uninitialized labels after parsing vmScope ($vmFunctionScope.name) : (${uninitializedLabels.map { it.key }})")
     }
+
+    //insert function epilog here
 
     return VmFunction(
       vmFunctionScope.name,
@@ -161,23 +166,7 @@ class VMParser(
     }
 
     val parametersString = functionStartLine.substring(parametersStartIndex + 1, parametersEndIndex)
-
-    val parameters = if (parametersString.isNotEmpty()) {
-      parametersString.split(',')
-        .map { it.trim() }
-        .map { parameter ->
-          val (parameterName, parameterTypeString) = parameter.split(':').map { it.trim() }
-          val parameterType = VariableType.fromString(parameterTypeString)
-          if (parameterType == null) {
-            throw ScopeParsingException(programLineIndex, "Cannot parse parameter type for parameter (${parameter})")
-          }
-
-          return@map FunctionParameter(parameterName, parameterType)
-        }
-    } else {
-      //function with no parameters
-      emptyList()
-    }
+    val parameters = parseFunctionParameters(parametersString, programLineIndex)
 
     var functionLength = 0
 
@@ -204,6 +193,43 @@ class VMParser(
       functionLength,
       parameters
     )
+  }
+
+  private fun parseFunctionParameters(
+    parametersString: String,
+    programLineIndex: Int
+  ): List<FunctionParameter> {
+    if (parametersString.isEmpty()) {
+      return emptyList()
+    }
+
+    /**
+     * def test(a: Int, b: Int, c: Int)
+     *
+     * stack[0] -> return address
+     * stack[8] -> a's address
+     * stack[12] -> b's address
+     * stack[16] -> c's address
+     * */
+
+    val rawParameters = parametersString.split(',').map { it.trim() }
+    val functionParameters = mutableListOf<FunctionParameter>()
+
+    //8 here because we need to skip the return address and it is exactly 8 bytes
+    var stackPointerOffset = 8
+
+    for (rawParameter in rawParameters) {
+      val (parameterName, parameterTypeString) = rawParameter.split(':').map { it.trim() }
+      val parameterType = VariableType.fromString(parameterTypeString)
+      if (parameterType == null) {
+        throw ScopeParsingException(programLineIndex, "Cannot parse parameter type for parameter ($rawParameter)")
+      }
+
+      functionParameters += FunctionParameter(parameterName, stackPointerOffset, parameterType)
+      stackPointerOffset += parameterType.size
+    }
+
+    return functionParameters
   }
 
   private fun parseLabel(
@@ -252,13 +278,13 @@ class VMParser(
     val parametersList = functionBody.substring(parametersStart + 1, parametersEnd).split(',')
     val functionParameters = parametersList
       .map { parameter -> parameter.trim() }
-      .map { parameter ->
+      .mapNotNull { parameter ->
         val parameterType = VariableType.fromString(parameter)
         if (parameterType == null) {
           throw ScopeParsingException(functionLine, "Unknown parameter operandType ($parameter)")
         }
 
-        parameterType!!
+        return@mapNotNull parameterType
       }
 
     return NativeFunction(
@@ -269,7 +295,7 @@ class VMParser(
   }
 
   private fun parseInstruction(
-    functionName: String,
+    vmFunctionScope: VmFunctionScope,
     functionLine: Int,
     line: String,
     labels: MutableMap<String, Int>
@@ -287,59 +313,69 @@ class VMParser(
     }
 
     val instruction = when (instructionName) {
-      "mov" -> parseGenericTwoOperandsInstruction(functionName, functionLine, body, InstructionType.Mov)
-      "add" -> parseGenericTwoOperandsInstruction(functionName, functionLine, body, InstructionType.Add)
-      "cmp" -> parseGenericTwoOperandsInstruction(functionName, functionLine, body, InstructionType.Cmp)
-      "xor" -> parseGenericTwoOperandsInstruction(functionName, functionLine, body, InstructionType.Xor)
-      "sub" -> parseGenericTwoOperandsInstruction(functionName, functionLine, body, InstructionType.Sub)
-      "inc" -> parseGenericOneOperandInstruction(functionName, functionLine, body, InstructionType.Inc)
-      "dec" -> parseGenericOneOperandInstruction(functionName, functionLine, body, InstructionType.Dec)
-      "push" -> parseGenericOneOperandInstruction(functionName, functionLine, body, InstructionType.Push)
-      "pop" -> parseGenericOneOperandInstruction(functionName, functionLine, body, InstructionType.Pop)
-      "ret" -> parseRet(functionName, functionLine, body, InstructionType.Ret)
+      "mov" -> parseGenericTwoOperandsInstruction(vmFunctionScope, functionLine, body, InstructionType.Mov)
+      "add" -> parseGenericTwoOperandsInstruction(vmFunctionScope, functionLine, body, InstructionType.Add)
+      "cmp" -> parseGenericTwoOperandsInstruction(vmFunctionScope, functionLine, body, InstructionType.Cmp)
+      "xor" -> parseGenericTwoOperandsInstruction(vmFunctionScope, functionLine, body, InstructionType.Xor)
+      "sub" -> parseGenericTwoOperandsInstruction(vmFunctionScope, functionLine, body, InstructionType.Sub)
+      "inc" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Inc)
+      "dec" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Dec)
+      "push" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Push)
+      "pop" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Pop)
+      "ret" -> parseRet(vmFunctionScope, functionLine, body, InstructionType.Ret)
       "je",
       "jne",
-      "jmp" -> parseJxx(functionName, functionLine, instructionName, body, labels, InstructionType.Jxx)
-      "call" -> parseCall(functionName, functionLine, body, InstructionType.Call)
-      "let" -> parseLet(functionName, functionLine, body, InstructionType.Let)
-      else -> throw ParsingException(functionName, functionLine, "Unknown instruction name ($instructionName)")
+      "jmp" -> parseJxx(vmFunctionScope, functionLine, instructionName, body, InstructionType.Jxx)
+      "call" -> parseCall(vmFunctionScope, functionLine, body, InstructionType.Call)
+      "let" -> parseLet(vmFunctionScope, functionLine, body, InstructionType.Let)
+      else -> throw ParsingException(vmFunctionScope.name, functionLine, "Unknown instruction name ($instructionName)")
+    }
+
+    if (instruction is Let) {
+      //do not obfuscate whatever letTransformer created
+      return letTransformer.transform(vmFunctionScope, instruction)
     }
 
     return vmInstructionObfuscator.obfuscate(vmMemory, instruction)
   }
 
-  private fun parseRet(functionName: String, functionLine: Int, body: String, type: InstructionType): Instruction {
+  private fun parseRet(
+    vmFunctionScope: VmFunctionScope,
+    functionLine: Int,
+    body: String,
+    type: InstructionType
+  ): Instruction {
     if (body.isEmpty()) {
       return Ret(0)
     }
 
-    val operand = operandParser.parseOperand(functionName, functionLine, body.trim(), type, vmMemory)
+    val operand = operandParser.parseOperand(vmFunctionScope, functionLine, body.trim(), type, vmMemory)
     if (operand !is C32) {
-      throw ParsingException(functionName, functionLine, "Ret can only be used with C32 operand")
+      throw ParsingException(vmFunctionScope.name, functionLine, "Ret can only be used with C32 operand")
     }
 
     if (operand.value < 0 || operand.value > Short.MAX_VALUE.toInt()) {
-      throw ParsingException(functionName, functionLine, "Ret operand overflow (${operand.value})")
+      throw ParsingException(vmFunctionScope.name, functionLine, "Ret operand overflow (${operand.value})")
     }
 
     return Ret(operand.value.toShort())
   }
 
   private fun parseGenericOneOperandInstruction(
-    functionName: String,
+    vmFunctionScope: VmFunctionScope,
     functionLine: Int,
     body: String,
     type: InstructionType
   ): Instruction {
     if (body.isEmpty()) {
       throw ParsingException(
-        functionName,
+        vmFunctionScope.name,
         functionLine,
         "Instruction has name but does not have a body ($body)"
       )
     }
 
-    val operand = operandParser.parseOperand(functionName, functionLine, body.trim(), type, vmMemory)
+    val operand = operandParser.parseOperand(vmFunctionScope, functionLine, body.trim(), type, vmMemory)
 
     return when (type) {
       InstructionType.Inc -> Inc(operand)
@@ -356,7 +392,7 @@ class VMParser(
       InstructionType.Xor,
       InstructionType.Sub -> {
         throw ParsingException(
-          functionName,
+          vmFunctionScope.name,
           functionLine,
           "Instruction ${type.instructionName} is not a generic one operand instruction"
         )
@@ -365,24 +401,24 @@ class VMParser(
   }
 
   private fun parseGenericTwoOperandsInstruction(
-    functionName: String,
+    vmFunctionScope: VmFunctionScope,
     functionLine: Int,
     body: String,
     type: InstructionType
   ): Instruction {
     if (body.isEmpty()) {
-      throw ParsingException(functionName, functionLine, "Instruction has name but does not have a body ($body)")
+      throw ParsingException(vmFunctionScope.name, functionLine, "Instruction has name but does not have a body ($body)")
     }
 
     if (body.indexOf(',') == -1) {
-      throw ParsingException(functionName, functionLine, "Cannot parse operands because there is no \',\' symbol")
+      throw ParsingException(vmFunctionScope.name, functionLine, "Cannot parse operands because there is no \',\' symbol")
     }
 
     val (destOperand, srcOperand) = body.split(',')
       .map { it.trim() }
 
-    val dest = operandParser.parseOperand(functionName, functionLine, destOperand, type, vmMemory)
-    val src = operandParser.parseOperand(functionName, functionLine, srcOperand, type, vmMemory)
+    val dest = operandParser.parseOperand(vmFunctionScope, functionLine, destOperand, type, vmMemory)
+    val src = operandParser.parseOperand(vmFunctionScope, functionLine, srcOperand, type, vmMemory)
 
     return when (type) {
       InstructionType.Add -> Add(dest, src)
@@ -399,7 +435,7 @@ class VMParser(
       InstructionType.Let,
       InstructionType.Ret -> {
         throw ParsingException(
-          functionName,
+          vmFunctionScope.name,
           functionLine,
           "Instruction ${type.instructionName} is not a generic two operands instruction"
         )
@@ -408,24 +444,24 @@ class VMParser(
   }
 
   private fun parseLet(
-    functionName: String,
+    vmFunctionScope: VmFunctionScope,
     functionLine: Int,
     body: String,
     type: InstructionType
   ): Instruction {
     if (body.isEmpty()) {
-      throw ParsingException(functionName, functionLine, "Instruction has name but does not have a body ($body)")
+      throw ParsingException(vmFunctionScope.name, functionLine, "Instruction has name but does not have a body ($body)")
     }
 
     if (body.indexOf(',') == -1) {
-      throw ParsingException(functionName, functionLine, "Cannot parse operands because there is no \',\' symbol")
+      throw ParsingException(vmFunctionScope.name, functionLine, "Cannot parse operands because there is no \',\' symbol")
     }
 
     val (variableOperand, initializerOperand) = body.split(',')
       .map { it.trim() }
 
-    val variable = operandParser.parseOperand(functionName, functionLine, variableOperand, type, vmMemory) as Variable
-    val initializer = operandParser.parseOperand(functionName, functionLine, initializerOperand, type, vmMemory)
+    val variable = operandParser.parseOperand(vmFunctionScope, functionLine, variableOperand, type, vmMemory) as Variable
+    val initializer = operandParser.parseOperand(vmFunctionScope, functionLine, initializerOperand, type, vmMemory)
 
     when (initializer) {
       is Constant -> {
@@ -436,7 +472,7 @@ class VMParser(
         }
       }
       else -> throw ParsingException(
-        functionName,
+        vmFunctionScope.name,
         functionLine,
         "Initialization not implemented for initializer of type (${initializer.operandName})"
       )
@@ -449,14 +485,14 @@ class VMParser(
   }
 
   private fun parseCall(
-    functionName: String,
+    vmFunctionScope: VmFunctionScope,
     functionLine: Int,
     body: String,
     type: InstructionType
   ): Instruction {
     val instructionFunctionName = body.trim()
     if (instructionFunctionName.isEmpty()) {
-      throw ParsingException(functionName, functionLine, "VmFunctionScope body is empty")
+      throw ParsingException(vmFunctionScope.name, functionLine, "VmFunctionScope body is empty")
     }
 
     return Call(
@@ -465,24 +501,23 @@ class VMParser(
   }
 
   private fun parseJxx(
-    functionName: String,
+    vmFunctionScope: VmFunctionScope,
     functionLine: Int,
     instructionName: String,
     body: String,
-    labels: Map<String, Int>,
     type: InstructionType
   ): Instruction {
     val jumpType = JumpType.fromString(instructionName)
     if (jumpType == null) {
       throw ParsingException(
-        functionName,
+        vmFunctionScope.name,
         functionLine,
         "Cannot parse jump operandType from instruction name ($instructionName)"
       )
     }
 
-    val labelName = parseLabel(functionName, functionLine, body)
-    return Jxx(jumpType, functionName, labelName)
+    val labelName = parseLabel(vmFunctionScope.name, functionLine, body)
+    return Jxx(jumpType, vmFunctionScope.name, labelName)
   }
 
   companion object {
