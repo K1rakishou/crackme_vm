@@ -126,6 +126,8 @@ abstract class Handler<T : Instruction> {
       }
     }
 
+    println("address = $address, value = $value")
+
     return applyAddressingMode(value, addressingMode)
   }
 

@@ -32,6 +32,8 @@ class OperandParser(
     }
   }
 
+  //returns either Memory<*> or Variable operand type
+  //it returns Memory<*> type operand when variable is a stack segment variable (like a function's parameter)
   private fun parseVariableOperand(
     vmFunctionScope: VmFunctionScope,
     operandString: String,
@@ -155,7 +157,7 @@ class OperandParser(
     functionLine: Int,
     type: InstructionType,
     vmMemory: VmMemory
-  ): Memory<Operand> {
+  ): Operand {
     //memory/stack
 
     val indexOfSegmentNameEnd = operandString.indexOf('@')
@@ -205,59 +207,39 @@ class OperandParser(
       Pair(operand, offsetOperand)
     } else {
       val operand = parseOperand(vmFunctionScope, functionLine, addressingParameters, type, vmMemory)
+
+      //FIXME: HACK - this should be refactored.
+      //this may happen when addressingParameters is a variable name and the variable has a stack segment
+      if (operand is Memory<*>) {
+        return operand
+      }
+
       Pair(operand, null)
     }
 
-    println("operand = $operand, offsetOperand = ${offsetOperand}")
-
     if (operand is Memory<*>) {
-      throw ParsingException(vmFunctionScope.name, functionLine, "Cannot use nested memory operands ($operandString)")
+      throw ParsingException(vmFunctionScope.name, functionLine, "Cannot use nested memory operands ($addressingParameters)")
     }
 
-    offsetOperand?.let {
-      if (it is Memory<*>) {
-        throw ParsingException(vmFunctionScope.name, functionLine, "Cannot use Memory as an offset operand ($operandString)")
-      }
+    if (offsetOperand != null && offsetOperand is Memory<*>) {
+      throw ParsingException(vmFunctionScope.name, functionLine, "Cannot use Memory as an offset operand ($operandString)")
     }
 
-    if (segment == Segment.Stack && operand is Variable) {
-      //when segment is stack and operand is variable, e.g.:
-      //    mov r0, ss@[a] as dword
-      //we want to transform such operand to
-      //    mov r0, ss@[0x8] as dword
-
-      if (offsetOperand != null) {
-        throw ParsingException(vmFunctionScope.name, functionLine, "Cannot use offset operand with stack segment")
-      }
-
-      val functionParameter = vmFunctionScope.getParameterByName(operand.name)
-      if (functionParameter == null) {
-        throw ParsingException(vmFunctionScope.name, functionLine, "Function parameter (${operand.name}) is not defined")
-      }
-
-      return Memory(
-        C32(functionParameter.stackFrame),
-        null,
-        Segment.Stack,
-        functionParameter.type.addressingMode
-      )
-    } else {
-      when (operand) {
-        is Variable -> {
-          if (!vmMemory.isVariableDefined(operand.name)) {
-            throw ParsingException(vmFunctionScope.name, functionLine, "Variable (${operand.name}) is not defined")
-          }
+    when (operand) {
+      is Variable -> {
+        if (!vmMemory.isVariableDefined(operand.name)) {
+          throw ParsingException(vmFunctionScope.name, functionLine, "Variable (${operand.name}) is not defined")
         }
-        is Register,
-        is Constant -> {
-          //don't need to check anything here
-        }
-        else -> throw ParsingException(vmFunctionScope.name, functionLine, "Operand ($operand) is not supported by Memory operand")
       }
-
-      //TODO: replace with memory address
-      return Memory(operand, offsetOperand, segment, addressingMode)
+      is Register,
+      is Constant -> {
+        //don't need to check anything here
+      }
+      else -> throw ParsingException(vmFunctionScope.name, functionLine, "Operand ($operand) is not supported by Memory operand")
     }
+
+    //TODO: replace with memory address
+    return Memory(operand, offsetOperand, segment, addressingMode)
   }
 
   private fun parseStringConstantOperand(

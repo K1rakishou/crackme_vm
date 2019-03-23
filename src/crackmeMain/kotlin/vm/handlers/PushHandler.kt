@@ -36,12 +36,15 @@ class PushHandler : Handler<Push>() {
         0
       },
       handleC64 = { operand, eip ->
+        println("pushing64 ${operand.value}")
         vm.vmStack.push64(operand.value)
         0
       },
       handleC32 = { operand, eip ->
         //TODO addressing mode for push/pop
         //push64 here because C64 is the default constant size
+
+        println("pushing32 ${operand.value.toLong()}")
         vm.vmStack.push64(operand.value.toLong())
         0
       }

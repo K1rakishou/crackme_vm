@@ -13,22 +13,25 @@ class FunctionsTest {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
-        def sum_of_three(a: Long, b: Long, c: Long)
+        def sum_of_four(a: Long, b: Long, c: Long, d: Long)
           mov r0, ss@[a] as qword
           mov r1, ss@[b] as qword
           mov r2, ss@[c] as qword
+          mov r3, ss@[d] as qword
 
           add r0, r1
           add r0, r2
+          add r0, r3
 
-          ret 0x18
+          ret 32
         end
 
         def main()
           push 10
           push 20
           push 30
-          call sum_of_three
+          push 100
+          call sum_of_four
 
           mov r1, 10
 @LOOP:
@@ -46,6 +49,6 @@ class FunctionsTest {
     val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
     vmSimulator.simulate(vm, entryPoint, instructions)
 
-    assertEquals(70, vm.registers[0])
+    assertEquals(170, vm.registers[0])
   }
 }

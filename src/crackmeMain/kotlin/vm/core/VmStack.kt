@@ -12,6 +12,14 @@ class VmStack(
 
   fun isEmpty() = sp == 0
 
+  fun cleatTop(clearCount: Short) {
+    if (sp - clearCount < 0) {
+      throw UnderflowException()
+    }
+
+    sp -= clearCount
+  }
+
   fun push64(value: Long) {
     if (sp + LONG_SIZE > size) {
       throw OverflowException()

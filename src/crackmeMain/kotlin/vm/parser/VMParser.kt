@@ -206,17 +206,16 @@ class VMParser(
     /**
      * def test(a: Int, b: Int, c: Int)
      *
-     * stack[0] -> return address
-     * stack[8] -> a's address
-     * stack[12] -> b's address
-     * stack[16] -> c's address
+     * stack[0] -> a's address
+     * stack[8] -> b's address
+     * stack[12] -> c's address
+     * stack[16] -> return address
      * */
 
     val rawParameters = parametersString.split(',').map { it.trim() }
     val functionParameters = mutableListOf<FunctionParameter>()
 
-    //8 here because we need to skip the return address and it is exactly 8 bytes
-    var stackPointerOffset = 8
+    var stackPointerOffset = 0
 
     for (rawParameter in rawParameters) {
       val (parameterName, parameterTypeString) = rawParameter.split(':').map { it.trim() }

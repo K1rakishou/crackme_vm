@@ -4,8 +4,7 @@ class VmFunctionScope(
   val name: String,
   val start: Int,
   val length: Int,
-  val parameters: List<FunctionParameter>,
-  var stackPointer: Int = 0
+  val parameters: List<FunctionParameter>
 ) {
 
   fun getParameterStackFrameByName(parameterName: String): Int? {
@@ -28,6 +27,6 @@ class FunctionParameter(
 ) {
 
   override fun toString(): String {
-    return "$name: ${type.str}"
+    return "$name: ${type.str}, ss@[$stackFrame]"
   }
 }
