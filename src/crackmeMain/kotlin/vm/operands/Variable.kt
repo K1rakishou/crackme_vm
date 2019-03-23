@@ -23,6 +23,6 @@ class Variable(
   }
 
   override fun toString(): String {
-    return name
+    return "$name at $address"
   }
 }

@@ -5,10 +5,10 @@ import crackme.vm.core.VmMemory
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class VmMemoryTests {
-  private val vmMemory = VmMemory(1024, Random(0))
+  private val registers: MutableList<Long> = mutableListOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  private val vmMemory = VmMemory(1024, registers, Random(0))
 
   @Test
   fun testPutGetInt() {

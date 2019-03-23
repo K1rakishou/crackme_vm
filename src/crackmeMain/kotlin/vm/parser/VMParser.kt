@@ -19,15 +19,15 @@ class VMParser(
   private val vmInstructionObfuscator: VMInstructionObfuscator = NoOpInstructionObfuscator(),
   private val letTransformer: LetTransformer = LetTransformer()
 ) {
-  private lateinit var nativeFunctions: MutableMap<NativeFunctionType, NativeFunction>
+  private val nativeFunctions: MutableMap<NativeFunctionType, NativeFunction> = mutableMapOf()
+
+  //r0, r1, r2, r3, r4, r5, r6, r7, sp, eip
+  val registers: MutableList<Long> = mutableListOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
   //this list is to keep track of all added string to the memory (their addresses in the memory)
-  private lateinit var vmMemory: VmMemory
-  private lateinit var vmFlags: VmFlags
+  private val vmMemory: VmMemory = VmMemory(1024, registers, Random(GetTickCount().toInt()))
 
   fun parse(program: String): VM {
-    nativeFunctions = mutableMapOf()
-    vmMemory = VmMemory(1024, Random(GetTickCount().toInt()))
-    vmFlags = VmFlags()
 
     val lines = program.split("\n")
       .map { it.trim() }
@@ -46,14 +46,11 @@ class VMParser(
       instructionId += vmFunction.instructions.size
     }
 
-    return VM(
-      random,
+    return VM.createVM(
       vmFunctions,
       nativeFunctions,
-      mutableListOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L),
-      VmStack(1024, random),
       vmMemory,
-      vmFlags
+      registers
     )
   }
 
@@ -66,7 +63,27 @@ class VMParser(
     val instructions = linkedMapOf<Int, Instruction>()
     var instructionId = _instructionId
 
-    //insert function prolog here
+    /**
+     * Function prolog is inserted here e.g.:
+     *
+     * def test(p1: Int, p2: Int)
+     *  let a: Int, 1
+     *  let b: Int 2
+     *  let c: Int, 3
+     * end
+     *
+     *    |
+     *    V
+     *
+     * def test(p1: Int, p2: Int)
+     *  sub sp, 12 <- allocate 12 byte on the stack for local variables
+     * end
+     *
+     * */
+    instructions[instructionId++] = Sub(
+      Register(VM.spRegOffset),
+      C32(vmFunctionScope.getLocalVariablesTotalStackSize())
+    )
 
     for ((lineIndex, funcLine) in funcBody.withIndex()) {
       val instructionLine = funcLine.trim()
@@ -166,9 +183,11 @@ class VMParser(
     }
 
     val parametersString = functionStartLine.substring(parametersStartIndex + 1, parametersEndIndex)
-    val parameters = parseFunctionParameters(parametersString, programLineIndex)
+    val functionParameters = parseFunctionParameters(parametersString, programLineIndex)
 
     var functionLength = 0
+    var prevStackFrame = functionParameters.lastOrNull()?.stackFrame ?: 0
+    val localVariables = mutableListOf<FunctionLocalVariable>()
 
     for (index in programLineIndex until lines.size) {
       val line = lines.getOrNull(index)?.trim()
@@ -178,12 +197,18 @@ class VMParser(
 
       ++functionLength
 
+      val localVariable = parseLocalVariable(lines[index], prevStackFrame)
+      if (localVariable != null) {
+        localVariables += localVariable
+        prevStackFrame += localVariable.stackFrame
+      }
+
       if (line == "end") {
         break
       }
     }
 
-    if (funcName.equals("main", true) && parameters.isNotEmpty()) {
+    if (funcName.equals("main", true) && functionParameters.isNotEmpty()) {
       throw ScopeParsingException(programLineIndex, "Main function must have no parameters!")
     }
 
@@ -191,7 +216,43 @@ class VMParser(
       funcName,
       programLineIndex,
       functionLength,
-      parameters
+      functionParameters,
+      localVariables
+    )
+  }
+
+  private fun parseLocalVariable(line: String, prevStackFrame: Int): FunctionLocalVariable? {
+    if (!line.startsWith("let")) {
+      return null
+    }
+
+    val indexOfComma = line.indexOf(',')
+    if (indexOfComma == -1) {
+      throw RuntimeException("Cannot parse operands for Let instruction ($line)")
+    }
+
+    val (variableName, variableTypeStr) = line.substring(3, indexOfComma).split(':')
+      .map { it.trim() }
+      .takeIf { it.size == 2 }
+      ?: listOf(null, null)
+
+    if (variableName == null) {
+      throw RuntimeException("Let instruction does not contain variable name ($line)")
+    }
+
+    if (variableTypeStr == null) {
+      throw RuntimeException("Let instruction does not contain variable type ($line)")
+    }
+
+    val variableType = VariableType.fromString(variableTypeStr)
+    if (variableType == null) {
+      throw RuntimeException("Unknown variable type ($line)")
+    }
+
+    return FunctionLocalVariable(
+      variableName,
+      prevStackFrame + variableType.size,
+      variableType
     )
   }
 

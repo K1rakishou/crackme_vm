@@ -1,13 +1,26 @@
 package crackme.vm.core
 
+import crackme.vm.VM
 import kotlin.random.Random
 
 class VmStack(
   private val size: Int,
+  private val registers: MutableList<Long>,
   private val random: Random
 ) {
-  var sp: Int = 0
-    private set
+
+  var sp: Int
+    get() {
+      return registers[VM.spRegOffset].toInt()
+    }
+    private set(value) {
+      registers[VM.spRegOffset] = value.toLong()
+    }
+
+  init {
+    sp = registers[VM.spRegOffset].toInt()
+  }
+
   private val stack = ByteArray(size) { 0 } //TODO: random.nextBytes(size)
 
   fun isEmpty() = sp == 0

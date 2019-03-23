@@ -1,13 +1,25 @@
 package crackme.vm.core
 
+import crackme.vm.VM
 import kotlin.random.Random
 
 class VmMemory(
   private val size: Int,
+  private val registers: MutableList<Long>,
   private val random: Random
 ) {
-  var ip = 0
-    private set
+
+  var ip: Int
+    get() {
+      return registers[VM.ipRegOffset].toInt()
+    }
+    private set(value) {
+      registers[VM.ipRegOffset] = value.toLong()
+    }
+
+  init {
+    ip = registers[VM.ipRegOffset].toInt()
+  }
 
   private val variables = mutableMapOf<String, MemoryVariable>()
   private val memory = ByteArray(size) { 0 } //TODO: random.nextBytes(size)
