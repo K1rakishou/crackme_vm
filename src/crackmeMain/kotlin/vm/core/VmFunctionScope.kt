@@ -1,5 +1,7 @@
 package crackme.vm.core
 
+import crackme.vm.VM
+
 class VmFunctionScope(
   val name: String,
   val start: Int,
@@ -7,6 +9,10 @@ class VmFunctionScope(
   val functionParameters: List<FunctionParameter>,
   val localVariables: List<FunctionLocalVariable>
 ) {
+
+  fun isMainFunctionScope(): Boolean {
+    return name == VM.mainFunctionName
+  }
 
   fun getParameterStackFrameByName(parameterName: String): Int? {
     return functionParameters.firstOrNull { it.name == parameterName }?.stackFrame
@@ -18,6 +24,10 @@ class VmFunctionScope(
 
   fun getLocalVariablesTotalStackSize(): Int {
     return localVariables.sumBy { it.type.size }
+  }
+
+  fun getTotalStackSizeAllocated(): Int {
+    return localVariables.sumBy { it.type.size } + functionParameters.sumBy { it.type.size }
   }
 
   override fun toString(): String {

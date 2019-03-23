@@ -5,10 +5,17 @@ import crackme.vm.core.Utils
 abstract class Instruction {
   abstract val instructionType: InstructionType
 
+  //FIXME: probably we don't need to account the operandType size here
   fun getInstructionRawSize(): Int = 1 + rawSize()  //1 is instruction operandType byte
   abstract fun compile(): List<ByteArray>
 
   protected abstract fun rawSize(): Int
+
+  protected fun Boolean.toByteArray(): ByteArray {
+    val array = ByteArray(1)
+    array[0] = if (this) 1 else 0
+    return array
+  }
 
   protected fun Byte.toByteArray(): ByteArray {
     val array = ByteArray(1)

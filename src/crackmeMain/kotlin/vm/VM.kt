@@ -22,6 +22,7 @@ class VM private constructor(
   companion object {
     const val spRegOffset = 8
     const val ipRegOffset = 9
+    const val mainFunctionName = "main"
 
     fun createVM(
       vmFunctions: MutableMap<String, VmFunction>,

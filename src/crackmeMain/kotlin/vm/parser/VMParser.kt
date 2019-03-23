@@ -64,7 +64,7 @@ class VMParser(
     var instructionId = _instructionId
 
     /**
-     * Function prolog is inserted here e.g.:
+     * Function prolog is inserted here:
      *
      * def test(p1: Int, p2: Int)
      *  let a: Int, 1
@@ -76,14 +76,13 @@ class VMParser(
      *    V
      *
      * def test(p1: Int, p2: Int)
-     *  sub sp, 12 <- allocate 12 byte on the stack for local variables
+     *  add sp, 12 <- allocate 12 byte on the stack for local variables
      * end
      *
+     * If a function does not have any parameters nor local variables we need to insert the prolog
+     *
      * */
-    instructions[instructionId++] = Sub(
-      Register(VM.spRegOffset),
-      C32(vmFunctionScope.getLocalVariablesTotalStackSize())
-    )
+    instructionId = insertFunctionProlog(vmFunctionScope, instructions, instructionId)
 
     for ((lineIndex, funcLine) in funcBody.withIndex()) {
       val instructionLine = funcLine.trim()
@@ -124,6 +123,25 @@ class VMParser(
       labels,
       instructions
     )
+  }
+
+  private fun insertFunctionProlog(
+    vmFunctionScope: VmFunctionScope,
+    instructions: LinkedHashMap<Int, Instruction>,
+    instructionId: Int
+  ): Int {
+    val totalStackAllocated = vmFunctionScope.getLocalVariablesTotalStackSize()
+
+    if (totalStackAllocated <= 0) {
+      return instructionId
+    }
+
+    instructions[instructionId] = Add(
+      Register(VM.spRegOffset),
+      C32(totalStackAllocated)
+    )
+
+    return instructionId + 1
   }
 
   private fun parseVmFunctionScopes(lines: List<String>): Map<String, VmFunctionScope> {
@@ -360,6 +378,10 @@ class VMParser(
     line: String,
     labels: MutableMap<String, Int>
   ): List<Instruction> {
+    if (line.startsWith("ret")) {
+      return parseRet(vmFunctionScope)
+    }
+
     val indexOfFirstSpace = line.indexOfFirst { it == ' ' }
 
     val (instructionName, body) = if (indexOfFirstSpace == -1) {
@@ -384,7 +406,6 @@ class VMParser(
       "pushd" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Push, AddressingMode.ModeDword)
       "popq" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Pop, AddressingMode.ModeQword)
       "popd" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Pop, AddressingMode.ModeDword)
-      "ret" -> parseRet(vmFunctionScope, functionLine, body, InstructionType.Ret)
       "je",
       "jne",
       "jmp" -> parseJxx(vmFunctionScope, functionLine, instructionName, body, InstructionType.Jxx)
@@ -401,26 +422,13 @@ class VMParser(
     return vmInstructionObfuscator.obfuscate(vmMemory, instruction)
   }
 
-  private fun parseRet(
-    vmFunctionScope: VmFunctionScope,
-    functionLine: Int,
-    body: String,
-    type: InstructionType
-  ): Instruction {
-    if (body.isEmpty()) {
-      return Ret(0)
-    }
+  private fun parseRet(vmFunctionScope: VmFunctionScope): List<Ret> {
+    val ret = Ret(
+      vmFunctionScope.getTotalStackSizeAllocated().toShort(),
+      vmFunctionScope.isMainFunctionScope()
+    )
 
-    val operand = operandParser.parseOperand(vmFunctionScope, functionLine, body.trim(), type, vmMemory)
-    if (operand !is C32) {
-      throw ParsingException(vmFunctionScope.name, functionLine, "Ret can only be used with C32 operand")
-    }
-
-    if (operand.value < 0 || operand.value > Short.MAX_VALUE.toInt()) {
-      throw ParsingException(vmFunctionScope.name, functionLine, "Ret operand overflow (${operand.value})")
-    }
-
-    return Ret(operand.value.toShort())
+    return listOf(ret)
   }
 
   private fun parseGenericOneOperandInstruction(

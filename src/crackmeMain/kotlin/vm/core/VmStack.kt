@@ -8,6 +8,9 @@ class VmStack(
   private val registers: MutableList<Long>,
   private val random: Random
 ) {
+  private var stackBottom = 0
+  private val stackTop = stackBottom + size
+  private val stack = ByteArray(size) { 0 } //TODO: random.nextBytes(size)
 
   var sp: Int
     get() {
@@ -18,15 +21,14 @@ class VmStack(
     }
 
   init {
-    sp = registers[VM.spRegOffset].toInt()
+    stackBottom = registers[VM.spRegOffset].toInt()
+    sp = stackBottom
   }
 
-  private val stack = ByteArray(size) { 0 } //TODO: random.nextBytes(size)
-
-  fun isEmpty() = sp == 0
+  fun isEmpty() = sp == stackBottom
 
   fun cleatTop(clearCount: Short) {
-    if (sp - clearCount < 0) {
+    if (sp - clearCount < stackBottom) {
       throw UnderflowException()
     }
 
@@ -34,7 +36,7 @@ class VmStack(
   }
 
   fun push(value: Long, addressingMode: AddressingMode) {
-    if (sp + addressingMode.size > size) {
+    if (sp + addressingMode.size > stackTop) {
       throw OverflowException()
     }
 
@@ -49,7 +51,7 @@ class VmStack(
   }
 
   fun <T : Any> pop(addressingMode: AddressingMode): T {
-    if (sp - addressingMode.size < 0) {
+    if (sp - addressingMode.size < stackBottom) {
       throw UnderflowException()
     }
 
@@ -72,7 +74,7 @@ class VmStack(
       throw UnderflowException()
     }
 
-    if ((address - LONG_SIZE) >= size) {
+    if ((address - LONG_SIZE) >= stackTop) {
       throw OverflowException()
     }
 
@@ -88,7 +90,7 @@ class VmStack(
       throw UnderflowException()
     }
 
-    if ((address - INT_SIZE) >= size) {
+    if ((address - INT_SIZE) >= stackTop) {
       throw OverflowException()
     }
 
@@ -104,7 +106,7 @@ class VmStack(
       throw UnderflowException()
     }
 
-    if ((address - INT_SIZE) >= size) {
+    if ((address - INT_SIZE) >= stackTop) {
       throw OverflowException()
     }
 
@@ -120,7 +122,7 @@ class VmStack(
       throw UnderflowException()
     }
 
-    if ((address - LONG_SIZE) >= size) {
+    if ((address - LONG_SIZE) >= stackTop) {
       throw OverflowException()
     }
 
