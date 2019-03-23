@@ -1,8 +1,8 @@
 package sample.helloworld.handlers
 
 import crackme.misc.extractInstructionsAndGetEntryPoint
-import crackme.vm.parser.VMParser
 import crackme.vm.VMSimulator
+import crackme.vm.parser.VMParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -14,7 +14,7 @@ class StackInstructionsHandlerTest {
     val vm = vmParser.parse(
       """
         def main()
-          push 0x11223344
+          pushq 0x11223344
           pop r0
           ret
         end

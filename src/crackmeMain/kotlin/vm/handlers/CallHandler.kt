@@ -1,9 +1,7 @@
 package crackme.vm.handlers
 
 import crackme.vm.VM
-import crackme.vm.core.VmExecutionException
-import crackme.vm.core.function.NativeFunctionCallbacks
-import crackme.vm.core.function.NativeFunctionType
+import crackme.vm.core.AddressingMode
 import crackme.vm.instructions.Call
 
 class CallHandler : Handler<Call>() {
@@ -14,7 +12,7 @@ class CallHandler : Handler<Call>() {
       throw RuntimeException("No function defined with name (${instruction.functionName})")
     }
 
-    vm.vmStack.push64(currentEip + 1L)
+    vm.vmStack.push(currentEip + 1L, AddressingMode.ModeQword)
     return vmFunction.start
   }
 

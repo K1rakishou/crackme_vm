@@ -319,7 +319,8 @@ class VMParser(
       "sub" -> parseGenericTwoOperandsInstruction(vmFunctionScope, functionLine, body, InstructionType.Sub)
       "inc" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Inc)
       "dec" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Dec)
-      "push" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Push)
+      "pushq" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Push, AddressingMode.ModeQword)
+      "pushd" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Push, AddressingMode.ModeDword)
       "pop" -> parseGenericOneOperandInstruction(vmFunctionScope, functionLine, body, InstructionType.Pop)
       "ret" -> parseRet(vmFunctionScope, functionLine, body, InstructionType.Ret)
       "je",
@@ -364,7 +365,8 @@ class VMParser(
     vmFunctionScope: VmFunctionScope,
     functionLine: Int,
     body: String,
-    type: InstructionType
+    type: InstructionType,
+    addressingMode: AddressingMode? = null
   ): Instruction {
     if (body.isEmpty()) {
       throw ParsingException(
@@ -379,7 +381,13 @@ class VMParser(
     return when (type) {
       InstructionType.Inc -> Inc(operand)
       InstructionType.Dec -> Dec(operand)
-      InstructionType.Push -> Push(operand)
+      InstructionType.Push -> {
+        if (addressingMode == null) {
+          throw ParsingException(vmFunctionScope.name, functionLine, "Push instruction must have an addressing mode")
+        }
+
+        Push(addressingMode, operand)
+      }
       InstructionType.Pop -> Pop(operand)
       InstructionType.Ret,
       InstructionType.Add,

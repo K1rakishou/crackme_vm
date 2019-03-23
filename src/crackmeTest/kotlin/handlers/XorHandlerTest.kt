@@ -33,7 +33,7 @@ class XorHandlerTest {
     val vm = vmParser.parse(
       """
         def main()
-          push 0xDEADBEEF112233
+          pushq 0xDEADBEEF112233
           xor ss@[0] as qword, 0xDEADBEEF112233
           pop r1
           ret

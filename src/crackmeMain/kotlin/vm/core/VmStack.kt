@@ -20,22 +20,19 @@ class VmStack(
     sp -= clearCount
   }
 
-  fun push64(value: Long) {
-    if (sp + LONG_SIZE > size) {
+  fun push(value: Long, addressingMode: AddressingMode) {
+    if (sp + addressingMode.size > size) {
       throw OverflowException()
     }
 
-    Utils.writeLongToArray(sp, value, stack)
-    sp += LONG_SIZE
-  }
-
-  fun push32(value: Int) {
-    if (sp + INT_SIZE > size) {
-      throw OverflowException()
+    when (addressingMode) {
+      AddressingMode.ModeByte -> stack[sp] = (value and 0xFF).toByte()
+      AddressingMode.ModeWord -> Utils.writeShortToArray(sp, value.toShort(), stack)
+      AddressingMode.ModeDword -> Utils.writeIntToArray(sp, value.toInt(), stack)
+      AddressingMode.ModeQword -> Utils.writeLongToArray(sp, value, stack)
     }
 
-    Utils.writeIntToArray(sp, value, stack)
-    sp += INT_SIZE
+    sp += addressingMode.size
   }
 
   fun pop64(): Long {

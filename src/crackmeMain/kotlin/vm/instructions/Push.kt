@@ -1,12 +1,16 @@
 package crackme.vm.instructions
 
+import crackme.vm.core.AddressingMode
 import crackme.vm.operands.Operand
 
 class Push(
+  val addressingMode: AddressingMode,
   override val operand: Operand,
   override val instructionType: InstructionType = InstructionType.Push
 ) : GenericOneOperandInstruction, Instruction() {
-  override fun rawSize(): Int = 1 + operand.rawSize //instructionType + size of operand
+
+  //instructionType + addressingMode + size of operand
+  override fun rawSize(): Int = 1 + addressingMode.mode + operand.rawSize
 
   override fun compile(): List<ByteArray> {
     return listOf(
@@ -16,6 +20,6 @@ class Push(
   }
 
   override fun toString(): String {
-    return "push $operand"
+    return "push $operand as ${addressingMode.typeStr}"
   }
 }

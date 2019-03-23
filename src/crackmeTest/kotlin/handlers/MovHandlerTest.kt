@@ -237,7 +237,7 @@ class MovHandlerTest {
       """
         def main()
           mov r1, 112233
-          push 0x11223344AABBCCDD
+          pushq 0x11223344AABBCCDD
           mov ss@[0] as qword, r1
           mov r0, ss@[0] as qword
           pop r1
