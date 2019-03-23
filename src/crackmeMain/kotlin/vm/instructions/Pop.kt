@@ -1,12 +1,16 @@
 package crackme.vm.instructions
 
+import crackme.vm.core.AddressingMode
 import crackme.vm.operands.Operand
 
 class Pop(
+  val addressingMode: AddressingMode,
   override val operand: Operand,
   override val instructionType: InstructionType = InstructionType.Pop
 ) : GenericOneOperandInstruction, Instruction() {
-  override fun rawSize(): Int = 1 + operand.rawSize //instructionType + size of operand
+
+  //instructionType + addressingMode + size of operand
+  override fun rawSize(): Int = 1 + addressingMode.mode + operand.rawSize
 
   override fun compile(): List<ByteArray> {
     return listOf(
@@ -16,6 +20,6 @@ class Pop(
   }
 
   override fun toString(): String {
-    return "pop $operand"
+    return "pop $operand as ${addressingMode.typeStr}"
   }
 }

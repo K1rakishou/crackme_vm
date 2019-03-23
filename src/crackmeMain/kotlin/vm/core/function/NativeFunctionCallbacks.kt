@@ -1,6 +1,7 @@
 package crackme.vm.core.function
 
 import crackme.vm.VM
+import crackme.vm.core.AddressingMode
 import crackme.vm.core.VariableType
 import crackme.vm.operands.*
 
@@ -10,11 +11,12 @@ object NativeFunctionCallbacks {
     return when (variableType) {
       //TODO addressing mode for push/pop
       //pop64 here because C64 is the default constant size
-      VariableType.IntType -> vm.vmStack.pop64() as T
-      VariableType.LongType -> vm.vmStack.pop64() as T
+      VariableType.IntType -> vm.vmStack.pop(AddressingMode.ModeDword) as T
+      VariableType.LongType -> vm.vmStack.pop(AddressingMode.ModeQword) as T
       //TODO addressing mode for push/pop
       //pop64 here because C64 is the default constant size
-      VariableType.StringType -> vm.vmStack.pop64() as T
+      //FIXME: should this be C64????
+      VariableType.StringType -> vm.vmStack.pop(AddressingMode.ModeQword) as T
     }
   }
 

@@ -240,7 +240,7 @@ class MovHandlerTest {
           pushq 0x11223344AABBCCDD
           mov ss@[0] as qword, r1
           mov r0, ss@[0] as qword
-          pop r1
+          popq r1
           ret
         end
       """

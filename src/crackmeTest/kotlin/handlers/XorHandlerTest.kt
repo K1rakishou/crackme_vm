@@ -35,7 +35,7 @@ class XorHandlerTest {
         def main()
           pushq 0xDEADBEEF112233
           xor ss@[0] as qword, 0xDEADBEEF112233
-          pop r1
+          popq r1
           ret
         end
       """

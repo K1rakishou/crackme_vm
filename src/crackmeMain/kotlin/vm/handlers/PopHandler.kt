@@ -15,20 +15,39 @@ class PopHandler : Handler<Pop>() {
       currentEip,
       instruction,
       handleReg = { operand, _ ->
-        val value = vm.vmStack.pop64()
-        vm.registers[operand.index] = value
-        value
+        when (instruction.addressingMode) {
+          AddressingMode.ModeByte -> {
+            val value = vm.vmStack.pop<Byte>(instruction.addressingMode).toLong()
+            vm.registers[operand.index] = value
+            value
+          }
+          AddressingMode.ModeWord -> {
+            val value = vm.vmStack.pop<Short>(instruction.addressingMode).toLong()
+            vm.registers[operand.index] = value
+            value
+          }
+          AddressingMode.ModeDword -> {
+            val value = vm.vmStack.pop<Int>(instruction.addressingMode).toLong()
+            vm.registers[operand.index] = value
+            value
+          }
+          AddressingMode.ModeQword -> {
+            val value = vm.vmStack.pop<Long>(instruction.addressingMode).toLong()
+            vm.registers[operand.index] = value
+            value
+          }
+        }
       },
       handleMemReg = { operand, eip ->
-        popIntoVmMemoryByRegister(operand, vm, eip)
+        popIntoVmMemoryByRegister(operand, instruction.addressingMode, vm, eip)
       },
       handleMemVar = { operand, eip ->
-        popIntoVmMemoryByVariable(operand, vm, eip)
+        popIntoVmMemoryByVariable(operand, instruction.addressingMode, vm, eip)
       },
       handleMemConstant = { operand, eip ->
         val value = when (operand.operand) {
-          is C64 -> vm.vmStack.pop64()
-          is C32 -> vm.vmStack.pop32().toLong()
+          is C64 -> vm.vmStack.pop<Long>(instruction.addressingMode)
+          is C32 -> vm.vmStack.pop<Int>(instruction.addressingMode).toLong()
           else -> throw VmExecutionException(eip, "Cannot pop into VmString")
         }
 
@@ -47,34 +66,50 @@ class PopHandler : Handler<Pop>() {
     return currentEip + 1
   }
 
-  private fun popIntoVmMemoryByVariable(operand: Memory<Variable>, vm: VM, eip: Int): Long {
+  private fun popIntoVmMemoryByVariable(operand: Memory<Variable>, addressingMode: AddressingMode, vm: VM, eip: Int): Long {
     return when (operand.addressingMode) {
-      AddressingMode.ModeByte -> TODO("push8  not implemented yet")
-      AddressingMode.ModeWord -> TODO("push16 not implemented yet")
+      AddressingMode.ModeByte -> {
+        val value = vm.vmStack.pop<Byte>(addressingMode)
+        putVmMemoryValueByVariable(operand, vm, value.toLong(), eip)
+        value.toLong()
+      }
+      AddressingMode.ModeWord -> {
+        val value = vm.vmStack.pop<Short>(addressingMode)
+        putVmMemoryValueByVariable(operand, vm, value.toLong(), eip)
+        value.toLong()
+      }
       AddressingMode.ModeDword -> {
-        val value = vm.vmStack.pop32()
+        val value = vm.vmStack.pop<Int>(addressingMode)
         putVmMemoryValueByVariable(operand, vm, value.toLong(), eip)
         value.toLong()
       }
       AddressingMode.ModeQword -> {
-        val value = vm.vmStack.pop64()
+        val value = vm.vmStack.pop<Long>(addressingMode)
         putVmMemoryValueByVariable(operand, vm, value, eip)
         value
       }
     }
   }
 
-  private fun popIntoVmMemoryByRegister(operand: Memory<Register>, vm: VM, eip: Int): Long {
+  private fun popIntoVmMemoryByRegister(operand: Memory<Register>, addressingMode: AddressingMode, vm: VM, eip: Int): Long {
     return when (operand.addressingMode) {
-      AddressingMode.ModeByte -> TODO("push8  not implemented yet")
-      AddressingMode.ModeWord -> TODO("push16 not implemented yet")
+      AddressingMode.ModeByte -> {
+        val value = vm.vmStack.pop<Byte>(addressingMode)
+        putVmMemoryValueByRegister(operand, vm, value.toLong(), eip)
+        value.toLong()
+      }
+      AddressingMode.ModeWord -> {
+        val value = vm.vmStack.pop<Short>(addressingMode)
+        putVmMemoryValueByRegister(operand, vm, value.toLong(), eip)
+        value.toLong()
+      }
       AddressingMode.ModeDword -> {
-        val value = vm.vmStack.pop32()
+        val value = vm.vmStack.pop<Int>(addressingMode)
         putVmMemoryValueByRegister(operand, vm, value.toLong(), eip)
         value.toLong()
       }
       AddressingMode.ModeQword -> {
-        val value = vm.vmStack.pop64()
+        val value = vm.vmStack.pop<Long>(addressingMode)
         putVmMemoryValueByRegister(operand, vm, value, eip)
         value
       }

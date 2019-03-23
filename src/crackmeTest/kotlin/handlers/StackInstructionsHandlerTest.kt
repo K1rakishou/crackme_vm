@@ -14,8 +14,8 @@ class StackInstructionsHandlerTest {
     val vm = vmParser.parse(
       """
         def main()
-          pushq 0x11223344
-          pop r0
+          pushd 0x11223344
+          popd r0
           ret
         end
       """

@@ -12,7 +12,7 @@ class CallHandler : Handler<Call>() {
       throw RuntimeException("No function defined with name (${instruction.functionName})")
     }
 
-    vm.vmStack.push(currentEip + 1L, AddressingMode.ModeQword)
+    vm.vmStack.push(currentEip + 1L, AddressingMode.ModeDword)
     return vmFunction.start
   }
 

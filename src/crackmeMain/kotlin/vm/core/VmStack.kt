@@ -35,26 +35,19 @@ class VmStack(
     sp += addressingMode.size
   }
 
-  fun pop64(): Long {
-    if (sp - LONG_SIZE < 0) {
+  fun <T : Any> pop(addressingMode: AddressingMode): T {
+    if (sp - addressingMode.size < 0) {
       throw UnderflowException()
     }
 
-    sp -= LONG_SIZE
-    val value = Utils.readLongFromByteArray(sp, stack)
+    sp -= addressingMode.size
 
-    return value
-  }
-
-  fun pop32(): Int {
-    if (sp - INT_SIZE < 0) {
-      throw UnderflowException()
+    return when (addressingMode) {
+      AddressingMode.ModeByte -> stack[sp] as T
+      AddressingMode.ModeWord -> Utils.readShortFromByteArray(sp, stack) as T
+      AddressingMode.ModeDword -> Utils.readIntFromArray(sp, stack) as T
+      AddressingMode.ModeQword -> Utils.readLongFromByteArray(sp, stack) as T
     }
-
-    sp -= INT_SIZE
-    val value = Utils.readIntFromArray(sp, stack)
-
-    return value
   }
 
   fun peek64(): Long {
