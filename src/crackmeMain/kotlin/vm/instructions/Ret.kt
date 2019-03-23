@@ -1,16 +1,16 @@
 package crackme.vm.instructions
 
 class Ret(
-  val bytesToClearFromStack: Short,
+  val amountToDeallocate: Short,
   val isVmExit: Boolean,
   override val instructionType: InstructionType = InstructionType.Ret
 ) : Instruction() {
-  override fun rawSize(): Int = 1 + bytesToClearFromStack + 1 //instructionType + bytesToClearFromStack + isVmExit
+  override fun rawSize(): Int = 1 + amountToDeallocate + 1 //instructionType + amountToDeallocate + isVmExit
 
   override fun compile(): List<ByteArray> {
     return listOf(
       instructionType.value.toByteArray(),
-      bytesToClearFromStack.toByteArray(),
+      amountToDeallocate.toByteArray(),
       isVmExit.toByteArray()
     )
   }
@@ -22,6 +22,6 @@ class Ret(
       "vm_exit"
     }
 
-    return "$name $bytesToClearFromStack"
+    return "$name $amountToDeallocate"
   }
 }

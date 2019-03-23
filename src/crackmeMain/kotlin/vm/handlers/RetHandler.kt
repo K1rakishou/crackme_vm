@@ -9,7 +9,7 @@ class RetHandler : Handler<Ret>() {
   override fun handle(vm: VM, currentEip: Int, instruction: Ret): Int {
     if (vm.vmStack.isEmpty() || instruction.isVmExit) {
       if (instruction.isVmExit) {
-        vm.vmStack.cleatTop(instruction.bytesToClearFromStack)
+        vm.vmStack.deallocate(instruction.amountToDeallocate)
       }
 
       //return from the VM
@@ -18,7 +18,7 @@ class RetHandler : Handler<Ret>() {
 
     //return from the current function
     val newEip = vm.vmStack.pop<Int>(AddressingMode.ModeDword).toInt()
-    vm.vmStack.cleatTop(instruction.bytesToClearFromStack)
+    vm.vmStack.deallocate(instruction.amountToDeallocate)
 
     return newEip
   }

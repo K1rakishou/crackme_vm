@@ -27,12 +27,12 @@ class VmStack(
 
   fun isEmpty() = sp == stackBottom
 
-  fun cleatTop(clearCount: Short) {
-    if (sp - clearCount < stackBottom) {
+  fun deallocate(amount: Short) {
+    if (sp - amount < stackBottom) {
       throw UnderflowException()
     }
 
-    sp -= clearCount
+    sp -= amount
   }
 
   fun push(value: Long, addressingMode: AddressingMode) {
