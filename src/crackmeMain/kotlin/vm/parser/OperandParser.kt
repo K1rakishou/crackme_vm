@@ -15,6 +15,17 @@ class OperandParser(
     type: InstructionType,
     vmMemory: VmMemory
   ): Operand {
+    return parseOperandInternal(vmFunctionScope, functionLine, operandString, type, vmMemory, false)
+  }
+
+  private fun parseOperandInternal(
+    vmFunctionScope: VmFunctionScope,
+    functionLine: Int,
+    operandString: String,
+    type: InstructionType,
+    vmMemory: VmMemory,
+    isMemoryInnerOperand: Boolean
+  ): Operand {
     val ch = operandString[0].toLowerCase()
 
     return when {
@@ -25,19 +36,19 @@ class OperandParser(
         if (operandString.contains('@') || operandString.contains('[') || operandString.contains(']')) {
           parseMemoryOperand(vmFunctionScope, operandString, functionLine, type, vmMemory)
         } else {
-          parseVariableOperand(vmFunctionScope, operandString, vmMemory, functionLine, type)
+          parseVariableOperand(vmFunctionScope, operandString, vmMemory, isMemoryInnerOperand, functionLine, type)
         }
       }
       else -> throw ParsingException(vmFunctionScope.name, functionLine, "Cannot parse operand for ($operandString)")
     }
   }
-
   //returns either Memory<*> or Variable operand type
   //it returns Memory<*> type operand when variable is a stack segment variable (like a function's parameter)
   private fun parseVariableOperand(
     vmFunctionScope: VmFunctionScope,
     operandString: String,
     vmMemory: VmMemory,
+    isMemoryInnerOperand: Boolean,
     functionLine: Int,
     type: InstructionType
   ): Operand {
@@ -47,7 +58,8 @@ class OperandParser(
        * variable declaration, e.g:.
        * let a: Int, 123456
        * */
-      return parseVariableDeclaration(vmFunctionScope, operandString, functionLine, type, vmMemory)
+
+      return parseVariableDeclaration(vmFunctionScope, operandString, functionLine, type)
     }
 
     /**
@@ -55,7 +67,9 @@ class OperandParser(
      *  mov r0, ss@[a] as dword
      *  mov ds@[b] as dword, r0
      * */
-    val isStackVariable = vmFunctionScope.getParameterStackFrameByName(operandString)?.let { true } ?: false
+    val isStackVariable = vmFunctionScope.isVariableDefined(operandString)
+
+    //TODO: we don't memory variables anymore (probably)
     val isMemoryVariable = vmMemory.isVariableDefined(operandString)
 
     if (isStackVariable && isMemoryVariable) {
@@ -84,6 +98,11 @@ class OperandParser(
         )
       }
 
+      //Hack to make "mov r0, a" return address of the variable "a"
+      if (!isMemoryInnerOperand) {
+        return C32(definedVariable.address)
+      }
+
       //TODO: replace with memory address
       return Variable(
         operandString,
@@ -91,32 +110,65 @@ class OperandParser(
         definedVariable.variableType
       )
     } else {
+      // if variable operand is not of Memory type then it is probably either a function's parameter or a function local
+      // variable so we need to get it's stack frame and transform this operand to the Memory type operand
+
       val functionParameter = vmFunctionScope.getParameterByName(operandString)
-      if (functionParameter == null) {
-        throw ParsingException(vmFunctionScope.name, functionLine, "Stack frame is null for variable with name ($operandString)")
+      if (functionParameter != null) {
+        //function parameter
+
+        //Hack to make "mov r0, a" return address of the variable "a"
+        if (!isMemoryInnerOperand) {
+          return C32(functionParameter.stackFrame)
+        }
+
+        /**
+         * Here we are transforming access from Memory<Variable> into Memory<C32> where memory segment is stack, e.g.:
+         *
+         *  def sum_of_three(a: Int, b: Int, c: Int)
+         *  mov r0, ss@[a] as qword
+         *  mov r1, ss@[b] as qword
+         *  mov r2, ss@[c] as qword
+         *
+         *    |
+         *    V
+         *  mov r0, ss@[8] as qword
+         *  mov r1, ss@[12] as qword
+         *  mov r2, ss@[16] as qword
+         * */
+
+        //FIXME: wrong addressing mode
+        return Memory(
+          C32(functionParameter.stackFrame),
+          null,
+          Segment.Stack,
+          functionParameter.type.addressingMode
+        )
+      } else {
+        //local variable
+
+        val localVariable = vmFunctionScope.getLocalVariableByName(operandString)
+        if (localVariable == null) {
+          throw ParsingException(
+            vmFunctionScope.name,
+            functionLine,
+            "Variable with name ($operandString) is not a function parameter nor a local variable"
+          )
+        }
+
+        //Hack to make "mov r0, a" return address of the variable "a"
+        if (!isMemoryInnerOperand) {
+          return C32(localVariable.stackFrame)
+        }
+
+        //FIXME: wrong addressing mode
+        return Memory(
+          C32(localVariable.stackFrame),
+          null,
+          Segment.Stack,
+          localVariable.type.addressingMode
+        )
       }
-
-      /**
-       * Here we are transforming access from Memory<Variable> into Memory<C32> where memory segment is stack, e.g.:
-       *
-       *  def sum_of_three(a: Int, b: Int, c: Int)
-       *  mov r0, ss@[a] as qword
-       *  mov r1, ss@[b] as qword
-       *  mov r2, ss@[c] as qword
-       *
-       *    |
-       *    V
-       *  mov r0, ss@[8] as qword
-       *  mov r1, ss@[12] as qword
-       *  mov r2, ss@[16] as qword
-       * */
-
-      return Memory(
-        C32(functionParameter.stackFrame),
-        null,
-        Segment.Stack,
-        functionParameter.type.addressingMode
-      )
     }
   }
 
@@ -124,8 +176,7 @@ class OperandParser(
     vmFunctionScope: VmFunctionScope,
     operandString: String,
     functionLine: Int,
-    type: InstructionType,
-    vmMemory: VmMemory
+    type: InstructionType
   ): Variable {
     val (variableNameRaw, variableTypeRaw) = operandString.split(':').map { it.trim() }
     val variableName = VMParser.wordRegex.find(variableNameRaw)?.value
@@ -133,20 +184,19 @@ class OperandParser(
       throw ParsingException(vmFunctionScope.name, functionLine, "Cannot parse variable name (${operandString})")
     }
 
-    if (type == InstructionType.Let) {
-      if (vmMemory.isVariableDefined(variableName)) {
-        throw ParsingException(vmFunctionScope.name, functionLine, "Variable ($variableName) is already defined")
-      }
-    }
-
     val variableType = VariableType.fromString(variableTypeRaw)
     if (variableType == null) {
       throw ParsingException(vmFunctionScope.name, functionLine, "Unknown variable type (${variableTypeRaw})")
     }
 
+    val stackFrame = vmFunctionScope.getLocalVariableStackFrameByName(variableName)
+    if (stackFrame == null) {
+      throw ParsingException(vmFunctionScope.name, functionLine, "Variable ($variableName) was not defined")
+    }
+
     return Variable(
       variableName,
-      vmMemory.allocVariable(variableName, variableType),
+      stackFrame,
       variableType
     )
   }
@@ -201,45 +251,69 @@ class OperandParser(
       }
 
       val (operandName, offsetOperandName) = addressingParameters.split('+').map { it.trim() }
-      val operand = parseOperand(vmFunctionScope, functionLine, operandName, type, vmMemory)
-      val offsetOperand = parseOperand(vmFunctionScope, functionLine, offsetOperandName, type, vmMemory)
+      val operand = parseOperandInternal(vmFunctionScope, functionLine, operandName, type, vmMemory, true)
+      val offsetOperand = parseOperandInternal(vmFunctionScope, functionLine, offsetOperandName, type, vmMemory, true)
 
       Pair(operand, offsetOperand)
     } else {
-      val operand = parseOperand(vmFunctionScope, functionLine, addressingParameters, type, vmMemory)
+      val operand = parseOperandInternal(vmFunctionScope, functionLine, addressingParameters, type, vmMemory, true)
 
       //FIXME: HACK - this should be refactored.
       //this may happen when addressingParameters is a variable name and the variable has a stack segment
-      if (operand is Memory<*>) {
-        return operand
+      if (operand is Memory<*> && operand.segment == Segment.Stack) {
+        return Memory(operand.operand, operand.offsetOperand, operand.segment, addressingMode)
       }
 
       Pair(operand, null)
     }
 
-    if (operand is Memory<*>) {
-      throw ParsingException(vmFunctionScope.name, functionLine, "Cannot use nested memory operands ($addressingParameters)")
-    }
+    val (transformedOperand, transformedOffsetOperand) = transformOperands(
+      operand,
+      offsetOperand,
+      vmFunctionScope,
+      functionLine
+    )
 
-    if (offsetOperand != null && offsetOperand is Memory<*>) {
-      throw ParsingException(vmFunctionScope.name, functionLine, "Cannot use Memory as an offset operand ($operandString)")
-    }
-
-    when (operand) {
-      is Variable -> {
-        if (!vmMemory.isVariableDefined(operand.name)) {
-          throw ParsingException(vmFunctionScope.name, functionLine, "Variable (${operand.name}) is not defined")
-        }
-      }
-      is Register,
-      is Constant -> {
-        //don't need to check anything here
-      }
-      else -> throw ParsingException(vmFunctionScope.name, functionLine, "Operand ($operand) is not supported by Memory operand")
+    //offset operand may be a Constant (C32) and a Register
+    if (transformedOffsetOperand != null && (transformedOffsetOperand !is C32 || transformedOffsetOperand !is Register)) {
+      throw ParsingException(
+        vmFunctionScope.name,
+        functionLine,
+        "Cannot use operand of type (${transformedOffsetOperand.operandType}) as an offset operand ($operandString)"
+      )
     }
 
     //TODO: replace with memory address
-    return Memory(operand, offsetOperand, segment, addressingMode)
+    return Memory(transformedOperand, transformedOffsetOperand, segment, addressingMode)
+  }
+
+  private fun transformOperands(
+    operand: Operand,
+    offsetOperand: Operand?,
+    vmFunctionScope: VmFunctionScope,
+    functionLine: Int
+  ): Pair<Operand, Operand?> {
+    val transformedOperand = if (operand is Memory<*>) {
+      if (operand.operand !is C32) {
+        throw ParsingException(
+          vmFunctionScope.name,
+          functionLine,
+          "Operand ($operand) should be transformed into a Memory<C32> operand but it isn't (innerOperand = ${operand.operand})"
+        )
+      }
+
+      operand.operand as C32
+    } else {
+      operand
+    }
+
+    if (offsetOperand != null && offsetOperand is C32 && transformedOperand is C32) {
+      //here we have transformed operand from Memory<C32> to C32 and then combined it with offsetOperand which is
+      //C32 as well, now we are getting rid og offsetOperand since we don't need it anymore
+      return Pair(C32(transformedOperand.value + offsetOperand.value), null)
+    }
+
+    return Pair(transformedOperand, offsetOperand)
   }
 
   private fun parseStringConstantOperand(

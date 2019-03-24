@@ -94,8 +94,8 @@ object GenericTwoOperandsInstructionHandler {
               is Variable -> {
                 //instr r0, [abc]
                 when (srcInstruction.segment) {
-                  Segment.Memory -> handle_Reg_MemVar(instruction.dest as Register, instruction.src as Memory<Variable>, eip)
-                  Segment.Stack -> throw VmExecutionException(eip, "Cannot use stack segment with Memory variable")
+                  Segment.Memory,
+                  Segment.Stack -> handle_Reg_MemVar(instruction.dest as Register, instruction.src as Memory<Variable>, eip)
                   else -> throw VmExecutionException(eip, "Unknown segment (${srcInstruction.segment.segmentName})")
                 }
               }
@@ -130,7 +130,8 @@ object GenericTwoOperandsInstructionHandler {
               is Variable -> {
                 //instr [abc], r0
                 when (destInstruction.segment) {
-                  Segment.Memory -> {
+                  Segment.Memory,
+                  Segment.Stack -> {
                     when (destInstruction.operand.variableType) {
                       VariableType.IntType,
                       VariableType.LongType,
@@ -139,7 +140,6 @@ object GenericTwoOperandsInstructionHandler {
                       }
                     }
                   }
-                  Segment.Stack -> throw VmExecutionException(eip, "Cannot use stack segment with Memory variable")
                   else -> throw VmExecutionException(eip, "Unknown segment (${destInstruction.segment.segmentName})")
                 }
               }
@@ -171,40 +171,53 @@ object GenericTwoOperandsInstructionHandler {
           //instr [r0], 1234
           is Constant -> {
             val sourceConst = instruction.src as Constant
-            val destInstruction = instruction.dest as Memory<*>
+            val destOperand = instruction.dest as Memory<*>
 
-            when (destInstruction.operand) {
+            when (destOperand.operand) {
               is Register -> {
                 //instr [r0], 1234
-                when (destInstruction.segment) {
-                  Segment.Memory -> handle_MemReg_Const(destInstruction as Memory<Register>, sourceConst, eip)
-                  Segment.Stack -> handle_MemReg_Const(destInstruction as Memory<Register>, sourceConst, eip)
-                  else -> throw VmExecutionException(eip, "Unknown segment (${destInstruction.segment.segmentName})")
+                when (destOperand.segment) {
+                  Segment.Memory -> handle_MemReg_Const(destOperand as Memory<Register>, sourceConst, eip)
+                  Segment.Stack -> handle_MemReg_Const(destOperand as Memory<Register>, sourceConst, eip)
+                  else -> throw VmExecutionException(eip, "Unknown segment (${destOperand.segment.segmentName})")
                 }
               }
               is Variable -> {
-                //instr [abc], r0
-                when (destInstruction.operand.variableType) {
+                //instr [abc], 1234
+                when (destOperand.operand.variableType) {
                   VariableType.IntType,
                   VariableType.LongType,
                   VariableType.StringType -> {
-                    handle_MemVar_Const(destInstruction as Memory<Variable>, sourceConst, eip)
+                    handle_MemVar_Const(destOperand as Memory<Variable>, sourceConst, eip)
                   }
-                  else -> throw VmExecutionException(eip, "Unknown variableType (${destInstruction.operand.variableType})")
+                  else -> throw VmExecutionException(eip, "Unknown variableType (${destOperand.operand.variableType})")
                 }
               }
               is Constant -> {
-                when (destInstruction.operand) {
-                  //instr [11223344], r0
+                when (destOperand.operand) {
+                  //instr [11223344], 1234
                   is C32 -> handle_MemC32_Const(instruction.dest as Memory<C32>, sourceConst, eip)
-                  else -> throw VmExecutionException(eip, "Unknown constant type (${destInstruction.operand})")
+                  is C64 -> {
+                    val convertedConstant = C32(destOperand.operand.value.toInt())
+
+                    //TODO: this convertation may be wrong (especially the addressingMode)
+                    val convertedOperand = Memory(
+                      convertedConstant,
+                      destOperand.offsetOperand,
+                      destOperand.segment,
+                      destOperand.addressingMode
+                    )
+
+                    handle_MemC32_Const(convertedOperand, sourceConst, eip)
+                  }
+                  else -> throw VmExecutionException(eip, "Unknown constant type (${destOperand.operand})")
                 }
               }
               is Memory<*> -> {
-                //instr [[???]], r0
+                //instr [[???]], 1234
                 throw VmExecutionException(eip, "Operand (${(instruction.dest as Memory<*>).operand.operandName}) cannot be used as Memory operand")
               }
-              else -> throw VmExecutionException(eip, "Unknown operand (${destInstruction.operand})")
+              else -> throw VmExecutionException(eip, "Unknown operand (${destOperand.operand})")
             }
           }
           //instr [123], abc

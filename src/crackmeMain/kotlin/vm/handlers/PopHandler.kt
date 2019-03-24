@@ -5,7 +5,10 @@ import crackme.vm.core.AddressingMode
 import crackme.vm.core.VmExecutionException
 import crackme.vm.handlers.helpers.GenericOneOperandInstructionHandler
 import crackme.vm.instructions.Pop
-import crackme.vm.operands.*
+import crackme.vm.operands.C32
+import crackme.vm.operands.C64
+import crackme.vm.operands.Memory
+import crackme.vm.operands.Register
 
 class PopHandler : Handler<Pop>() {
 
@@ -42,7 +45,9 @@ class PopHandler : Handler<Pop>() {
         popIntoVmMemoryByRegister(operand, instruction.addressingMode, vm, eip)
       },
       handleMemVar = { operand, eip ->
-        popIntoVmMemoryByVariable(operand, instruction.addressingMode, vm, eip)
+        TODO("remove me handleMemVar")
+
+//        popIntoVmMemoryByVariable(operand, instruction.addressingMode, vm, eip)
       },
       handleMemConstant = { operand, eip ->
         val value = when (operand.operand) {
@@ -64,31 +69,6 @@ class PopHandler : Handler<Pop>() {
 
     vm.vmFlags.updateFlagsFromResult(result)
     return currentEip + 1
-  }
-
-  private fun popIntoVmMemoryByVariable(operand: Memory<Variable>, addressingMode: AddressingMode, vm: VM, eip: Int): Long {
-    return when (operand.addressingMode) {
-      AddressingMode.ModeByte -> {
-        val value = vm.vmStack.pop<Byte>(addressingMode)
-        putVmMemoryValueByVariable(operand, vm, value.toLong(), eip)
-        value.toLong()
-      }
-      AddressingMode.ModeWord -> {
-        val value = vm.vmStack.pop<Short>(addressingMode)
-        putVmMemoryValueByVariable(operand, vm, value.toLong(), eip)
-        value.toLong()
-      }
-      AddressingMode.ModeDword -> {
-        val value = vm.vmStack.pop<Int>(addressingMode)
-        putVmMemoryValueByVariable(operand, vm, value.toLong(), eip)
-        value.toLong()
-      }
-      AddressingMode.ModeQword -> {
-        val value = vm.vmStack.pop<Long>(addressingMode)
-        putVmMemoryValueByVariable(operand, vm, value, eip)
-        value
-      }
-    }
   }
 
   private fun popIntoVmMemoryByRegister(operand: Memory<Register>, addressingMode: AddressingMode, vm: VM, eip: Int): Long {

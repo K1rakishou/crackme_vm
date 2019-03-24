@@ -8,7 +8,9 @@ import crackme.vm.core.function.NativeFunctionType
 import crackme.vm.instructions.*
 import crackme.vm.obfuscator.NoOpInstructionObfuscator
 import crackme.vm.obfuscator.VMInstructionObfuscator
-import crackme.vm.operands.*
+import crackme.vm.operands.C32
+import crackme.vm.operands.Register
+import crackme.vm.operands.Variable
 import platform.windows.GetTickCount
 import kotlin.random.Random
 
@@ -111,7 +113,9 @@ class VMParser(
 
     val uninitializedLabels = labels.filter { it.value == -1 }
     if (uninitializedLabels.isNotEmpty()) {
-      throw RuntimeException("There are uninitialized labels after parsing vmScope ($vmFunctionScope.name) : (${uninitializedLabels.map { it.key }})")
+      throw RuntimeException(
+        "There are uninitialized labels after parsing vmScope (${vmFunctionScope.name}) : (${uninitializedLabels.map { it.key }})"
+      )
     }
 
     //insert function epilog here
@@ -217,8 +221,12 @@ class VMParser(
 
       val localVariable = parseLocalVariable(lines[index], prevStackFrame)
       if (localVariable != null) {
+        if (localVariables.any { it.name == localVariable.name }) {
+          throw ScopeParsingException(index, "Variable (${localVariable.name}) is already defined")
+        }
+
         localVariables += localVariable
-        prevStackFrame += localVariable.stackFrame
+        prevStackFrame += localVariable.type.size
       }
 
       if (line == "end") {
@@ -269,7 +277,7 @@ class VMParser(
 
     return FunctionLocalVariable(
       variableName,
-      prevStackFrame + variableType.size,
+      prevStackFrame,
       variableType
     )
   }
@@ -410,13 +418,11 @@ class VMParser(
       "jne",
       "jmp" -> parseJxx(vmFunctionScope, functionLine, instructionName, body, InstructionType.Jxx)
       "call" -> parseCall(vmFunctionScope, functionLine, body, InstructionType.Call)
-      "let" -> parseLet(vmFunctionScope, functionLine, body, InstructionType.Let)
+      "let" -> {
+        val let = parseLet(vmFunctionScope, functionLine, body, InstructionType.Let)
+        letTransformer.transform(vmMemory, vmFunctionScope, functionLine, let as Let)
+      }
       else -> throw ParsingException(vmFunctionScope.name, functionLine, "Unknown instruction name ($instructionName)")
-    }
-
-    if (instruction is Let) {
-      //do not obfuscate whatever letTransformer created
-      return letTransformer.transform(vmFunctionScope, instruction)
     }
 
     return vmInstructionObfuscator.obfuscate(vmMemory, instruction)
@@ -545,21 +551,6 @@ class VMParser(
 
     val variable = operandParser.parseOperand(vmFunctionScope, functionLine, variableOperand, type, vmMemory) as Variable
     val initializer = operandParser.parseOperand(vmFunctionScope, functionLine, initializerOperand, type, vmMemory)
-
-    when (initializer) {
-      is Constant -> {
-        when (initializer) {
-          is C32 -> vmMemory.putInt(variable.address, initializer.value)
-          is C64 -> vmMemory.putLong(variable.address, initializer.value)
-          is VmString -> vmMemory.putInt(variable.address, initializer.address)
-        }
-      }
-      else -> throw ParsingException(
-        vmFunctionScope.name,
-        functionLine,
-        "Initialization not implemented for initializer of type (${initializer.operandName})"
-      )
-    }
 
     return Let(
       variable,

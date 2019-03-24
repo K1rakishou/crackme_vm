@@ -65,20 +65,36 @@ class VmStack(
     }
   }
 
-  fun peek64(): Long {
-    return Utils.readLongFromByteArray(sp - LONG_SIZE, stack)
+  fun peek8(): Byte {
+    return stack[sp]
   }
 
-  fun peek64At(address: Int): Long {
+  fun peek8At(address: Int): Byte {
     if (address < 0) {
       throw UnderflowException()
     }
 
-    if ((address - LONG_SIZE) >= stackTop) {
+    if ((address - BYTE_SIZE) >= stackTop) {
       throw OverflowException()
     }
 
-    return Utils.readLongFromByteArray(address, stack)
+    return stack[address]
+  }
+
+  fun peek16(): Short {
+    return Utils.readShortFromByteArray(sp - SHORT_SIZE, stack)
+  }
+
+  fun peek16At(address: Int): Short {
+    if (address < 0) {
+      throw UnderflowException()
+    }
+
+    if ((address - SHORT_SIZE) >= stackTop) {
+      throw OverflowException()
+    }
+
+    return Utils.readShortFromByteArray(address, stack)
   }
 
   fun peek32(): Int {
@@ -95,6 +111,54 @@ class VmStack(
     }
 
     return Utils.readIntFromArray(address, stack)
+  }
+
+  fun peek64(): Long {
+    return Utils.readLongFromByteArray(sp - LONG_SIZE, stack)
+  }
+
+  fun peek64At(address: Int): Long {
+    if (address < 0) {
+      throw UnderflowException()
+    }
+
+    if ((address - LONG_SIZE) >= stackTop) {
+      throw OverflowException()
+    }
+
+    return Utils.readLongFromByteArray(address, stack)
+  }
+
+  fun set8(value: Byte) {
+    stack[sp] = value
+  }
+
+  fun set8At(address: Int, value: Byte) {
+    if (address < 0) {
+      throw UnderflowException()
+    }
+
+    if ((address - BYTE_SIZE) >= stackTop) {
+      throw OverflowException()
+    }
+
+    stack[address] = value
+  }
+
+  fun set16(value: Short) {
+    Utils.writeShortToArray(sp, value, stack)
+  }
+
+  fun set16At(address: Int, value: Short) {
+    if (address < 0) {
+      throw UnderflowException()
+    }
+
+    if ((address - SHORT_SIZE) >= stackTop) {
+      throw OverflowException()
+    }
+
+    Utils.writeShortToArray(address, value, stack)
   }
 
   fun set32(value: Int) {
@@ -128,8 +192,6 @@ class VmStack(
 
     Utils.writeLongToArray(address, value, stack)
   }
-
-  //TODO: maybe push/pop/peek 16 and 8
 
   class OverflowException : Exception("Stack overflow")
   class UnderflowException : Exception("Stack is empty")

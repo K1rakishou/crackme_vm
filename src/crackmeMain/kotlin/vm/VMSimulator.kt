@@ -7,7 +7,6 @@ class VMSimulator(
   private val movHandler: MovHandler = MovHandler(),
   private val addHandler: AddHandler = AddHandler(),
   private val callHandler: CallHandler = CallHandler(),
-  private val letHandler: LetHandler = LetHandler(),
   private val cmpHandler: CmpHandler = CmpHandler(),
   private val jxxHandler: JxxHandler = JxxHandler(),
   private val xorHandler: XorHandler = XorHandler(),
@@ -28,12 +27,13 @@ class VMSimulator(
         throw RuntimeException("ip is out of bounds ip = ($eip), upperBound = ${instructions.size}")
       }
 
+      println(currentInstruction)
+
       eip = when (currentInstruction.instructionType) {
         InstructionType.Add -> addHandler.handle(vm, eip, currentInstruction as Add)
         InstructionType.Call -> callHandler.handle(vm, eip, currentInstruction as Call)
         InstructionType.Cmp -> cmpHandler.handle(vm, eip, currentInstruction as Cmp)
         InstructionType.Jxx -> jxxHandler.handle(vm, eip, currentInstruction as Jxx)
-        InstructionType.Let -> letHandler.handle(vm, eip, currentInstruction as Let)
         InstructionType.Mov -> movHandler.handle(vm, eip, currentInstruction as Mov)
         InstructionType.Xor -> xorHandler.handle(vm, eip, currentInstruction as Xor)
         InstructionType.Sub -> subHandler.handle(vm, eip, currentInstruction as Sub)
@@ -42,6 +42,9 @@ class VMSimulator(
         InstructionType.Push -> pushHandler.handle(vm, eip, currentInstruction as Push)
         InstructionType.Pop -> popHandler.handle(vm, eip, currentInstruction as Pop)
         InstructionType.Ret -> retHandler.handle(vm, eip, currentInstruction as Ret)
+        InstructionType.Let -> throw RuntimeException(
+          "Let should be transformed into Mov instruction so this should not happen"
+        )
       }
 
       if (eip == Int.MAX_VALUE) {

@@ -71,59 +71,6 @@ class VmMemory(
     return variables[variableName]
   }
 
-  fun <T : Any> getVariableValue(variableName: String, variableType: VariableType): T {
-    val variable = variables[variableName]
-    if (variable == null) {
-      throw RuntimeException("Unknown variable (${variableName})")
-    }
-
-    if (variable.variableType != variableType) {
-      throw RuntimeException("Variable types do not match (expected = ${variable.variableType}, actual = ${variableType})")
-    }
-
-    return when (variableType) {
-      VariableType.IntType -> {
-        Utils.readIntFromArray(variable.address, memory) as T
-      }
-      VariableType.LongType -> {
-        Utils.readLongFromByteArray(variable.address, memory) as T
-      }
-      VariableType.StringType -> {
-        val address = Utils.readIntFromArray(variable.address, memory)
-        val stringLen = Utils.readIntFromArray(address, memory)
-
-        val array = ByteArray(stringLen)
-        Utils.copyBytes(memory, address + INT_SIZE, array, 0, stringLen)
-
-        return String(array.map { it.toChar() }.toCharArray()) as T
-      }
-    }
-  }
-
-  fun allocVariable(variableName: String, variableType: VariableType): Int {
-    val variableSize = when (variableType) {
-      VariableType.IntType -> 4
-      VariableType.LongType -> 8
-      VariableType.StringType -> 4
-    }
-
-    if (ip < 0 || (ip + variableSize) > size) {
-      throw EipIsOutOfBoundsException(ip, ip + variableSize)
-    }
-
-    val address = ip
-    variables.put(variableName, MemoryVariable(address, variableType))
-
-    when (variableType) {
-      VariableType.IntType -> Utils.writeIntToArray(address, 0, memory)
-      VariableType.LongType -> Utils.writeLongToArray(address, 0, memory)
-      VariableType.StringType -> Utils.writeIntToArray(address, 0, memory)
-    }
-
-    ip += variableSize
-    return address
-  }
-
   private fun allocInt(value: Int): Int {
     if (ip < 0 || (ip + INT_SIZE) > size) {
       throw EipIsOutOfBoundsException(ip, size)

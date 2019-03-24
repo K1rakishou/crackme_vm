@@ -7,23 +7,44 @@ class VmFunctionScope(
   val start: Int,
   val length: Int,
   val functionParameters: List<FunctionParameter>,
-  val localVariables: List<FunctionLocalVariable>
+  private val localVariables: MutableList<FunctionLocalVariable>
 ) {
 
   fun isMainFunctionScope(): Boolean {
     return name == VM.mainFunctionName
   }
 
+  fun isVariableDefined(name: String): Boolean {
+    val isFunctionParameter = functionParameters.any { it.name == name }
+    if (isFunctionParameter) {
+      return true
+    }
+
+    return localVariables.any { it.name == name }
+  }
+
   fun getParameterStackFrameByName(parameterName: String): Int? {
     return functionParameters.firstOrNull { it.name == parameterName }?.stackFrame
+  }
+
+  fun getLocalVariableStackFrameByName(localVariableName: String): Int? {
+    return localVariables.firstOrNull { it.name == localVariableName }?.stackFrame
   }
 
   fun getParameterByName(parameterName: String): FunctionParameter? {
     return functionParameters.firstOrNull { it.name == parameterName }
   }
 
+  fun getLocalVariableByName(variableName: String): FunctionLocalVariable? {
+    return localVariables.firstOrNull { it.name == variableName }
+  }
+
   fun getLocalVariablesTotalStackSize(): Int {
     return localVariables.sumBy { it.type.size }
+  }
+
+  fun getFunctionParametersTotalStackSize(): Int {
+    return functionParameters.sumBy { it.type.size }
   }
 
   fun getTotalStackSizeAllocated(): Int {

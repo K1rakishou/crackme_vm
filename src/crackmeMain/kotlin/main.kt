@@ -18,6 +18,10 @@ fun main() {
       end
     """
 
+  //TODO: Remove VmString!!!!!!
+  //TODO: add Lea instruction to be able to get an address of a variable
+
+  //TODO: add modules and ability to include modules (#include "module-path/module-name.asm")
   //TODO: rework println and other native functions
   //TODO: make Let instruction allocate variable on stack instead of the global memory
   //TODO: Introduce 32, 16 and maybe even 8 bit registers

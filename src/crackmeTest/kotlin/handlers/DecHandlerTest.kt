@@ -1,8 +1,8 @@
 package sample.helloworld.handlers
 
 import crackme.misc.extractInstructionsAndGetEntryPoint
-import crackme.vm.parser.VMParser
 import crackme.vm.VMSimulator
+import crackme.vm.parser.VMParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -32,19 +32,19 @@ class DecHandlerTest {
   }
 
   @Test
-  fun testDecMemReg() {
+  fun testDecStackReg() {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
         def main()
           let a: Int, 10
           mov r2, a
-          dec ds@[r2] as dword
-          dec ds@[r2] as dword
-          dec ds@[r2] as dword
-          dec ds@[r2] as dword
-          dec ds@[r2] as dword
-          mov r4, ds@[r2] as dword
+          dec ss@[r2] as dword
+          dec ss@[r2] as dword
+          dec ss@[r2] as dword
+          dec ss@[r2] as dword
+          dec ss@[r2] as dword
+          mov r4, ss@[r2] as dword
 
           ret
         end
@@ -58,18 +58,18 @@ class DecHandlerTest {
   }
 
   @Test
-  fun testDecMemConstant() {
+  fun testDecStackConstant() {
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
         def main()
           let a: Int, 0x11223344
-          dec ds@[0] as dword
-          dec ds@[0] as dword
-          dec ds@[0] as dword
-          dec ds@[0] as dword
-          dec ds@[0] as dword
-          mov r2, ds@[0] as dword
+          dec ss@[0] as dword
+          dec ss@[0] as dword
+          dec ss@[0] as dword
+          dec ss@[0] as dword
+          dec ss@[0] as dword
+          mov r2, ss@[0] as dword
 
           ret
         end

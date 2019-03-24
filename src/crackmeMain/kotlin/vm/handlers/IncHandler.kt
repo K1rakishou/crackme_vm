@@ -19,9 +19,11 @@ class IncHandler : Handler<Inc>() {
         newValue
       },
       handleMemVar = { operand, eip ->
-        val newValue = getVmMemoryValueByVariable(vm, eip, operand) + 1
-        putVmMemoryValueByVariable(operand, vm, newValue, eip)
-        newValue
+        TODO("remove me handleMemVar")
+
+//        val newValue = getVmMemoryValueByVariable(vm, eip, operand) + 1
+//        putVmMemoryValueByVariable(operand, vm, newValue, eip)
+//        newValue
       },
       handleMemConstant = { operand, eip ->
         val newValue = getVmMemoryValueByConstant(vm, eip, operand) + 1

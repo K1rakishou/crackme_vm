@@ -1,6 +1,7 @@
 package crackme.vm.handlers
 
 import crackme.vm.VM
+import crackme.vm.core.AddressingMode
 import crackme.vm.handlers.helpers.GenericTwoOperandsInstructionHandler
 import crackme.vm.instructions.Xor
 import crackme.vm.operands.Constant
@@ -14,7 +15,7 @@ class XorHandler : Handler<Xor>() {
       currentEip,
       instruction,
       handle_Reg_Constant = { dest, src, eip ->
-        vm.registers[dest.index] = vm.registers[dest.index] xor extractValueFromConstant(eip, src)
+        vm.registers[dest.index] = vm.registers[dest.index] xor extractValueFromConstant(eip, src, AddressingMode.ModeQword)
         vm.registers[dest.index]
       },
       handle_Reg_MemC32 = { dest, src, _ ->
@@ -26,16 +27,18 @@ class XorHandler : Handler<Xor>() {
         vm.registers[dest.index]
       },
       handle_Reg_MemVar = { dest, src, eip ->
-        vm.registers[dest.index] = vm.registers[dest.index] xor getVmMemoryValueByVariable(vm, eip, src)
-        vm.registers[dest.index]
+        TODO("remove me handle_Reg_MemVar")
+//        vm.registers[dest.index] = vm.registers[dest.index] xor getVmMemoryValueByVariable(vm, eip, src)
+//        vm.registers[dest.index]
       },
       handle_Reg_Reg = { dest, src, _ ->
         vm.registers[dest.index] = vm.registers[dest.index] xor vm.registers[src.index]
         vm.registers[dest.index]
       },
       handle_Reg_Var = { dest, src, _ ->
-        vm.registers[dest.index] = vm.registers[dest.index] xor src.address.toLong()
-        vm.registers[dest.index]
+        TODO("XorRegVar is forbidden")
+//        vm.registers[dest.index] = vm.registers[dest.index] xor src.stackFrame.toLong()
+//        vm.registers[dest.index]
       },
       handle_MemReg_Reg = { dest, src, eip ->
         val newValue = getVmMemoryValueByRegister(vm, eip, dest) xor vm.registers[src.index]
@@ -43,9 +46,11 @@ class XorHandler : Handler<Xor>() {
         newValue
       },
       handle_MemVar_Reg = { dest, src, eip ->
-        val newValue = getVmMemoryValueByVariable(vm, eip, dest) xor vm.registers[src.index]
-        putVmMemoryValueByVariable(dest, vm, newValue, eip)
-        newValue
+        TODO("remove me handle_MemVar_Reg")
+
+//        val newValue = getVmMemoryValueByVariable(vm, eip, dest) xor vm.registers[src.index]
+//        putVmMemoryValueByVariable(dest, vm, newValue, eip)
+//        newValue
       },
       handle_MemC32_Reg = { dest, src, _ ->
         val address = dest.operand.value
@@ -60,13 +65,15 @@ class XorHandler : Handler<Xor>() {
         newValue
       },
       handle_MemVar_Const = { dest, src, eip ->
-        val constantValue = getConstantValueFromVmMemory(vm, src)
-        val newValue = getVmMemoryValueByVariable(vm, eip, dest) xor constantValue
-        putVmMemoryValueByVariable(dest, vm, newValue, eip)
-        newValue
+        TODO("remove me handle_MemVar_Const")
+
+//        val constantValue = getConstantValueFromVmMemory(vm, src)
+//        val newValue = getVmMemoryValueByVariable(vm, eip, dest) xor constantValue
+//        putVmMemoryValueByVariable(dest, vm, newValue, eip)
+//        newValue
       },
       handle_MemC32_Const = { dest, src, eip ->
-        val constantValue = extractValueFromConstant(eip, src)
+        val constantValue = extractValueFromConstant(eip, src, dest.addressingMode)
         val newValue = getVmMemoryValueByConstant(vm, eip, dest as Memory<Constant>) xor constantValue
         putVmMemoryValueByConstant(dest, vm, newValue, eip)
         newValue

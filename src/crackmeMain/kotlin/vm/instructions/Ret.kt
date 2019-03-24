@@ -5,7 +5,9 @@ class Ret(
   val isVmExit: Boolean,
   override val instructionType: InstructionType = InstructionType.Ret
 ) : Instruction() {
-  override fun rawSize(): Int = 1 + amountToDeallocate + 1 //instructionType + amountToDeallocate + isVmExit
+
+  //instructionType + amountToDeallocate + isVmExit
+  override fun rawSize(): Int = 1 + amountToDeallocate + 1
 
   override fun compile(): List<ByteArray> {
     return listOf(

@@ -6,7 +6,7 @@ import kotlin.experimental.or
 
 class Memory<T : Operand>(
   val operand: T,
-  val offsetOperand: T? = null,
+  val offsetOperand: Operand? = null,
   val segment: Segment = Segment.Memory,
   val addressingMode: AddressingMode = AddressingMode.ModeQword
 ) : Operand {
@@ -47,7 +47,7 @@ class Memory<T : Operand>(
       ""
     }
 
-    return "[$operand$offset] as ${addressingMode.typeStr}"
+    return "${segment.segmentName}@[$operand$offset] as ${addressingMode.typeStr}"
   }
 }
 

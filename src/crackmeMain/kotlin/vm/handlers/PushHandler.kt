@@ -23,10 +23,12 @@ class PushHandler : Handler<Push>() {
         0
       },
       handleMemVar = { operand, eip ->
-        val value = getVmMemoryValueByVariable(vm, eip, operand)
-        vm.vmStack.push(value, instruction.addressingMode)
+        TODO("remove me handleMemVar")
 
-        0
+//        val value = getVmMemoryValueByVariable(vm, eip, operand)
+//        vm.vmStack.push(value, instruction.addressingMode)
+//
+//        0
       },
       handleMemConstant = { operand, eip ->
         val value = getConstantValueFromVmMemory(vm, operand.operand)
