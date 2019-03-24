@@ -31,7 +31,6 @@ class OperandParser(
     return when {
       ch == 'r' -> parseRegisterOperand(vmFunctionScope, operandString, functionLine)
       ch == '-' || ch.isDigit() -> parseNumericConstantOperand(vmFunctionScope, operandString, functionLine)
-      ch == '\"' -> parseStringConstantOperand(vmFunctionScope, operandString, functionLine, vmMemory)
       ch.isLetter() || ch == '[' -> {
         if (operandString.contains('@') || operandString.contains('[') || operandString.contains(']')) {
           parseMemoryOperand(vmFunctionScope, operandString, functionLine, type, vmMemory)
@@ -39,6 +38,7 @@ class OperandParser(
           parseVariableOperand(vmFunctionScope, operandString, vmMemory, isMemoryInnerOperand, functionLine, type)
         }
       }
+      ch == '\"' -> throw ParsingException(vmFunctionScope.name, functionLine, "Old strings are not supported anymore!!!")
       else -> throw ParsingException(vmFunctionScope.name, functionLine, "Cannot parse operand for ($operandString)")
     }
   }
@@ -314,23 +314,6 @@ class OperandParser(
     }
 
     return Pair(transformedOperand, offsetOperand)
-  }
-
-  private fun parseStringConstantOperand(
-    vmFunctionScope: VmFunctionScope,
-    operandString: String,
-    functionLine: Int,
-    vmMemory: VmMemory
-  ): VmString {
-    val stringEndIndex = operandString.indexOf('\"', 1)
-    if (stringEndIndex == -1) {
-      throw ParsingException(vmFunctionScope.name, functionLine, "Cannot find end of the string operand (${operandString})")
-    }
-
-    val string = operandString.substring(1, stringEndIndex)
-    val address = vmMemory.allocString(string)
-
-    return VmString(address)
   }
 
   private fun parseNumericConstantOperand(

@@ -59,12 +59,6 @@ class LetTransformer {
               initializer
             )
           }
-          is VmString -> {
-            Mov(
-              Memory(C32(variableStackFrame), null, Segment.Stack, instruction.variable.variableType.addressingMode),
-              initializer
-            )
-          }
           else -> throw ParsingException(
             vmFunctionScope.name,
             functionLine,

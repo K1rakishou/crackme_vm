@@ -3,7 +3,10 @@ package crackme.vm.core.function
 import crackme.vm.VM
 import crackme.vm.core.AddressingMode
 import crackme.vm.core.VariableType
-import crackme.vm.operands.*
+import crackme.vm.operands.C64
+import crackme.vm.operands.Constant
+import crackme.vm.operands.Operand
+import crackme.vm.operands.Register
 
 object NativeFunctionCallbacks {
 
@@ -61,7 +64,6 @@ object NativeFunctionCallbacks {
       is Constant -> {
         when (operand) {
           is C64 -> throw OperandNotSupportedForThisFunction(NativeFunctionType.Alloc, operand)
-          is VmString -> throw OperandNotSupportedForThisFunction(NativeFunctionType.Alloc, operand)
           else -> throw RuntimeException("Not implemented for ${operand.operandName}")
         }
       }

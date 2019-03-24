@@ -46,11 +46,6 @@ object GenericTwoOperandsInstructionHandler {
       is Register -> {
         when (val srcOperand = instruction.src) {
           is Constant -> {
-            if (srcOperand is VmString) {
-              //instr r0, "test"
-              throw VmExecutionException(eip, "Operand of type (${srcOperand.operandName}) cannot be used as source with instruction ($instruction)")
-            }
-
             when (srcOperand) {
               //instr r0, 1122334455667788
               is C64 -> handle_Reg_Constant(instruction.dest as Register, srcOperand, eip)
@@ -153,9 +148,6 @@ object GenericTwoOperandsInstructionHandler {
                       Segment.Stack -> handle_MemC32_Reg(destInstruction as Memory<C32>, sourceReg, eip)
                       else -> throw VmExecutionException(eip, "Unknown segment (${destInstruction.segment.segmentName})")
                     }
-                  }
-                  is VmString -> {
-                    throw VmExecutionException(eip, "VmString cannot be used as a memory address")
                   }
                   else -> throw VmExecutionException(eip, "Unknown operand (${destInstruction.operand})")
                 }

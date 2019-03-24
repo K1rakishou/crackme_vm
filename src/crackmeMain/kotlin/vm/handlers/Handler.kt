@@ -31,9 +31,6 @@ abstract class Handler<T : Instruction> {
 
         constant.value.toLong()
       }
-      is VmString -> {
-        constant.address.toLong()
-      }
       else -> throw VmExecutionException(eip, "Not implemented for constant of type ($constant)")
     }
   }
@@ -117,7 +114,6 @@ abstract class Handler<T : Instruction> {
       //TODO: probably should forbid C64 here
       is C64 -> operand.value.toInt()
       is C32 -> operand.value
-      is VmString -> throw VmExecutionException(eip, "Cannot use VmString with Memory operand")
       else -> throw VmExecutionException(eip, "Unknown constant type ($operand)")
     }
 
@@ -151,7 +147,6 @@ abstract class Handler<T : Instruction> {
       //TODO: probably should forbid C64 here
       is C64 -> operand.value.toInt()
       is C32 -> operand.value
-      is VmString -> throw VmExecutionException(eip, "Cannot use VmString with Memory operand")
       else -> throw VmExecutionException(eip, "Unknown constant type ($operand)")
     }
 

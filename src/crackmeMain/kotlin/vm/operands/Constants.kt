@@ -45,24 +45,3 @@ class C64(
     return value.toString()
   }
 }
-
-class VmString(
-  val address: Int
-) : Constant() {
-  override val operandName = "String"
-  override val rawSize: Int = 1 + 4 //operandType + address
-  override val operandType: OperandType = OperandType.Constant_VmString
-
-  override fun compile(): ByteArray {
-    val array = ByteArray(rawSize)
-
-    array[0] = operandType.value
-    Utils.writeIntToArray(1, address, array)
-
-    return array
-  }
-
-  override fun toString(): String {
-    return "string at ($address)"
-  }
-}

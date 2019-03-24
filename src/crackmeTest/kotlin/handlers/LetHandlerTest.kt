@@ -204,51 +204,13 @@ class LetHandlerTest {
   }
 
   @Test
-  fun test_LetString() {
-    //let a: String, "Hello from VM!"
-    val string = "Hello from VM!"
-
-    val vmParser = VMParser()
-    val vm = vmParser.parse(
-      """
-         def main()
-           let a: String, "${string}"
-           mov r0, a
-           ret
-         end
-      """
-    )
-    val vmSimulator = VMSimulator()
-    val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
-    vmSimulator.simulate(vm, entryPoint, instructions)
-
-    assertEquals(string, vm.vmMemory.getString(vm.registers[0].toInt()))
-  }
-
-  @Test
   fun test_MultipleLetInstructions() {
-    val string1 = "Hello from VM!"
-    val string2 = "This is a test string #2"
-    val string3 = "And this is another test string 45346346347347"
-
     val vmParser = VMParser()
     val vm = vmParser.parse(
       """
         def main()
-          let a: String, "${string1}"
-          let b: String, "${string2}"
-          let c: String, "${string3}"
           let d: Int, 1234
           let aavvss: Long, 1122334455667788
-
-          mov r0, a
-          mov r0, ss@[r0] as dword
-
-          mov r1, b
-          mov r1, ss@[r1] as dword
-
-          mov r2, c
-          mov r2, ss@[r2] as dword
 
           mov r3, d
           mov r3, ss@[r3] as dword
@@ -264,9 +226,6 @@ class LetHandlerTest {
     val (instructions, entryPoint) = extractInstructionsAndGetEntryPoint(vm)
     vmSimulator.simulate(vm, entryPoint, instructions)
 
-    assertEquals(string1, vm.vmMemory.getString(vm.registers[0].toInt()))
-    assertEquals(string2, vm.vmMemory.getString(vm.registers[1].toInt()))
-    assertEquals(string3, vm.vmMemory.getString(vm.registers[2].toInt()))
     assertEquals(1234, vm.registers[3])
     assertEquals(1122334455667788, vm.registers[4])
   }

@@ -11,8 +11,9 @@ interface Operand {
 enum class OperandType(val value: Byte) {
   Constant_C32(1 shl 0),
   Constant_C64(1 shl 1),
-  Constant_VmString(1 shl 2),
-  Register(1 shl 3),
-  Variable(1 shl 4),
+  Register(1 shl 2),
+  Variable(1 shl 3),
+
+  //this should be the last bit!!!
   Memory(1 shl 6)
 }
