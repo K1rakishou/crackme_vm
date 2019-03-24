@@ -1,7 +1,6 @@
 package crackme.vm.handlers.helpers
 
 import crackme.vm.VM
-import crackme.vm.core.VariableType
 import crackme.vm.core.VmExecutionException
 import crackme.vm.instructions.GenericTwoOperandsInstruction
 import crackme.vm.instructions.Instruction
@@ -19,22 +18,14 @@ object GenericTwoOperandsInstructionHandler {
     handle_Reg_MemC32: (dest: Register, src: Memory<C32>, eip: Int) -> Long,
     //instr r0, ss/ds@[r0]
     handle_Reg_MemReg: (dest: Register, src: Memory<Register>, eip: Int) -> Long,
-    //instr r0, ds@[abc]
-    handle_Reg_MemVar: (dest: Register, src: Memory<Variable>, eip: Int) -> Long,
     //instr r0, r1
     handle_Reg_Reg: (dest: Register, src: Register, eip: Int) -> Long,
-    //instr r0, abc
-    handle_Reg_Var: (dest: Register, src: Variable, eip: Int) -> Long,
     //instr ss/ds@[r0], r0
     handle_MemReg_Reg: (dest: Memory<Register>, src: Register, eip: Int) -> Long,
-    //instr ds@[abc], r0
-    handle_MemVar_Reg: (dest: Memory<Variable>, src: Register, eip: Int) -> Long,
     //instr ss/ds@[11223344], r0
     handle_MemC32_Reg: (dest: Memory<C32>, src: Register, eip: Int) -> Long,
     //instr ss/ds@[r0], 1234
     handle_MemReg_Const: (dest: Memory<Register>, src: Constant, eip: Int) -> Long,
-    //instr ds@[abc], r0
-    handle_MemVar_Const: (dest: Memory<Variable>, src: Constant, eip: Int) -> Long,
     //instr [11223344], 123
     handle_MemC32_Const: (dest: Memory<C32>, src: Constant, eip: Int) -> Long
   ): Long {
@@ -86,21 +77,11 @@ object GenericTwoOperandsInstructionHandler {
                   else -> throw VmExecutionException(eip, "Unknown segment (${srcInstruction.segment.segmentName})")
                 }
               }
-              is Variable -> {
-                //instr r0, [abc]
-                when (srcInstruction.segment) {
-                  Segment.Memory,
-                  Segment.Stack -> handle_Reg_MemVar(instruction.dest as Register, instruction.src as Memory<Variable>, eip)
-                  else -> throw VmExecutionException(eip, "Unknown segment (${srcInstruction.segment.segmentName})")
-                }
-              }
               else -> throw VmExecutionException(eip, "Unknown operand (${srcInstruction.operand})")
             }
           }
           //instr r0, r1
           is Register -> handle_Reg_Reg(instruction.dest as Register, instruction.src as Register, eip)
-          //instr r0, abc
-          is Variable -> handle_Reg_Var(instruction.dest as Register, instruction.src as Variable, eip)
           else -> throw VmExecutionException(eip, "Unknown operand ($srcOperand)")
         }
       }
@@ -119,22 +100,6 @@ object GenericTwoOperandsInstructionHandler {
                 when (destInstruction.segment) {
                   Segment.Memory -> handle_MemReg_Reg(destInstruction as Memory<Register>, sourceReg, eip)
                   Segment.Stack -> handle_MemReg_Reg(destInstruction as Memory<Register>, sourceReg, eip)
-                  else -> throw VmExecutionException(eip, "Unknown segment (${destInstruction.segment.segmentName})")
-                }
-              }
-              is Variable -> {
-                //instr [abc], r0
-                when (destInstruction.segment) {
-                  Segment.Memory,
-                  Segment.Stack -> {
-                    when (destInstruction.operand.variableType) {
-                      VariableType.IntType,
-                      VariableType.LongType,
-                      VariableType.StringType -> {
-                        handle_MemVar_Reg(destInstruction as Memory<Variable>, sourceReg, eip)
-                      }
-                    }
-                  }
                   else -> throw VmExecutionException(eip, "Unknown segment (${destInstruction.segment.segmentName})")
                 }
               }
@@ -172,17 +137,6 @@ object GenericTwoOperandsInstructionHandler {
                   Segment.Memory -> handle_MemReg_Const(destOperand as Memory<Register>, sourceConst, eip)
                   Segment.Stack -> handle_MemReg_Const(destOperand as Memory<Register>, sourceConst, eip)
                   else -> throw VmExecutionException(eip, "Unknown segment (${destOperand.segment.segmentName})")
-                }
-              }
-              is Variable -> {
-                //instr [abc], 1234
-                when (destOperand.operand.variableType) {
-                  VariableType.IntType,
-                  VariableType.LongType,
-                  VariableType.StringType -> {
-                    handle_MemVar_Const(destOperand as Memory<Variable>, sourceConst, eip)
-                  }
-                  else -> throw VmExecutionException(eip, "Unknown variableType (${destOperand.operand.variableType})")
                 }
               }
               is Constant -> {

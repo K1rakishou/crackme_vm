@@ -26,31 +26,13 @@ class MovHandler : Handler<Mov>() {
         vm.registers[dest.index] = getVmMemoryValueByRegister(vm, eip, src)
         0
       },
-      handle_Reg_MemVar = { dest, src, eip ->
-        TODO("remove me handle_Reg_MemVar")
-
-//        vm.registers[dest.index] = getVmMemoryValueByVariable(vm, eip, src)
-//        0
-      },
       handle_Reg_Reg = { dest, src, _ ->
         vm.registers[dest.index] = vm.registers[src.index]
         0
       },
-      handle_Reg_Var = { dest, src, _ ->
-        TODO("MovRegVar is forbidden")
-
-//        vm.registers[dest.index] = src.stackFrame.toLong()
-//        0
-      },
       handle_MemReg_Reg = { dest, src, eip ->
         putVmMemoryValueByRegister(dest, vm, vm.registers[src.index], eip)
         0
-      },
-      handle_MemVar_Reg = { dest, src, eip ->
-        TODO("remove me handle_MemVar_Reg")
-
-//        putVmMemoryValueByVariable(dest, vm, vm.registers[src.index], eip)
-//        0
       },
       handle_MemC32_Reg = { dest, src, eip ->
         putVmMemoryValueByConstant(dest as Memory<Constant>, vm, vm.registers[src.index], eip)
@@ -59,12 +41,6 @@ class MovHandler : Handler<Mov>() {
       handle_MemReg_Const = { dest, src, eip ->
         putVmMemoryValueByRegister(dest, vm, getConstantValueFromVmMemory(vm, src), eip)
         0
-      },
-      handle_MemVar_Const = { dest, src, eip ->
-        TODO("remove me handle_MemVar_Const")
-
-//        putVmMemoryValueByVariable(dest, vm, getConstantValueFromVmMemory(vm, src), eip)
-//        0
       },
       handle_MemC32_Const = { dest, src, eip ->
         putVmMemoryValueByConstant(dest as Memory<Constant>, vm, extractValueFromConstant(eip, src, dest.addressingMode), eip)

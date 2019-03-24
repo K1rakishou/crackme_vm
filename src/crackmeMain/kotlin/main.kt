@@ -18,7 +18,6 @@ fun main() {
       end
     """
 
-  //TODO: Remove VmString!!!!!!
   //TODO: add Lea instruction to be able to get an address of a variable
 
   //TODO: add modules and ability to include modules (#include "module-path/module-name.asm")

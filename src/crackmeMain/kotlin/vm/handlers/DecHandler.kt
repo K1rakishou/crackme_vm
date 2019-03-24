@@ -18,13 +18,6 @@ class DecHandler : Handler<Dec>() {
         putVmMemoryValueByRegister(operand, vm, newValue, eip)
         newValue
       },
-      handleMemVar = { operand, eip ->
-        TODO("remove me handleMemVar")
-
-//        val newValue = getVmMemoryValueByVariable(vm, eip, operand) - 1
-//        putVmMemoryValueByVariable(operand, vm, newValue, eip)
-//        newValue
-      },
       handleMemConstant = { operand, eip ->
         val newValue = getVmMemoryValueByConstant(vm, eip, operand) - 1
         putVmMemoryValueByConstant(operand, vm, newValue, eip)

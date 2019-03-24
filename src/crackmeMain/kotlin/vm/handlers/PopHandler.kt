@@ -44,11 +44,6 @@ class PopHandler : Handler<Pop>() {
       handleMemReg = { operand, eip ->
         popIntoVmMemoryByRegister(operand, instruction.addressingMode, vm, eip)
       },
-      handleMemVar = { operand, eip ->
-        TODO("remove me handleMemVar")
-
-//        popIntoVmMemoryByVariable(operand, instruction.addressingMode, vm, eip)
-      },
       handleMemConstant = { operand, eip ->
         val value = when (operand.operand) {
           is C64 -> vm.vmStack.pop<Long>(instruction.addressingMode)
