@@ -18,8 +18,8 @@ class XorHandler : Handler<Xor>() {
         vm.registers[dest.index] = vm.registers[dest.index] xor extractValueFromConstant(eip, src, AddressingMode.ModeQword)
         vm.registers[dest.index]
       },
-      handle_Reg_MemC32 = { dest, src, _ ->
-        vm.registers[dest.index] = vm.registers[dest.index] xor getConstantValueFromVmMemory(vm, src.operand)
+      handle_Reg_MemC32 = { dest, src, eip ->
+        vm.registers[dest.index] = vm.registers[dest.index] xor getVmMemoryValueByConstant(vm, eip, src as Memory<Constant>)
         vm.registers[dest.index]
       },
       handle_Reg_MemReg = { dest, src, eip ->
@@ -35,11 +35,10 @@ class XorHandler : Handler<Xor>() {
         putVmMemoryValueByRegister(dest, vm, newValue, eip)
         newValue
       },
-      handle_MemC32_Reg = { dest, src, _ ->
-        val address = dest.operand.value
-        val newValue = vm.vmMemory.getInt(address) xor vm.registers[src.index].toInt()
-        vm.vmMemory.putInt(address, newValue)
-        newValue.toLong()
+      handle_MemC32_Reg = { dest, src, eip ->
+        val newValue = getVmMemoryValueByConstant(vm, eip, dest as Memory<Constant>) xor vm.registers[src.index]
+        putVmMemoryValueByConstant(dest as Memory<Constant>, vm, newValue, eip)
+        newValue
       },
       handle_MemReg_Const = { dest, src, eip ->
         val constantValue = getConstantValueFromVmMemory(vm, src)

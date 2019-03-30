@@ -81,27 +81,11 @@ abstract class Handler<T : Instruction> {
     }
   }
 
-  protected fun getConstantValueFromVmStack(vm: VM, operand: Constant): Long {
-    return when (operand) {
-      is C64 -> vm.vmStack.peek64At(operand.value.toInt())
-      is C32 -> vm.vmStack.peek32At(operand.value).toLong()
-      else -> throw NotImplementedError("getConstantValueFromVmStack not implemented for constant operandType (${operand.operandName})")
-    }
-  }
-
   protected fun putConstantValueIntoMemory(vm: VM, operand: Constant, value: Long) {
     when (operand) {
       is C64 -> vm.vmMemory.putLong(operand.value.toInt(), value)
       is C32 -> vm.vmMemory.putInt(operand.value, value.toInt())
       else -> throw NotImplementedError("getConstantValueFromVmMemory not implemented for constant operandType (${operand.operandName})")
-    }
-  }
-
-  protected fun putConstantValueIntoStack(vm: VM, operand: Constant, value: Long) {
-    when (operand) {
-      is C64 -> vm.vmStack.set64At(operand.value.toInt(), value)
-      is C32 -> vm.vmStack.set32At(operand.value, value.toInt())
-      else -> throw NotImplementedError("putConstantValueIntoStack not implemented for constant operandType (${operand.operandName})")
     }
   }
 

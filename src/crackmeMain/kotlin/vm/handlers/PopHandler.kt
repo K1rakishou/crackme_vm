@@ -51,6 +51,7 @@ class PopHandler : Handler<Pop>() {
           else -> throw VmExecutionException(eip, "Cannot pop into VmString")
         }
 
+        //TODO: may not work properly
         putConstantValueIntoMemory(vm, operand.operand, value)
         value
       },

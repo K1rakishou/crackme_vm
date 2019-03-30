@@ -23,6 +23,7 @@ class PushHandler : Handler<Push>() {
         0
       },
       handleMemConstant = { operand, eip ->
+        //TODO: may not work properly
         val value = getConstantValueFromVmMemory(vm, operand.operand)
         vm.vmStack.push(value, instruction.addressingMode)
 
