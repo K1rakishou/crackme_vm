@@ -12,6 +12,8 @@ fun main() {
   val testProgram =
 
     """
+      def_var test: String = "1234567890"
+
       def main()
         mov r0, 1
         ret

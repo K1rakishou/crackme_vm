@@ -35,7 +35,7 @@ class VMParser(
       .map { it.trim() }
       .filterNot { it.isEmpty() }
 
-    val vmFunctionScopes = parseVmFunctionScopes(lines)
+    val vmFunctionScopes = initialParsing(lines)
 
     val vmFunctions = mutableMapOf<String, VmFunction>()
     var instructionId = 0
@@ -148,20 +148,37 @@ class VMParser(
     return instructionId + 1
   }
 
-  private fun parseVmFunctionScopes(lines: List<String>): Map<String, VmFunctionScope> {
+  private fun initialParsing(lines: List<String>): Map<String, VmFunctionScope> {
     var programLine = 0
     val vmFunctionScopes = mutableMapOf<String, VmFunctionScope>()
 
     while (programLine < lines.size) {
       val line = lines.getOrNull(programLine)?.trim()
       if (line == null) {
-        throw ScopeParsingException(programLine, "Prepare error, current programLine is out of bounds (programLine = $programLine), (linesCount = ${lines.size})")
+        throw ScopeParsingException(
+          programLine,
+          "Prepare error, current programLine is out of bounds (programLine = $programLine), (linesCount = ${lines.size})"
+        )
       }
 
       when {
+        line.startsWith("def_var") -> {
+          val (variableName, value) = parseGlobalVariable(programLine, line.substring(7))
+          if (vmMemory.isVariableDefined(variableName)) {
+            throw ScopeParsingException(programLine, "Global variable ${variableName} is already defined")
+          }
+
+          vmMemory.allocString(variableName, value)
+          ++programLine
+        }
         line.startsWith("use") -> {
           val nativeFunction = parseNativeFunction(programLine, line)
+          if (nativeFunctions.containsKey(nativeFunction.type)) {
+            throw ScopeParsingException(programLine, "Native function ${nativeFunction.type.funcName} is already defined")
+          }
+
           nativeFunctions[nativeFunction.type] = nativeFunction
+          ++programLine
         }
         line.startsWith("def") -> {
           val vmFunctionScope = parseFunctionScope(lines, programLine)
@@ -178,6 +195,44 @@ class VMParser(
     }
 
     return vmFunctionScopes
+  }
+
+  private fun parseGlobalVariable(programLine: Int, line: String): Pair<String, String> {
+    if (line.indexOf(":") == -1) {
+      throw GlobalVariableParsingException(programLine, "Cannot parse variable name ($line)")
+    }
+
+    val (variableName, rest) = line.split(':').map { it.trim() }
+
+    if (rest.indexOf("=") == -1) {
+      throw GlobalVariableParsingException(programLine, "Cannot parse variable initializer ($rest)")
+    }
+
+    val (variableTypeRaw, valueRaw) = rest.split('=').map { it.trim() }
+
+    val variableType = VariableType.fromString(variableTypeRaw)
+    if (variableType == null) {
+      throw GlobalVariableParsingException(programLine, "Cannot parse variable type ($variableTypeRaw)")
+    }
+
+    val value = parseString(valueRaw, programLine)
+
+    return Pair(
+      variableName,
+      value
+    )
+  }
+
+  private fun parseString(
+    text: String,
+    programLine: Int
+  ): String {
+    val stringEndIndex = text.indexOf('\"', 1)
+    if (stringEndIndex == -1) {
+      throw GlobalVariableParsingException(programLine, "Cannot parse string variable ($text)")
+    }
+
+    return text.substring(1, stringEndIndex)
   }
 
   private fun parseFunctionScope(lines: List<String>, programLineIndex: Int): VmFunctionScope {

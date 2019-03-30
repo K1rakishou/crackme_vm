@@ -42,6 +42,7 @@ class OperandParser(
       else -> throw ParsingException(vmFunctionScope.name, functionLine, "Cannot parse operand for ($operandString)")
     }
   }
+
   //returns either Memory<*> or Variable operand type
   //it returns Memory<*> type operand when variable is a stack segment variable (like a function's parameter)
   private fun parseVariableOperand(

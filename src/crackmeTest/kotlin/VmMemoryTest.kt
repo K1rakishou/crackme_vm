@@ -67,8 +67,8 @@ class VmMemoryTests {
     val str1 = "This is a test string1"
     val str2 = "This is a test string2"
 
-    val address1 = vmMemory.allocString(str1)
-    val address2 = vmMemory.allocString(str2)
+    val address1 = vmMemory.allocString("1", str1)
+    val address2 = vmMemory.allocString("2", str2)
 
     val bytes1 = vmMemory.slice(0, 4 + str1.length)
     val bytes2 = vmMemory.slice(4 + str1.length, 4 + str1.length + 4 + str2.length)

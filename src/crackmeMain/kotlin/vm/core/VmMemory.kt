@@ -24,6 +24,59 @@ class VmMemory(
   private val variables = mutableMapOf<String, MemoryVariable>()
   private val memory = ByteArray(size) { 0 } //TODO: random.nextBytes(size)
 
+  fun allocString(name: String, value: String): Int {
+    if (ip < 0 || (ip + value.length) > size) {
+      throw EipIsOutOfBoundsException(ip, size)
+    }
+
+    val address = allocInt(value.length)
+    Utils.copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, ip, value.length)
+
+    ip += value.length
+    variables[name] = MemoryVariable(name, address, VariableType.StringType)
+
+    return address
+  }
+
+  fun allocArray(len: Int): Int {
+    if (ip < 0 || (ip + len) > size) {
+      throw EipIsOutOfBoundsException(ip, ip + len)
+    }
+
+    val address = ip
+    ip += len
+
+    return address
+  }
+
+  private fun allocInt(value: Int): Int {
+    if (ip < 0 || (ip + INT_SIZE) > size) {
+      throw EipIsOutOfBoundsException(ip, size)
+    }
+
+    val address = ip
+    Utils.writeIntToArray(ip, value, memory)
+
+    ip += INT_SIZE
+    return address
+  }
+
+  fun allocLong(value: Long): Int {
+    if (ip < 0 || (ip + LONG_SIZE) > size) {
+      throw EipIsOutOfBoundsException(ip, size)
+    }
+
+    val address = ip
+    Utils.writeLongToArray(ip, value, memory)
+
+    ip += LONG_SIZE
+    return address
+  }
+
+  fun getVariable(variableName: String): MemoryVariable? {
+    return variables[variableName]
+  }
+
   fun isVariableDefined(variableName: String): Boolean {
     return variables.containsKey(variableName)
   }
@@ -54,33 +107,6 @@ class VmMemory(
     }
 
     Utils.copyBytes(bytes, 0, memory, index, bytes.size)
-  }
-
-  fun alloc(len: Int): Int {
-    if (ip < 0 || (ip + len) > size) {
-      throw EipIsOutOfBoundsException(ip, ip + len)
-    }
-
-    val address = ip
-    ip += len
-
-    return address
-  }
-
-  fun getVariable(variableName: String): MemoryVariable? {
-    return variables[variableName]
-  }
-
-  private fun allocInt(value: Int): Int {
-    if (ip < 0 || (ip + INT_SIZE) > size) {
-      throw EipIsOutOfBoundsException(ip, size)
-    }
-
-    val address = ip
-    Utils.writeIntToArray(ip, value, memory)
-
-    ip += INT_SIZE
-    return address
   }
 
   fun putByte(index: Int, value: Byte) {
@@ -139,36 +165,12 @@ class VmMemory(
     Utils.writeLongToArray(index, value, memory)
   }
 
-  fun allocLong(value: Long): Int {
-    if (ip < 0 || (ip + LONG_SIZE) > size) {
-      throw EipIsOutOfBoundsException(ip, size)
-    }
-
-    val address = ip
-    Utils.writeLongToArray(ip, value, memory)
-
-    ip += LONG_SIZE
-    return address
-  }
-
   fun getLong(index: Int): Long {
     if (index < 0 || index > size) {
       throw VmIndexOutOfBoundsException(index, size)
     }
 
     return Utils.readLongFromByteArray(index, memory)
-  }
-
-  fun allocString(value: String): Int {
-    if (ip < 0 || (ip + value.length) > size) {
-      throw EipIsOutOfBoundsException(ip, size)
-    }
-
-    val address = allocInt(value.length)
-    Utils.copyBytes(value.toCharArray().map { it.toByte() }.toByteArray(), 0, memory, ip, value.length)
-
-    ip += value.length
-    return address
   }
 
   fun getString(index: Int): String {
@@ -184,6 +186,7 @@ class VmMemory(
   }
 
   class MemoryVariable(
+    val name: String,
     val address: Int,
     val variableType: VariableType
   )

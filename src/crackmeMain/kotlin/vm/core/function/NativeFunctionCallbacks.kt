@@ -69,7 +69,7 @@ object NativeFunctionCallbacks {
       }
       is Register -> {
         val regValue = vm.registers[operand.index]
-        vm.vmMemory.alloc(regValue.toInt()).toLong()
+        vm.vmMemory.allocArray(regValue.toInt()).toLong()
       }
       else -> throw RuntimeException("Not implemented for ${operand.operandName}")
     }
