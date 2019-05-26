@@ -3,6 +3,7 @@ package sample.helloworld.obfuscator
 import crackme.vm.VM
 import crackme.vm.VMSimulator
 import crackme.vm.instructions.Instruction
+import crackme.vm.instructions.Ret
 import crackme.vm.obfuscator.mutation.MutationEngine
 import crackme.vm.obfuscator.mutation.SimpleMutationEngine
 import kotlin.random.Random
@@ -15,17 +16,20 @@ abstract class AbstractMutationEngineTest {
 
     for (i in 0 until count) {
       val mutatedCode = mutator(mutationEngine)
-//
-//      for (instruction in mutatedCode) {
-//        println("[Attempt $i]: $instruction")
-//      }
 
-      //FIXME
-//      val vm = VM(random, mutatedCode)
-//      val vmSimulator = VMSimulator(true)
-//      vmSimulator.simulate(vm)
-//
-//      checker(vm)
+      for (instruction in mutatedCode) {
+        println("[Attempt $i]: $instruction")
+      }
+
+      val mutatedCodeWithReturn = ArrayList(mutatedCode).apply {
+        add(Ret(0, true))
+      }
+
+      val vm = VM.createTestVM(mutatedCodeWithReturn)
+      val vmSimulator = VMSimulator()
+      vmSimulator.simulate(vm, 0, mutatedCodeWithReturn)
+
+      checker(vm)
     }
   }
 

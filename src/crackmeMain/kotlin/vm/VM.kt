@@ -6,6 +6,8 @@ import crackme.vm.core.VmMemory
 import crackme.vm.core.VmStack
 import crackme.vm.core.function.NativeFunction
 import crackme.vm.core.function.NativeFunctionType
+import crackme.vm.instructions.Instruction
+import platform.windows.GetTickCount
 import kotlin.random.Random
 
 class VM private constructor(
@@ -33,6 +35,33 @@ class VM private constructor(
       return VM(
         vmFunctions,
         nativeFunctions,
+        vmMemory,
+        registers
+      )
+    }
+
+    fun createTestVM(instructions: List<Instruction>): VM {
+      val instructionsMap = linkedMapOf<Int, Instruction>()
+
+      for ((index, instruction) in instructions.withIndex()) {
+        instructionsMap.put(index, instruction)
+      }
+
+      val functions = hashMapOf(
+        mainFunctionName to VmFunction(mainFunctionName, 0, instructions.size, emptyMap(), instructionsMap)
+      )
+
+      val registers = mutableListOf(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L)
+
+      val vmMemory = VmMemory(
+        1024,
+        registers,
+        Random(GetTickCount().toInt())
+      )
+
+      return VM(
+        functions,
+        emptyMap(),
         vmMemory,
         registers
       )
