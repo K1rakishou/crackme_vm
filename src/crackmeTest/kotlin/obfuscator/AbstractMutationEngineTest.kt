@@ -9,7 +9,7 @@ import crackme.vm.obfuscator.mutation.SimpleMutationEngine
 import kotlin.random.Random
 
 abstract class AbstractMutationEngineTest {
-  private val random = Random(0)
+  protected val random = Random(0)
 
   fun <T : Instruction> test(count: Int = 100, mutator: (MutationEngine) -> List<Instruction>, checker: (VM) -> Unit) {
     val mutationEngine = SimpleMutationEngine(random)

@@ -2,7 +2,17 @@ package crackme.vm.operands
 
 import crackme.vm.core.Utils
 
-abstract class Constant : Operand
+abstract class Constant : Operand {
+
+  fun getValue(): Long {
+    return when (this) {
+      is C32 -> this.value.toLong()
+      is C64 -> this.value
+      else -> throw NotImplementedError("Not implemented for ${this::class.simpleName}")
+    }
+  }
+
+}
 
 class C32(
   val value: Int
